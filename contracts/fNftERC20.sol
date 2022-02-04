@@ -2,10 +2,12 @@
 pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 
 contract FNftERC20 is ERC20, ERC721Holder {
-    bool private lock;
+    bool private locked;
     address public createdBy;
     address public fractionalizer;
     address public nft;
@@ -16,7 +18,8 @@ contract FNftERC20 is ERC20, ERC721Holder {
         bool accepted;
         address token;
     }
-    mapping public bid(address => Bid);
+
+    mapping(address => Bid) public bids;
 
     constructor(address _nft, address _creator, string memory _name, string memory _symbol) ERC20(_name, _symbol) {
         createdBy = _creator;
@@ -30,15 +33,12 @@ contract FNftERC20 is ERC20, ERC721Holder {
         _mint(_account, _amount);
     }
 
-    function withdrawl() {
-        
-    }
 
     function buy(uint tokenId) external {
-        storage bid = bid[msg.sender].accepted;
+        Bid storage bid = bids[msg.sender];
         require(bid.accepted);
         ERC20(bid.token).transferFrom(msg.sender, address(this), bid.amount);
-        ERC721(nft).transfer(msg.sender, bid.tokenId);
+        IERC721(nft).safeTransferFrom(address(this), msg.sender, tokenId);
         locked = true;
     }
 
@@ -50,10 +50,7 @@ contract FNftERC20 is ERC20, ERC721Holder {
     // }
 }
 
-interface IFNFTERC20 {
-
-    function mint(uint _amount, address, blah);
-
-    function withdrawl();
-
-}
+// interface IFNFTERC20 {
+//     function mint(uint _amount, address, blah);
+//     function withdrawl();
+// }
