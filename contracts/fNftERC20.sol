@@ -2,25 +2,19 @@
 pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+
+// import "@openzeppelin/contracts/utils/Strings.sol";
 
 /// @title FNFTERC20
 /// @author @0xlucky @0xsoon @colinnielsen
 /// @notice ERC20 contract for RenaissanceLab's NFT fractionalization protocol
 /// @dev An ERC20 token represented by an underlying asset NFT, has a built-in redemption and bid mechanism
 
-contract FNFTERC20 is
-    ERC20,
-    ERC20Permit,
-    ERC721Holder //, ERC20Snapshot
-{
+contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     /*///////////////////////////////////////////////////////////////
                                   EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -38,10 +32,22 @@ contract FNFTERC20 is
     );
 
     /// @notice emitted when a bid is placed on the nft, bids must be in place in ETH
+    /// @param proposer the address of the proposer
+    /// @param newReserve the new reserve price in ETH
+    /// @param createdBlock blockNumber the proposal was created on
+    event ReserveChangeProposalCreated(
+        address indexed proposer,
+        uint256 newReserve,
+        uint256 createdBlock
+    );
+
+    event Vote(address indexed voter, uint256 voteAmount);
+
+    /// @notice emitted when a bid is placed on the nft, bids must be in place in ETH
     /// @param bidder the address of the bidder
     /// @param amount of ETH
-    /// @param expirary timestamp of the bid
-    event BidCreated(address bidder, uint256 amount, uint256 expirary);
+    /// @param expiraryBlock block number the bid expires on
+    event BidCreated(address bidder, uint256 amount, uint256 expiraryBlock);
 
     /// @notice emitted when a bid is withdrawn
     /// @param bidder the address of the bidder
@@ -57,14 +63,16 @@ contract FNFTERC20 is
     //////////////////////////////////////////////////////////////*/
     struct HighestBid {
         address bidder;
-        uint256 expirary;
+        uint256 expiraryBlock;
         uint256 amount;
     }
 
-    // struct ReserveProposal {
-    //     uint256 amount;
-    //     uint256 expirary;
-    // }
+    struct ReserveChangeProposal {
+        address proposer;
+        uint256 reservePrice;
+        uint256 votesInFavor;
+        uint256 createdBlock;
+    }
 
     /*///////////////////////////////////////////////////////////////
                                   ERRORS
@@ -76,18 +84,20 @@ contract FNFTERC20 is
     error BadExpirary();
     error BidNotExpired();
     error BidWithdrawalFail();
-    error WithdrawHighestBid();
+    error WithdrawingHighestBid();
     error NotHighestBidder();
     error BidDoesntExist();
     error IncorrectNFT();
     error IncorrectTokenId();
     error AuctionNotOver();
     error AlreadyHasNFT();
+    error AuctionAccepted();
     error BidTooSmall();
     error NFTLiquidated();
     error PayoutTooSmall();
+    error ProposalInProgress();
+    error ProposalExpired();
     error NotEnoughTokens();
-    error NoV2Pair();
 
     /*///////////////////////////////////////////////////////////////
                                 STORAGE
@@ -100,10 +110,12 @@ contract FNFTERC20 is
     uint256 public reservePrice;
     bool public contractHasNFT;
 
+    ReserveChangeProposal public reserveChangeProposal;
     HighestBid public highestBid;
     mapping(address => uint256) public bids;
 
     uint256 public immutable BLOCKS_PER_DAY; //72k for aurora @ avg 1.2s block time
+    uint256 public constant QUORUM_PERCENTAGE = 50; //50%
 
     /// @param _nft the contract address of the underlying NFT
     /// @param _tokenId the tokenId of the underlying NFT
@@ -129,20 +141,22 @@ contract FNFTERC20 is
         )
         ERC20Permit(string(abi.encodePacked("Fractionalized ", _nft.name())))
     {
-        BLOCKS_PER_DAY = _blocksPerDay;
+        nft = _nft;
+        tokenId = _tokenId;
         reservePrice = _reservePrice;
-        contractHasNFT = true;
-        _mint(msg.sender, _fractions);
+        BLOCKS_PER_DAY = _blocksPerDay;
 
         emit FNFTCreated(address(_nft), tokenId, msg.sender, _fractions);
+
+        _mint(msg.sender, _fractions);
     }
 
     /*///////////////////////////////////////////////////////////////
                             EXTERNAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Allows the user to place a bid on an NFT with an expirary date.
-    ///     bids are placed in eth and held by this contract until the expirary.
+    /// @notice Allows the user to place a bid on an NFT with an expiraryBlock date.
+    ///     bids are placed in eth and held by this contract until the expiraryBlock.
     ///     NOTE: If you have been outbid, you can increase your bid here.
     function placeBid() external payable {
         uint256 bidValue = bids[msg.sender] += msg.value;
@@ -151,39 +165,39 @@ contract FNFTERC20 is
         if (bidValue < reservePrice || bidValue < highestBid.amount)
             revert BidTooSmall();
 
-        highestBid.expirary =
+        highestBid.expiraryBlock =
             block.number +
-            (BLOCKS_PER_DAY * (highestBid.amount == 0 ? 7 : 1)); // initial bid has a cooldown of 7 days, bid war extends the expirary by 1 day,
+            (BLOCKS_PER_DAY * (highestBid.amount == 0 ? 7 : 1)); // initial bid has a cooldown of 7 days, bid war extends the expiraryBlock by 1 day,
         highestBid.bidder = msg.sender;
         highestBid.amount = bidValue;
 
         bids[msg.sender] = bidValue;
 
-        emit BidCreated(msg.sender, msg.value, highestBid.expirary);
+        emit BidCreated(msg.sender, msg.value, highestBid.expiraryBlock);
     }
 
-    /// @notice allows the user to withdrawal their losing bid after the expiraryDate has passed
+    /// @notice allows the user to withdrawal their losing bid
     function withdrawBid() external {
         // prevent a user from withdrawing a bid when their bid is the highest bid
         // NOTE: this should imply that you can't withdraw if you've won
-        if (highestBid.bidder == msg.sender) revert WithdrawHighestBid();
+        if (highestBid.bidder == msg.sender) revert WithdrawingHighestBid();
 
-        uint256 amountOwed = bids[msg.sender];
+        uint256 paybackAmount = bids[msg.sender];
 
         // delete their bid info
         delete bids[msg.sender];
 
-        emit BidWithdrawn(msg.sender, amountOwed);
+        emit BidWithdrawn(msg.sender, paybackAmount);
 
         // send it back to the user and require the transfer succeeds
-        (bool success, ) = msg.sender.call{value: amountOwed}("");
+        (bool success, ) = msg.sender.call{value: paybackAmount}("");
         if (!success) revert BidWithdrawalFail();
     }
 
     function withdrawNFT() external {
         if (!contractHasNFT) revert NFTLiquidated();
         if (highestBid.bidder != msg.sender) revert NotHighestBidder();
-        if (highestBid.expirary < block.number) revert AuctionNotOver();
+        if (highestBid.expiraryBlock < block.number) revert AuctionNotOver();
 
         contractHasNFT = false;
         emit Liquidated(msg.sender);
@@ -201,9 +215,77 @@ contract FNFTERC20 is
         ERC721(nft).safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
+    function createReserveChangeProposal(uint256 _newReserve) external {
+        if (!contractHasNFT) revert NFTLiquidated();
+        if (
+            highestBid.expiraryBlock != 0 &&
+            highestBid.expiraryBlock < block.number
+        ) revert AuctionAccepted();
+        if (
+            reserveChangeProposal.createdBlock != 0 &&
+            getProposalExpirary(reserveChangeProposal.createdBlock) >
+            block.number
+        ) revert ProposalInProgress();
+        if ((balanceOf(msg.sender) * 100) / totalSupply() < 5)
+            revert NotEnoughTokens(); // must hold at least 5% of the total supply in order to call a reverse increase proposal
+
+        reserveChangeProposal = ReserveChangeProposal({
+            proposer: msg.sender,
+            reservePrice: _newReserve,
+            votesInFavor: 0,
+            createdBlock: block.number
+        });
+
+        emit ReserveChangeProposalCreated(
+            msg.sender,
+            _newReserve,
+            block.number
+        );
+    }
+
+    function voteInFavor() external {
+        if (!contractHasNFT) revert NFTLiquidated();
+        if (
+            reserveChangeProposal.createdBlock != 0 &&
+            getProposalExpirary(reserveChangeProposal.createdBlock) <
+            block.number
+        ) revert ProposalExpired();
+
+        uint256 votingPower = getPastVotes(
+            msg.sender,
+            reserveChangeProposal.createdBlock
+        );
+
+        reserveChangeProposal.votesInFavor += votingPower;
+
+        emit Vote(msg.sender, votingPower);
+    }
+
+    function changeReservePrice() external {
+        if (
+            (reserveChangeProposal.votesInFavor * 100) / totalSupply() <
+            QUORUM_PERCENTAGE
+        ) revert();
+        reservePrice = reserveChangeProposal.reservePrice;
+        delete reserveChangeProposal;
+        // emit reserve accepted;
+    }
+
     /*///////////////////////////////////////////////////////////////
                             PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
+
+    function getProposalExpirary(uint256 _blockNum)
+        public
+        view
+        returns (uint256)
+    {
+        return _blockNum + (BLOCKS_PER_DAY * 10);
+    }
+
+    function getBlockNum() public view returns (uint256) {
+        return block.number;
+    }
 
     function onERC721Received(
         address,
@@ -223,25 +305,26 @@ contract FNFTERC20 is
                             INTERAL FUNCTIONS
     //////////////////////////////////////////////////////////////*/
 
-    // function _beforeTokenTransfer(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) internal override(ERC20, ERC20Snapshot) {}
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20, ERC20Votes) {
+        super._afterTokenTransfer(from, to, amount);
+        _delegate(to, to);
+    }
 
-    // function _afterTokenTransfer(
-    //     address from,
-    //     address to,
-    //     uint256 amount
-    // ) internal override(ERC20, ERC20Votes) {}
+    function _mint(address to, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._mint(to, amount);
+    }
 
-    // function _mint(address _to, uint256 _amount)
-    //     internal
-    //     override(ERC20, ERC20Votes)
-    // {}
-
-    // function _burn(address account, uint256 amount)
-    //     internal
-    //     override(ERC20, ERC20Votes)
-    // {}
+    function _burn(address account, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._burn(account, amount);
+    }
 }
