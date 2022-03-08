@@ -4,6 +4,8 @@ coverage
 coverage.json
 typechain
 bin
+.DS_Store
+out/
 
 #Hardhat files
 cache
