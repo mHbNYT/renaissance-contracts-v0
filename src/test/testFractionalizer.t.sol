@@ -33,27 +33,26 @@ contract testFractionalizer is DSTest, ERC721Holder {
         fractionalizer = new Fractionalizer(address(controller));
     }
 
-    function testFractionalize() public {
+    function testFractionalize(uint224 fractions, uint256 reservePrice) public {
         uint256 tokenId = 1;
-        uint256 fractions = 1000;
         address computedFNFTAddress = fractionalizer.computeFNFTAddress(
             address(this),
             address(nft),
             tokenId,
             fractions,
-            1 ether
+            reservePrice
         );
         nft.safeMint(address(this));
         nft.approve(address(fractionalizer), tokenId);
 
-        fNFT = fractionalizer.fractionalize(address(nft), tokenId, fractions, 1 ether);
+        fNFT = fractionalizer.fractionalize(address(nft), tokenId, fractions, reservePrice);
         assertEq(computedFNFTAddress, address(fNFT));
         assertEq(fNFT.creator(), address(this));
         assertEq(address(fNFT.nft()), address(nft));
         assertEq(fNFT.name(), "Fractionalized MockNFT");
         assertEq(fNFT.symbol(), "fNFT-MOCK-#1");
         assertEq(fNFT.totalSupply(), fractions);
-        assertEq(fNFT.reservePrice(), 1 ether);
+        assertEq(fNFT.reservePrice(), reservePrice);
         assertEq(nft.ownerOf(tokenId), address(fNFT));
     }
 }

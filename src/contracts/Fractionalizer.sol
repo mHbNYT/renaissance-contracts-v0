@@ -22,7 +22,7 @@ contract Fractionalizer is Ownable {
     function fractionalize(
         address _nft,
         uint256 _tokenId,
-        uint256 _fractions,
+        uint224 _fractions,
         uint256 _reservePrice
     ) public returns (FNFTERC20) {
         // emit the event before the creation of the contract for subgraph reasons
@@ -45,7 +45,7 @@ contract Fractionalizer is Ownable {
         address _owner,
         address _nft,
         uint256 _tokenId,
-        uint256 _fractions,
+        uint224 _fractions,
         uint256 _reservePrice
     ) public view returns (address) {
         return

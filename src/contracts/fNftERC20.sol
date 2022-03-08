@@ -132,7 +132,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         address _owner,
         address _nft,
         uint256 _tokenId,
-        uint256 _fractions,
+        uint224 _fractions,
         uint256 _reservePrice,
         FNFTController _FNFTController
     )
