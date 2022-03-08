@@ -7,8 +7,11 @@ contract FNFTController is Ownable {
     uint256 public blocksPerHour;
     // percentage of holders needed to reach quorum
     uint256 public quorumPercentage;
+    // hours to wait before an initial bid wins
     uint256 public startingBidCooldownHours;
+    // hours to wait before any subsequent bids win
     uint256 public bidCooldownHours;
+    // hours to wait before a reserve price change proposal expires
     uint256 public proposalExpiraryHours;
 
     constructor(

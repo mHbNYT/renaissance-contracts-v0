@@ -1,11 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {FNFTController} from "./FNFTController.sol";
+import "../test/utils/console.sol";
 
 /// @title FNFTERC20
 /// @author @0xlucky @0xsoon @colinnielsen
@@ -51,6 +54,10 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     /// @param liquidator the address of the user who liquidated the NFT
     event Liquidated(address liquidator);
 
+    /// @notice emitted when a user's tokens are redeemed proportionally for the sale amount
+    /// @param user the user's tokens
+    event TokensRedeemed(address user, uint256 amount);
+
     /*///////////////////////////////////////////////////////////////
                              STRUCTS / ENUMS
     //////////////////////////////////////////////////////////////*/
@@ -73,6 +80,10 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
 
     error WithdrawingHighestBid();
     error NFTLiquidated();
+    error NFTNotSold();
+    error CannotRefractionalize();
+    error TokenRedemptionFail();
+    error ZeroAddress();
     error BidWithdrawalFail();
     error BidAlreadyPlaced();
     error BidDoesntExist();
@@ -92,8 +103,8 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     //////////////////////////////////////////////////////////////*/
 
     modifier unlocked() {
-        // if the contract doesn't have an NFT and it's not initializing, then the token has been liquidated
-        if (!contractHasNFT && initializing) revert NFTLiquidated();
+        // if the contract doesn't have an NFT then the token has been liquidated
+        if (!contractHasNFT) revert NFTLiquidated();
         _;
     }
 
@@ -118,26 +129,28 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     /// @param _fractions the amount of fractions to create
     /// @param _reservePrice the reserve price needed to liquidate the nft
     constructor(
-        ERC721 _nft,
+        address _owner,
+        address _nft,
         uint256 _tokenId,
         uint256 _fractions,
         uint256 _reservePrice,
         FNFTController _FNFTController
     )
         ERC20(
-            string(abi.encodePacked("Fractionalized ", _nft.name())),
-            string(abi.encodePacked("fNFT-", _nft.symbol(), "-#", Strings.toString(_tokenId)))
+            string(abi.encodePacked("Fractionalized ", ERC721(_nft).name())),
+            string(abi.encodePacked("fNFT-", ERC721(_nft).symbol(), "-#", Strings.toString(_tokenId)))
         )
-        ERC20Permit(string(abi.encodePacked("Fractionalized ", _nft.name())))
+        ERC20Permit(string(abi.encodePacked("Fractionalized ", ERC721(_nft).name())))
     {
-        nft = _nft;
+        if (_owner == address(0)) revert ZeroAddress();
+        nft = ERC721(_nft);
         tokenId = _tokenId;
         reservePrice = _reservePrice;
         controller = _FNFTController;
 
         emit FNFTCreated(address(_nft), tokenId, msg.sender, _fractions);
 
-        _mint(msg.sender, _fractions);
+        _mint(_owner, _fractions);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -264,6 +277,19 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         emit ReservePriceUpdated(newPrice);
     }
 
+    function redeemTokensForETH() external {
+        bool bidAccepted = !contractHasNFT && highestBid.expiraryBlock < block.number;
+        if (!bidAccepted) revert NFTNotSold();
+
+        uint256 userBalance = balanceOf(msg.sender);
+        uint256 shareOwed = (highestBid.amount * ((userBalance * 100) / totalSupply())) / 100;
+        transferFrom(msg.sender, address(this), userBalance);
+        emit TokensRedeemed(msg.sender, shareOwed);
+
+        (bool success, ) = msg.sender.call{value: shareOwed}("");
+        if (!success) revert TokenRedemptionFail();
+    }
+
     /*///////////////////////////////////////////////////////////////
                             PUBLIC FUNCTIONS
     //////////////////////////////////////////////////////////////*/
@@ -279,6 +305,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         uint256 _tokenId,
         bytes memory
     ) public override returns (bytes4) {
+        if (!initializing) revert CannotRefractionalize();
         if (msg.sender != address(nft)) revert IncorrectNFTAddress();
         if (_tokenId != tokenId) revert IncorrectTokenId();
         initializing = false;

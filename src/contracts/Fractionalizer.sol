@@ -1,29 +1,72 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-// contract Fractionalizer is Ownable, ERC721Holder {
-//     bool private isLocked;
+import {FNFTController} from "./FNFTController.sol";
+import {FNFTERC20} from "./fNFTERC20.sol";
+import "../test/utils/console.sol";
 
-//     event Fractionalized(address _nft, uint _tokenId);
+contract Fractionalizer is Ownable {
+    event Fractionalized(address FNFTAddress, address nft, uint256 tokenId, uint256 fractions, uint256 reservePrice);
 
-//     mapping(address => address) public nftToFnft;
+    bytes4 public immutable salt = 0xefefefef;
 
-//     // step 1. approve your nft to this contract
-//     // step 2. call fractionalize
+    FNFTController public controller;
 
-//     function fractionalize(address _nft, uint _tokenId) public returns(address NFNT) {
-//         address newFNFT = new fNFT(...args);
-//         ERC721(nft).transferFrom(msg.sender, fNFTaddress, tokenId);
-//         //if fNFT not in NftToFnft
-//             //trnasfer ownership from _nft owner to fNFT-ERC20
-//             //mint fNFT-ERC20 to the nft owner
-//         //if fNFT in NftToFnft
-//             //trnasfer ownership from _nft owner to fNFT-ERC20
-//             //mint new fNFT-ERC20 to the nft owner
+    constructor(address _controller) {
+        controller = FNFTController(_controller);
+    }
 
-//         emit Fractionalized(_nft, _tokenId);
-//     }
-// }
+    function fractionalize(
+        address _nft,
+        uint256 _tokenId,
+        uint256 _fractions,
+        uint256 _reservePrice
+    ) public returns (FNFTERC20) {
+        // emit the event before the creation of the contract for subgraph reasons
+
+        FNFTERC20 fNFT = new FNFTERC20{salt: bytes32(salt)}(
+            msg.sender,
+            _nft,
+            _tokenId,
+            _fractions,
+            _reservePrice,
+            controller
+        );
+        ERC721(_nft).safeTransferFrom(msg.sender, address(fNFT), _tokenId);
+
+        emit Fractionalized(address(fNFT), _nft, _tokenId, _fractions, _reservePrice);
+        return fNFT;
+    }
+
+    function computeFNFTAddress(
+        address _owner,
+        address _nft,
+        uint256 _tokenId,
+        uint256 _fractions,
+        uint256 _reservePrice
+    ) public view returns (address) {
+        return
+            address(
+                uint160(
+                    uint256(
+                        keccak256(
+                            abi.encodePacked(
+                                bytes1(0xff),
+                                address(this),
+                                bytes32(salt),
+                                keccak256(
+                                    abi.encodePacked(
+                                        type(FNFTERC20).creationCode,
+                                        abi.encode(_owner, _nft, _tokenId, _fractions, _reservePrice, controller)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+    }
+}

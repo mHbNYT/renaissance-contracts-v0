@@ -6,6 +6,7 @@ typechain
 bin
 .DS_Store
 out/
+yarn-error.log
 
 #Hardhat files
 cache

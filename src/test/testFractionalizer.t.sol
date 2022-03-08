@@ -7,9 +7,8 @@ import {FNFTController} from "../contracts/fNFTController.sol";
 import {Fractionalizer} from "../contracts/Fractionalizer.sol";
 import {FNFTERC20} from "../contracts/fNFTERC20.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "../test/utils/console.sol";
 
-contract testfNFT is DSTest, ERC721Holder {
+contract testFractionalizer is DSTest, ERC721Holder {
     CheatCodes public cheats = CheatCodes(HEVM_ADDRESS);
     MockNFT public nft;
     FNFTController public controller;
@@ -34,26 +33,27 @@ contract testfNFT is DSTest, ERC721Holder {
         fractionalizer = new Fractionalizer(address(controller));
     }
 
-    function setUp() public {}
-
-    function testFNFTInitialization() public {
+    function testFractionalize() public {
         uint256 tokenId = 1;
         uint256 fractions = 1000;
-
+        address computedFNFTAddress = fractionalizer.computeFNFTAddress(
+            address(this),
+            address(nft),
+            tokenId,
+            fractions,
+            1 ether
+        );
         nft.safeMint(address(this));
         nft.approve(address(fractionalizer), tokenId);
 
         fNFT = fractionalizer.fractionalize(address(nft), tokenId, fractions, 1 ether);
+        assertEq(computedFNFTAddress, address(fNFT));
+        assertEq(fNFT.creator(), address(this));
+        assertEq(address(fNFT.nft()), address(nft));
         assertEq(fNFT.name(), "Fractionalized MockNFT");
         assertEq(fNFT.symbol(), "fNFT-MOCK-#1");
         assertEq(fNFT.totalSupply(), fractions);
-        assertEq(fNFT.balanceOf(address(this)), fractions);
-        assertEq(fNFT.getVotes(address(this)), fractions);
         assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(address(fNFT.nft()), address(nft));
-        assertEq(fNFT.creator(), address(this));
-        assertTrue(fNFT.contractHasNFT());
-        assertTrue(!fNFT.initializing());
-        assertEq(address(fNFT.controller()), address(controller));
+        assertEq(nft.ownerOf(tokenId), address(fNFT));
     }
 }
