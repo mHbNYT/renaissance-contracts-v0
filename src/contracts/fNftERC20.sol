@@ -61,6 +61,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     /*///////////////////////////////////////////////////////////////
                              STRUCTS / ENUMS
     //////////////////////////////////////////////////////////////*/
+
     struct HighestBid {
         address bidder;
         uint256 expiraryBlock;
@@ -87,6 +88,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     error BidWithdrawalFail();
     error BidAlreadyPlaced();
     error BidDoesntExist();
+    error BidInProgress();
     error BidTooSmall();
     error IncorrectNFTAddress();
     error IncorrectTokenId();
@@ -102,9 +104,20 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
                                 MODIFIERS
     //////////////////////////////////////////////////////////////*/
 
-    modifier unlocked() {
+    modifier hasUnderlyingNFT() {
         // if the contract doesn't have an NFT then the token has been liquidated
         if (!contractHasNFT) revert NFTLiquidated();
+        _;
+    }
+
+    modifier noProposal() {
+        //TODO: add expired proposal check
+        if (reserveUpdateProposal.reservePrice != 0) revert ProposalInProgress();
+        _;
+    }
+
+    modifier noActiveBids() {
+        if (highestBid.amount != 0) revert BidInProgress();
         _;
     }
 
@@ -117,12 +130,11 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     uint256 public reservePrice;
     bool public contractHasNFT;
     bool public initializing = true;
+    FNFTController public controller;
 
     ReserveChangeProposal public reserveUpdateProposal;
     HighestBid public highestBid;
     mapping(address => uint256) public bids;
-
-    FNFTController public controller;
 
     /// @param _nft the contract address of the underlying NFT
     /// @param _tokenId the tokenId of the underlying NFT
@@ -160,7 +172,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     /// @notice Allows the user to place a bid on an NFT with an expiraryBlock date.
     ///     bids are placed in eth and held by this contract until the expiraryBlock.
     /// NOTE: cannot be used to increase a bid
-    function placeBid() external payable unlocked {
+    function placeInitialBid() external payable noProposal {
         //TODO: make sure there is not reserve price increase vote in progress
         if (bids[msg.sender] > 0) revert BidAlreadyPlaced();
         if (msg.value < reservePrice || msg.value <= highestBid.amount) revert BidTooSmall();
@@ -175,7 +187,7 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
     }
 
     /// @notice allows a user to increase their bid by msg.value amount
-    function increaseBid() external payable unlocked {
+    function increaseBid() external payable noProposal {
         //TODO: make sure there is not reserve price increase vote in progress
         uint256 newBid = bids[msg.sender] + msg.value;
         if (bids[msg.sender] == 0) revert BidDoesntExist();
@@ -208,20 +220,8 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         if (!success) revert BidWithdrawalFail();
     }
 
-    function withdrawNFT() external unlocked {
-        if (highestBid.bidder != msg.sender) revert NotHighestBidder();
-        if (highestBid.expiraryBlock < block.number) revert AuctionNotOver();
-
-        contractHasNFT = false;
-        delete bids[msg.sender];
-
-        emit Liquidated(msg.sender);
-
-        nft.safeTransferFrom(address(this), msg.sender, tokenId);
-    }
-
     /// @notice Allows the user to unfractionalize if they own 100% of the total supply (all fractions)
-    function unfractionalizeWithAllTokens() external unlocked {
+    function unfractionalizeWithAllTokens() external hasUnderlyingNFT {
         if (balanceOf(msg.sender) < totalSupply()) revert NotEnoughTokens();
 
         contractHasNFT = false;
@@ -230,18 +230,17 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         nft.safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
-    function createReserveChangeProposal(uint256 _newReserve) external unlocked {
+    //TODO: implement gate-keeper over bid logic
+    function createReserveChangeProposal(uint256 _newReserve, uint256 _expirary) external noActiveBids hasUnderlyingNFT {
         // if the contract doesn't have an accepted bid
-        if (highestBid.expiraryBlock != 0 && highestBid.expiraryBlock < block.number) revert AuctionAccepted();
-        // if the contract doesn't already have a reserve change proposal and it's not expired
-        if (
-            reserveUpdateProposal.createdBlock != 0 &&
-            getProposalExpirary(reserveUpdateProposal.createdBlock) > block.number //TODO: check to see if it reached quorum
-        ) revert ProposalInProgress();
+        // if (highestBid.expiraryBlock != 0 && highestBid.expiraryBlock < block.number) revert AuctionAccepted();
+        // // if the contract doesn't already have a reserve change proposal and it's not expired
+        // if (
+        //     reserveUpdateProposal.createdBlock != 0 &&
+        //     getProposalExpirary(reserveUpdateProposal.createdBlock) > block.number //TODO: check to see if it reached quorum
+        // ) revert ProposalInProgress();
         // must hold at least 5% of the total supply in order to call a reverse increase proposal
-        if ((balanceOf(msg.sender) * 100) / totalSupply() < 5)
-            //
-            revert NotEnoughTokens();
+        if ((balanceOf(msg.sender) * 100) / totalSupply() < 5) revert NotEnoughTokens();
 
         reserveUpdateProposal = ReserveChangeProposal({
             proposer: msg.sender,
@@ -253,32 +252,42 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         emit ReserveChangeProposalCreated(msg.sender, _newReserve, block.number);
     }
 
-    function voteInFavor() external unlocked {
+    function voteInFavor() external {
         if (
             reserveUpdateProposal.createdBlock != 0 &&
             getProposalExpirary(reserveUpdateProposal.createdBlock) < block.number
         ) revert ProposalExpired();
 
         uint256 votingPower = getPastVotes(msg.sender, reserveUpdateProposal.createdBlock);
-
         reserveUpdateProposal.votesInFavor += votingPower;
 
         emit Vote(msg.sender, votingPower);
+
+        if ((reserveUpdateProposal.votesInFavor * 100) / totalSupply() > controller.quorumPercentage()) {
+            uint256 newPrice = reserveUpdateProposal.reservePrice;
+            reservePrice = newPrice;
+            delete reserveUpdateProposal;
+
+            emit ReservePriceUpdated(newPrice);
+        }
     }
 
-    function updateReservePrice() external unlocked {
-        if ((reserveUpdateProposal.votesInFavor * 100) / totalSupply() < controller.quorumPercentage())
-            revert NotEnoughVotes();
+    function withdrawNFT() external hasUnderlyingNFT {
+        if (highestBid.bidder != msg.sender) revert NotHighestBidder();
+        if (highestBid.expiraryBlock < block.number) revert AuctionNotOver();
+        if (getProposalExpirary(reserveUpdateProposal.createdBlock) < block.number) revert("proposal in progress");
+        if (highestBid.amount < reservePrice) revert("reserve price changed");
 
-        uint256 newPrice = reserveUpdateProposal.reservePrice;
-        reservePrice = newPrice;
-        delete reserveUpdateProposal;
+        contractHasNFT = false;
+        delete bids[msg.sender];
 
-        emit ReservePriceUpdated(newPrice);
+        emit Liquidated(msg.sender);
+
+        nft.safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
     function redeemTokensForETH() external {
-        bool bidAccepted = !contractHasNFT && highestBid.expiraryBlock < block.number;
+        bool bidAccepted = !initializing && highestBid.expiraryBlock < block.number;
         if (!bidAccepted) revert NFTNotSold();
 
         uint256 userBalance = balanceOf(msg.sender);
@@ -305,9 +314,9 @@ contract FNFTERC20 is ERC20, ERC721Holder, ERC20Votes {
         uint256 _tokenId,
         bytes memory
     ) public override returns (bytes4) {
-        if (!initializing) revert CannotRefractionalize();
         if (msg.sender != address(nft)) revert IncorrectNFTAddress();
         if (_tokenId != tokenId) revert IncorrectTokenId();
+        if (!initializing) revert CannotRefractionalize();
         initializing = false;
         contractHasNFT = true;
         creator = _from;
