@@ -1,68 +1,32 @@
-import "@nomiclabs/hardhat-waffle";
-import {node_url, accounts, getChainId, apiKey} from './utils/network';
-// import {node_url, accounts, getChainId} from ;
+// https://github.com/wighawag/hardhat-deploy#2-extra-hardhatconfig-networks-options
+import "dotenv/config";
+import { HardhatUserConfig } from "hardhat/types";
+import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
+import "@typechain/hardhat";
+import "solidity-coverage";
+import "@nomiclabs/hardhat-etherscan";
+import "hardhat-interface-generator";
 
-export default {
+const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: '0.6.12',
+        version: "0.8.11",
         settings: {
           optimizer: {
             enabled: true,
-            runs: 9999,
-          },
-        },
-      },
-      {
-        version: '0.7.5',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 9999,
-          },
-        },
-      },
-      {
-        version: '0.8.9',
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 9999,
+            runs: 2_000_000,
           },
         },
       },
     ],
   },
-  networks: {
-    localhost: {
-      url: node_url('localhost'),
-      accounts: accounts(),
-    },
-    aurora: {
-      url: node_url('aurora'),
-      chainId: getChainId('aurora'),
-      accounts: accounts('aurora'),
-      live: true,
-      saveDeployments: true,
-      tags: ['aurora'],
-      gasPrice: 2000000000,
-      gas: 8000000,
-    },
-    aurora_testnet: {
-      url: node_url('aurora_testnet'),
-      chainId: getChainId('aurora_testnet'),
-      accounts: accounts('aurora_testnet'),
-      live: true,
-      saveDeployments: true,
-      tags: ['aurora_testnet'],
-      gasPrice: 2000000000,
-      gas: 8000000,
-    }
+  paths: {
+    sources: "./src/contracts",
+    artifacts: "./build/artifacts",
+    cache: "./build/cache",
   },
-  etherscan : {
-    // Your API key for Etherscan
-    // Obtain one at httpsL//etherscan.io/
-    apiKey: apiKey('aurora')
-  }
 };
+
+export default config;

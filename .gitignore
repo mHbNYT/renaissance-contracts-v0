@@ -3,6 +3,10 @@ node_modules
 coverage
 coverage.json
 typechain
+bin
+.DS_Store
+out/
+yarn-error.log
 
 #Hardhat files
 cache
