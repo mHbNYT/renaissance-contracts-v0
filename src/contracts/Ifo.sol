@@ -4,6 +4,11 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+interface IfNFT {
+    function balanceOf(address _account) external returns(uint256);
+    function totalSupply() external returns(uint256);
+}
+
 contract Ifo is Ownable {
     using SafeERC20 for IERC20;
 
@@ -33,6 +38,7 @@ contract Ifo is Ownable {
     event Mint(address token, address indexed who, uint256 amount);
     event SaleStarted(uint256 block);
     event SaleEnded(uint256 block);
+    event AdminWithdrawal(address _fNFT, uint256 _amount);
 
     constructor(
         address _fNFT,
@@ -40,17 +46,25 @@ contract Ifo is Ownable {
         uint256 _price,
         uint256 _cap,
         bool _allowWhitelisting
-    ) {
+    ) {        
         require( _fNFT != address(0), "Ifo: _fNFT 0");
+
         FNFT = IERC20(_fNFT);
-        require( amountForSale != 0, "Ifo: amountForSale 0");
+        require(IfNFT( address(FNFT) ).balanceOf(msg.sender) == IfNFT( address(FNFT) ).totalSupply(), "Ifo: not owner");
+
+        require( _amountForSale != 0, "Ifo: amountForSale 0");
+        require( _amountForSale <= IfNFT( address(FNFT) ).balanceOf(msg.sender), "Ifo: amountForSale over limit");        
+        require( _amountForSale % _cap == 0, "Ifo: amountForSale undivisible");
         amountForSale = _amountForSale;
+
         require( _price != 0, "Ifo: price 0" );
         price = _price;
         require( _cap != 0, "Ifo: cap 0" );
         cap = _cap;
 
         allowWhitelisting = _allowWhitelisting;
+
+        FNFT.safeTransferFrom(msg.sender, address(this), IfNFT( address(FNFT) ).balanceOf(msg.sender));
     }
 
     //* @notice modifer to check if contract is paused
@@ -120,39 +134,43 @@ contract Ifo is Ownable {
 
     /**
      *  @notice transfer ERC20 token to DAO multisig
-     *  @param _token: token address to withdraw
-     *  @param _amount: amount of token to withdraw
      */
-    function adminWithdraw(address _token, uint256 _amount) external onlyOwner {
-        IERC20( _token ).safeTransfer( address(msg.sender), _amount );
-        emit AdminWithdrawal(_token, _amount);
+    function adminWithdraw() external onlyOwner {
+        require(ended, "adminWithdraw: sale not ended");        
+        (bool sent, ) = msg.sender.call{value: address(this).balance}("");
+        require(sent, "adminWithdraw: eth tx failed");
+        FNFT.safeTransfer( address(msg.sender), IfNFT( address(FNFT) ).balanceOf(address(this)) );        
+        emit AdminWithdrawal(address(FNFT), IfNFT( address(FNFT) ).balanceOf(address(this)));
     }
 
     /**
      *  @notice it deposits FRAX for the sale
-     *  @param _amount: amount of FRAX to deposit to sale (18 decimals)
      */
     function deposit() external payable checkIfPaused {
-        require(started, "deposit: Sale not started");
-        require(!ended, "deposit: Sale ended");        
-        require(cap >= user.amount.add(msg.value), "deposit: over limit");
+        require(started, "deposit: sale not started");
+        require(!ended, "deposit: sale ended");        
         if (allowWhitelisting == true) {
             require(whitelisted[msg.sender] == true, "deposit: not whitelisted");
         }
 
         UserInfo storage user = userInfo[msg.sender];
+        require(cap >= user.amount + msg.value, "deposit: over limit");
 
-        user.amount = user.amount.add(msg.value);
-        totalRaised = totalRaised.add(msg.value);
+        user.amount = user.amount + msg.value;
+        totalRaised = totalRaised + msg.value;
 
-        uint256 payout = msg.value.mul(1e18).div(price).div(1e18); // fNFT to mint for msg.value
+        uint256 payout = msg.value * 1e18 / price / 1e18; // fNFT to mint for msg.value
 
-        totalSold = totalSold.add(payout);
+        totalSold = totalSold + payout;
 
         FNFT.safeTransferFrom( address(this), msg.sender, payout );        
 
         emit Deposit(msg.sender, msg.value, payout);
     }
 
-
+    // @notice it checks a users ETH allocation remaining
+    function getUserRemainingAllocation(address _user) external view returns ( uint256 ) {
+        UserInfo memory user = userInfo[_user];
+        return cap - user.amount;
+    }
 }
