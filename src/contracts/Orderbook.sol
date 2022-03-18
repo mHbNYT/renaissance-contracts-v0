@@ -19,6 +19,8 @@ contract Orderbook {
     event BuyOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
     event SellOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
 
+    error EthAmountDifferent();    
+
     enum OrderType {
         buy,
         sell
@@ -30,7 +32,7 @@ contract Orderbook {
         uint256 amount;
         uint256 price;
         uint256 remaining;
-        uint256 timestamp;
+        uint256 blockNumber;
     }
 
     IERC20 public fNFT;
@@ -43,7 +45,12 @@ contract Orderbook {
     }
 
     function postBuyOrder(uint _amount, uint _price) external payable {
+        if (_amount * _price != msg.value) revert EthAmountDifferent();
         
+        orders.push(Order(OrderType.buy, msg.sender, _amount, _price, _amount, block.number));
+        totalEthInEscrow[msg.sender] += msg.value;
+
+        emit BuyOrderPosted(orders.length - 1, msg.sender, _amount, _price);
     }
 
     function postSellOrder(uint _amount, uint _price) external {
