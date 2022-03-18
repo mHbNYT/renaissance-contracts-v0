@@ -19,7 +19,8 @@ contract Orderbook {
     event BuyOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
     event SellOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
 
-    error EthAmountDifferent();    
+    error EthAmountDifferent();   
+    error NotEnoughFNFT();
 
     enum OrderType {
         buy,
@@ -54,7 +55,14 @@ contract Orderbook {
     }
 
     function postSellOrder(uint _amount, uint _price) external {
-        
+        if (_amount > fNFT.balanceOf(msg.sender)) revert NotEnoughFNFT();
+
+        orders.push(Order(OrderType.sell, msg.sender, _amount, _price, _amount, block.number));
+        totalFNFTInEscrow[msg.sender] += _amount;
+
+        fNFT.transferFrom(msg.sender, address(this), _amount);
+
+        emit SellOrderPosted(orders.length - 1, msg.sender, _amount, _price);
     }
 
     function editBuyOrder(uint _oid, uint _newAmount, uint _newPrice) external payable {
