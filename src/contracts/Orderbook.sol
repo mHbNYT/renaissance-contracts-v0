@@ -14,6 +14,8 @@ contract Orderbook is Ownable {
     event SellOrderRemoved(address _fNFT, uint _oid, address _host);
     event BuyOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
     event SellOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
+    event FeeChanged(uint _oldFee, uint _newFee);
+    event DaoChanged(address _oldDao, address _newDao);
 
     error FeeTooHigh();
     error InvalidAddress();
@@ -152,12 +154,16 @@ contract Orderbook is Ownable {
     //Managerial functions
 
     function changeFee(uint _fee) external onlyOwner {
-        if (_fee > 1000) revert FeeTooHigh();        
+        if (_fee > 1000) revert FeeTooHigh();                
+
+        emit FeeChanged(fee, _fee);        
         fee = _fee;
     }
 
     function changeDao(address _dao) external onlyOwner {
         if (_dao == address(0)) revert InvalidAddress();
+        
+        emit DaoChanged(dao, _dao);
         dao = _dao;
     }
 }
