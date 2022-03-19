@@ -15,6 +15,8 @@ contract Orderbook is Ownable {
     event BuyOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
     event SellOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
 
+    error FeeTooHigh();
+    error InvalidAddress();
     error EthAmountDifferent();   
     error NotEnoughFNFT();
     error OnlyOrderHost();
@@ -37,13 +39,17 @@ contract Orderbook is Ownable {
     }
 
     uint public fee;
+    address public dao;
     mapping(address => bool) public fNFTWhitelist;    
     mapping(address => Order[]) public orders;
     mapping(address => uint256) public totalEthInEscrow;
     mapping(address => mapping(address => uint256)) public totalFNFTInEscrow;
 
-    constructor(uint _fee) {
-        fee = _fee;
+    constructor(uint _fee, address _dao) {        
+        if (_fee > 1000) revert FeeTooHigh();
+        if (_dao == address(0)) revert InvalidAddress();
+        fee = _fee; //1000 = 10%
+        dao = _dao;
     }
 
     function postBuyOrder(address _fNFT, uint _amount, uint _price) external payable {
@@ -104,7 +110,12 @@ contract Orderbook is Ownable {
         order.amount -= _amount;
         totalFNFTInEscrow[order.host][_fNFT] -= _amount;
 
-        payable(order.host).transfer(msg.value);
+        uint tax = getTax(msg.value);
+
+        if (tax != 0) {
+            payable(dao).transfer(tax);
+        }
+        payable(order.host).transfer(msg.value - tax);
         IERC20(_fNFT).safeTransferFrom(address(this), msg.sender, _amount);
 
         emit BuyOrderFulfilled(_fNFT, _oid, msg.sender, order.host, _amount);
@@ -117,19 +128,36 @@ contract Orderbook is Ownable {
         if (order.orderType != OrderType.buy) revert WrongOrderType(); 
         if (order.amount < _amount) revert NotEnoughSupply();
 
-        order.amount -= _amount;
-        totalEthInEscrow[order.host] -= _amount * order.price;
+        uint totalCost = _amount * order.price;
+        uint tax = getTax(totalCost);
 
-        payable(msg.sender).transfer(_amount * order.price);
+        order.amount -= _amount;
+        totalEthInEscrow[order.host] -= totalCost;
+                
+        if (tax != 0) {
+            payable(dao).transfer(tax);
+        }
+        payable(msg.sender).transfer(totalCost - tax);
         IERC20(_fNFT).safeTransferFrom(address(this), order.host, _amount);
 
         emit SellOrderFulfilled(_fNFT, _oid, order.host, msg.sender, _amount);
     }
 
+    //Helper functions
+
+    function getTax(uint _amount) private view returns(uint) {
+        return _amount * fee / 10000;
+    }
 
     //Managerial functions
 
     function changeFee(uint _fee) external onlyOwner {
+        if (_fee > 1000) revert FeeTooHigh();        
         fee = _fee;
+    }
+
+    function changeDao(address _dao) external onlyOwner {
+        if (_dao == address(0)) revert InvalidAddress();
+        dao = _dao;
     }
 }
