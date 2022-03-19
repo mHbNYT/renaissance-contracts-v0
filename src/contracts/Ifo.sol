@@ -39,7 +39,24 @@ contract Ifo is Ownable {
     event Mint(address token, address indexed who, uint256 amount);
     event SaleStarted(uint256 block);
     event SaleEnded(uint256 block);
-    event AdminWithdrawal(address _fNFT, uint256 _amount);
+    event AdminETHWithdrawal(address _eth, uint256 _amount);
+    event AdminFNFTWithdrawal(address _fNFT, uint256 _amount);
+    
+    error InvalidAddress();
+    error NotOwner();    
+    error InvalidAmountForSale();
+    error InvalidPrice();
+    error InvalidCap();
+    error WhitelistingDisallowed();
+    error ContractPaused();
+    error TooManyWhitelists();    
+    error SaleAlreadyStarted();
+    error SaleUnstarted();
+    error SaleAlreadyEnded();    
+    error SaleActive();
+    error TxFailed();
+    error NotWhitelisted();
+    error OverLimit();
 
     constructor(
         address _fNFT,
@@ -48,35 +65,35 @@ contract Ifo is Ownable {
         uint256 _cap,
         bool _allowWhitelisting
     ) {        
-        require( _fNFT != address(0), "Ifo: _fNFT 0");
-
+        if (_fNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_fNFT);
-        require(IfNFT( address(FNFT) ).balanceOf(msg.sender) == IfNFT( address(FNFT) ).totalSupply(), "Ifo: not owner");
+        uint initiatorSupply = IfNFT( address(FNFT) ).balanceOf(msg.sender);
+        if (initiatorSupply <= IfNFT( address(FNFT) ).totalSupply()) revert NotOwner();
+        if (
+            _amountForSale == 0 || 
+            _amountForSale > initiatorSupply ||
+            _amountForSale % _cap != 0
+        ) revert InvalidAmountForSale();        
+        if (_price == 0) revert InvalidPrice();        
+        if (_cap == 0) revert InvalidCap();
 
-        require( _amountForSale != 0, "Ifo: amountForSale 0");
-        require( _amountForSale <= IfNFT( address(FNFT) ).balanceOf(msg.sender), "Ifo: amountForSale over limit");        
-        require( _amountForSale % _cap == 0, "Ifo: amountForSale undivisible");
-        amountForSale = _amountForSale;
-
-        require( _price != 0, "Ifo: price 0" );
+        amountForSale = _amountForSale;        
         price = _price;
-        require( _cap != 0, "Ifo: cap 0" );
         cap = _cap;
-
         allowWhitelisting = _allowWhitelisting;
 
-        FNFT.safeTransferFrom(msg.sender, address(this), IfNFT( address(FNFT) ).balanceOf(msg.sender));
+        FNFT.safeTransferFrom(msg.sender, address(this), initiatorSupply);
     }
 
     //* @notice modifer to check if contract is paused
     modifier whitelistingAllowed() {
-        require(allowWhitelisting == true, "addWhitelist: false");
+        if (!allowWhitelisting) revert WhitelistingDisallowed();        
         _;
     }
 
     //* @notice modifer to check if contract is paused
     modifier checkIfPaused() {
-        require(contractPaused == false, "contract is paused");
+        if (contractPaused) revert ContractPaused();        
         _;
     }
 
@@ -88,8 +105,7 @@ contract Ifo is Ownable {
      *  @notice adds a single whitelist to the sale
      *  @param _address: address to whitelist
      */
-    function addWhitelist(address _address) external onlyOwner whitelistingAllowed {
-        require(allowWhitelisting == true, "addWhitelist: false");
+    function addWhitelist(address _address) external onlyOwner whitelistingAllowed {        
         whitelisted[_address] = true;
     }
     
@@ -98,7 +114,7 @@ contract Ifo is Ownable {
      *  @param _addresses: dynamic array of addresses to whitelist
      */
     function addMultipleWhitelists(address[] calldata _addresses) external onlyOwner whitelistingAllowed {
-        require(_addresses.length <= 333,"too many addresses");
+        if (_addresses.length > 333) revert TooManyWhitelists();        
         for (uint256 i = 0; i < _addresses.length; i++) {
             whitelisted[_addresses[i]] = true;
         }
@@ -113,16 +129,17 @@ contract Ifo is Ownable {
     }
 
     // @notice Starts the sale
-    function start() external onlyOwner {
-        require(!started, "Sale has already started");
+    function start() external onlyOwner {        
+        if (started) revert SaleAlreadyStarted();
         started = true;
         emit SaleStarted(block.number);
     }
 
     // @notice Ends the sale
     function end() external onlyOwner {
-        require(started, "Sale has not started");
-        require(!ended, "Sale has already ended");
+        if (!started) revert SaleUnstarted();
+        if (ended) revert SaleAlreadyEnded();
+
         ended = true;
         emit SaleEnded(block.number);
     }
@@ -136,26 +153,37 @@ contract Ifo is Ownable {
     /**
      *  @notice transfer ERC20 token to DAO multisig
      */
-    function adminWithdraw() external onlyOwner {
-        require(ended, "adminWithdraw: sale not ended");        
-        (bool sent, ) = msg.sender.call{value: address(this).balance}("");
-        require(sent, "adminWithdraw: eth tx failed");
-        FNFT.safeTransfer( address(msg.sender), IfNFT( address(FNFT) ).balanceOf(address(this)) );        
-        emit AdminWithdrawal(address(FNFT), IfNFT( address(FNFT) ).balanceOf(address(this)));
+    function adminWithdrawETH() external onlyOwner {
+        if (!ended) revert SaleActive();
+        uint ethBalance = address(this).balance;  
+        (bool sent, ) = msg.sender.call{value: ethBalance}("");
+        if (!sent) revert TxFailed();
+
+        emit AdminETHWithdrawal(address(FNFT), ethBalance);        
+    }
+
+    function adminWithdrawFNFT() external onlyOwner {
+        if (!ended) revert SaleActive();
+        //TODO: Add redemption check
+
+        uint fNFTBalance = IfNFT( address(FNFT) ).balanceOf(address(this));
+        FNFT.safeTransfer( address(msg.sender), fNFTBalance);
+
+        emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
 
     /**
      *  @notice it deposits FRAX for the sale
      */
     function deposit() external payable checkIfPaused {
-        require(started, "deposit: sale not started");
-        require(!ended, "deposit: sale ended");        
+        if (!started) revert SaleUnstarted();
+        if (ended) revert SaleAlreadyEnded();   
         if (allowWhitelisting == true) {
-            require(whitelisted[msg.sender] == true, "deposit: not whitelisted");
+            if (!whitelisted[msg.sender]) revert NotWhitelisted();            
         }
 
         UserInfo storage user = userInfo[msg.sender];
-        require(cap >= user.amount + msg.value, "deposit: over limit");
+        if (user.amount + msg.value > cap) revert OverLimit();        
 
         user.amount = user.amount + msg.value;
         totalRaised = totalRaised + msg.value;
