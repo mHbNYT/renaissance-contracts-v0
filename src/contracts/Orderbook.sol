@@ -73,7 +73,9 @@ contract Orderbook {
         totalEthInEscrow[msg.sender] -= order.amount * order.price;
         delete orders[_oid];
 
-        payable(msg.sender).transfer(order.amount * order.price);        
+        payable(msg.sender).transfer(order.amount * order.price);   
+
+        emit BuyOrderRemoved(_oid, msg.sender);
     }
 
     function removeSellOrder(uint _oid) external {
@@ -86,6 +88,8 @@ contract Orderbook {
         delete orders[_oid];
 
         fNFT.safeTransferFrom(address(this), msg.sender, order.amount);
+
+        emit SellOrderRemoved(_oid, msg.sender);
     }
 
     function buy(uint _oid, uint _amount) external payable {
@@ -100,6 +104,8 @@ contract Orderbook {
 
         payable(order.host).transfer(msg.value);
         fNFT.safeTransferFrom(address(this), msg.sender, _amount);
+
+        emit BuyOrderFulfilled(_oid, msg.sender, order.host, _amount);
     }
 
     function sell(uint _oid, uint _amount) external {
@@ -114,5 +120,7 @@ contract Orderbook {
 
         payable(msg.sender).transfer(_amount * order.price);
         fNFT.safeTransferFrom(address(this), order.host, _amount);
+
+        emit SellOrderFulfilled(_oid, order.host, msg.sender, _amount);
     }
 }
