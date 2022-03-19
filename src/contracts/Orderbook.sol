@@ -4,9 +4,6 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "./ifo.sol";
-
 contract Orderbook {
     using SafeERC20 for IERC20;
 
@@ -23,7 +20,7 @@ contract Orderbook {
     error WrongOrderType();
     error NotEnoughBalance();
     error NotEnoughPayment();
-    error NotEnoughAvailable();
+    error NotEnoughSupply();
 
     enum OrderType {
         buy,
@@ -95,7 +92,8 @@ contract Orderbook {
         Order storage order = orders[_oid];
 
         if (_amount * order.price < msg.value) revert NotEnoughPayment();
-        if (order.amount < _amount) revert NotEnoughAvailable();
+        if (order.orderType != OrderType.sell) revert WrongOrderType();   
+        if (order.amount < _amount) revert NotEnoughSupply();
 
         order.amount -= _amount;
         totalFNFTInEscrow[order.host] -= _amount;
@@ -104,7 +102,17 @@ contract Orderbook {
         fNFT.safeTransferFrom(address(this), msg.sender, _amount);
     }
 
-    function sell(uint _oid, uint _amount) external payable {
+    function sell(uint _oid, uint _amount) external {
+        Order storage order = orders[_oid];
 
+        if (_amount < fNFT.balanceOf(msg.sender)) revert NotEnoughPayment();
+        if (order.orderType != OrderType.buy) revert WrongOrderType(); 
+        if (order.amount < _amount) revert NotEnoughSupply();
+
+        order.amount -= _amount;
+        totalEthInEscrow[order.host] -= _amount * order.price;
+
+        payable(msg.sender).transfer(_amount * order.price);
+        fNFT.safeTransferFrom(address(this), order.host, _amount);
     }
 }
