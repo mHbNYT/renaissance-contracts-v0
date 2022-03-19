@@ -20,6 +20,7 @@ contract Orderbook {
     error EthAmountDifferent();   
     error NotEnoughFNFT();
     error OnlyOrderHost();
+    error WrongOrderType();
     error NotEnoughBalance();
 
     enum OrderType {
@@ -59,7 +60,7 @@ contract Orderbook {
         orders.push(Order(OrderType.sell, msg.sender, _amount, _price, block.number));
         totalFNFTInEscrow[msg.sender] += _amount;
 
-        fNFT.transferFrom(msg.sender, address(this), _amount);
+        fNFT.safeTransferFrom(msg.sender, address(this), _amount);
 
         emit SellOrderPosted(orders.length - 1, msg.sender, _amount, _price);
     }
@@ -67,8 +68,9 @@ contract Orderbook {
     function removeBuyOrder(uint _oid) external {
         Order memory order = orders[_oid];        
         if (msg.sender != order.host) revert OnlyOrderHost();
-                
+        if (order.orderType != OrderType.buy) revert WrongOrderType();                
         if (totalEthInEscrow[msg.sender] < order.amount * order.price) revert NotEnoughBalance();
+        
         totalEthInEscrow[msg.sender] -= order.amount * order.price;        
         delete orders[_oid];
 
@@ -76,7 +78,15 @@ contract Orderbook {
     }
 
     function removeSellOrder(uint _oid) external {
+        Order memory order = orders[_oid];        
+        if (msg.sender != order.host) revert OnlyOrderHost();
+        if (order.orderType != OrderType.sell) revert WrongOrderType();                
+        if (totalFNFTInEscrow[msg.sender] < order.amount) revert NotEnoughBalance();
 
+        totalFNFTInEscrow[msg.sender] -= order.amount;
+        delete orders[_oid];
+
+        fNFT.safeTransferFrom(address(this), msg.sender, order.amount);
     }
 
     function buy(uint _oid) external payable {
