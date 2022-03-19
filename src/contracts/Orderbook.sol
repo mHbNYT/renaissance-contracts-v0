@@ -11,9 +11,7 @@ contract Orderbook {
     using SafeERC20 for IERC20;
 
     event BuyOrderPosted(uint _oid,  address _host, uint _amount, uint _price);
-    event SellOrderPosted(uint _oid,  address _host, uint _amount, uint _price);
-    event BuyOrderEdited(uint _oid,  address _host, uint _newAmount, uint _newPrice);
-    event SellOrderEdited(uint _oid,  address _host, uint _newAmount, uint _newPrice);
+    event SellOrderPosted(uint _oid,  address _host, uint _amount, uint _price);    
     event BuyOrderRemoved(uint _oid, address _host);
     event SellOrderRemoved(uint _oid, address _host);
     event BuyOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
@@ -21,6 +19,8 @@ contract Orderbook {
 
     error EthAmountDifferent();   
     error NotEnoughFNFT();
+    error OnlyOrderHost();
+    error NotEnoughBalance();
 
     enum OrderType {
         buy,
@@ -32,7 +32,6 @@ contract Orderbook {
         address host;
         uint256 amount;
         uint256 price;
-        uint256 remaining;
         uint256 blockNumber;
     }
 
@@ -48,7 +47,7 @@ contract Orderbook {
     function postBuyOrder(uint _amount, uint _price) external payable {
         if (_amount * _price != msg.value) revert EthAmountDifferent();
         
-        orders.push(Order(OrderType.buy, msg.sender, _amount, _price, _amount, block.number));
+        orders.push(Order(OrderType.buy, msg.sender, _amount, _price, block.number));
         totalEthInEscrow[msg.sender] += msg.value;
 
         emit BuyOrderPosted(orders.length - 1, msg.sender, _amount, _price);
@@ -57,7 +56,7 @@ contract Orderbook {
     function postSellOrder(uint _amount, uint _price) external {
         if (_amount > fNFT.balanceOf(msg.sender)) revert NotEnoughFNFT();
 
-        orders.push(Order(OrderType.sell, msg.sender, _amount, _price, _amount, block.number));
+        orders.push(Order(OrderType.sell, msg.sender, _amount, _price, block.number));
         totalFNFTInEscrow[msg.sender] += _amount;
 
         fNFT.transferFrom(msg.sender, address(this), _amount);
@@ -65,16 +64,15 @@ contract Orderbook {
         emit SellOrderPosted(orders.length - 1, msg.sender, _amount, _price);
     }
 
-    function editBuyOrder(uint _oid, uint _newAmount, uint _newPrice) external payable {
-
-    }
-
-    function editSellOrder(uint _oid, uint _newAmount, uint _newPrice) external {
-
-    }
-
     function removeBuyOrder(uint _oid) external {
-        
+        Order memory order = orders[_oid];        
+        if (msg.sender != order.host) revert OnlyOrderHost();
+                
+        if (totalEthInEscrow[msg.sender] < order.amount * order.price) revert NotEnoughBalance();
+        totalEthInEscrow[msg.sender] -= order.amount * order.price;        
+        delete orders[_oid];
+
+        payable(msg.sender).transfer(order.amount * order.price);        
     }
 
     function removeSellOrder(uint _oid) external {
