@@ -3,16 +3,17 @@ pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Orderbook {
+contract Orderbook is Ownable {
     using SafeERC20 for IERC20;
 
-    event BuyOrderPosted(uint _oid,  address _host, uint _amount, uint _price);
-    event SellOrderPosted(uint _oid,  address _host, uint _amount, uint _price);    
-    event BuyOrderRemoved(uint _oid, address _host);
-    event SellOrderRemoved(uint _oid, address _host);
-    event BuyOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
-    event SellOrderFulfilled(uint _oid, address _buyer, address _seller, uint _amount);
+    event BuyOrderPosted(address _fNFT, uint _oid,  address _host, uint _amount, uint _price);
+    event SellOrderPosted(address _fNFT, uint _oid,  address _host, uint _amount, uint _price);    
+    event BuyOrderRemoved(address _fNFT, uint _oid, address _host);
+    event SellOrderRemoved(address _fNFT, uint _oid, address _host);
+    event BuyOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
+    event SellOrderFulfilled(address _fNFT, uint _oid, address _buyer, address _seller, uint _amount);
 
     error EthAmountDifferent();   
     error NotEnoughFNFT();
@@ -35,83 +36,84 @@ contract Orderbook {
         uint256 blockNumber;
     }
 
-    IERC20 public fNFT;
-    Order[] public orders;
+    uint public fee;
+    mapping(address => bool) public fNFTWhitelist;    
+    mapping(address => Order[]) public orders;
     mapping(address => uint256) public totalEthInEscrow;
-    mapping(address => uint256) public totalFNFTInEscrow;
+    mapping(address => mapping(address => uint256)) public totalFNFTInEscrow;
 
-    constructor(address _fNFT) {
-        fNFT = IERC20(_fNFT);
+    constructor(uint _fee) {
+        fee = _fee;
     }
 
-    function postBuyOrder(uint _amount, uint _price) external payable {
+    function postBuyOrder(address _fNFT, uint _amount, uint _price) external payable {
         if (_amount * _price != msg.value) revert EthAmountDifferent();
         
-        orders.push(Order(OrderType.buy, msg.sender, _amount, _price, block.number));
+        orders[_fNFT].push(Order(OrderType.buy, msg.sender, _amount, _price, block.number));
         totalEthInEscrow[msg.sender] += msg.value;
 
-        emit BuyOrderPosted(orders.length - 1, msg.sender, _amount, _price);
+        emit BuyOrderPosted(_fNFT, orders[_fNFT].length - 1, msg.sender, _amount, _price);
     }
 
-    function postSellOrder(uint _amount, uint _price) external {
-        if (_amount > fNFT.balanceOf(msg.sender)) revert NotEnoughFNFT();
+    function postSellOrder(address _fNFT, uint _amount, uint _price) external {
+        if (_amount > IERC20(_fNFT).balanceOf(msg.sender)) revert NotEnoughFNFT();
 
-        orders.push(Order(OrderType.sell, msg.sender, _amount, _price, block.number));
-        totalFNFTInEscrow[msg.sender] += _amount;
+        orders[_fNFT].push(Order(OrderType.sell, msg.sender, _amount, _price, block.number));
+        totalFNFTInEscrow[msg.sender][_fNFT] += _amount;
 
-        fNFT.safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(_fNFT).safeTransferFrom(msg.sender, address(this), _amount);
 
-        emit SellOrderPosted(orders.length - 1, msg.sender, _amount, _price);
+        emit SellOrderPosted(_fNFT, orders[_fNFT].length - 1, msg.sender, _amount, _price);
     }
 
-    function removeBuyOrder(uint _oid) external {
-        Order memory order = orders[_oid];        
+    function removeBuyOrder(address _fNFT, uint _oid) external {
+        Order memory order = orders[_fNFT][_oid];
         if (msg.sender != order.host) revert OnlyOrderHost();
         if (order.orderType != OrderType.buy) revert WrongOrderType();                
         if (totalEthInEscrow[msg.sender] < order.amount * order.price) revert NotEnoughBalance();
 
         totalEthInEscrow[msg.sender] -= order.amount * order.price;
-        delete orders[_oid];
+        delete orders[_fNFT][_oid];
 
         payable(msg.sender).transfer(order.amount * order.price);   
 
-        emit BuyOrderRemoved(_oid, msg.sender);
+        emit BuyOrderRemoved(_fNFT, _oid, msg.sender);
     }
 
-    function removeSellOrder(uint _oid) external {
-        Order memory order = orders[_oid];        
+    function removeSellOrder(address _fNFT, uint _oid) external {
+        Order memory order = orders[_fNFT][_oid];
         if (msg.sender != order.host) revert OnlyOrderHost();
         if (order.orderType != OrderType.sell) revert WrongOrderType();                
-        if (totalFNFTInEscrow[msg.sender] < order.amount) revert NotEnoughBalance();
+        if (totalFNFTInEscrow[msg.sender][_fNFT] < order.amount) revert NotEnoughBalance();
 
-        totalFNFTInEscrow[msg.sender] -= order.amount;
-        delete orders[_oid];
+        totalFNFTInEscrow[msg.sender][_fNFT] -= order.amount;
+        delete orders[_fNFT][_oid];
 
-        fNFT.safeTransferFrom(address(this), msg.sender, order.amount);
+        IERC20(_fNFT).safeTransferFrom(address(this), msg.sender, order.amount);
 
-        emit SellOrderRemoved(_oid, msg.sender);
+        emit SellOrderRemoved(_fNFT, _oid, msg.sender);
     }
 
-    function buy(uint _oid, uint _amount) external payable {
-        Order storage order = orders[_oid];
+    function buy(address _fNFT, uint _oid, uint _amount) external payable {
+        Order storage order = orders[_fNFT][_oid];
 
         if (_amount * order.price < msg.value) revert NotEnoughPayment();
         if (order.orderType != OrderType.sell) revert WrongOrderType();   
         if (order.amount < _amount) revert NotEnoughSupply();
 
         order.amount -= _amount;
-        totalFNFTInEscrow[order.host] -= _amount;
+        totalFNFTInEscrow[order.host][_fNFT] -= _amount;
 
         payable(order.host).transfer(msg.value);
-        fNFT.safeTransferFrom(address(this), msg.sender, _amount);
+        IERC20(_fNFT).safeTransferFrom(address(this), msg.sender, _amount);
 
-        emit BuyOrderFulfilled(_oid, msg.sender, order.host, _amount);
+        emit BuyOrderFulfilled(_fNFT, _oid, msg.sender, order.host, _amount);
     }
 
-    function sell(uint _oid, uint _amount) external {
-        Order storage order = orders[_oid];
+    function sell(address _fNFT, uint _oid, uint _amount) external {
+        Order storage order = orders[_fNFT][_oid];
 
-        if (_amount < fNFT.balanceOf(msg.sender)) revert NotEnoughPayment();
+        if (_amount < IERC20(_fNFT).balanceOf(msg.sender)) revert NotEnoughPayment();
         if (order.orderType != OrderType.buy) revert WrongOrderType(); 
         if (order.amount < _amount) revert NotEnoughSupply();
 
@@ -119,8 +121,15 @@ contract Orderbook {
         totalEthInEscrow[order.host] -= _amount * order.price;
 
         payable(msg.sender).transfer(_amount * order.price);
-        fNFT.safeTransferFrom(address(this), order.host, _amount);
+        IERC20(_fNFT).safeTransferFrom(address(this), order.host, _amount);
 
-        emit SellOrderFulfilled(_oid, order.host, msg.sender, _amount);
+        emit SellOrderFulfilled(_fNFT, _oid, order.host, msg.sender, _amount);
+    }
+
+
+    //Managerial functions
+
+    function changeFee(uint _fee) external onlyOwner {
+        fee = _fee;
     }
 }
