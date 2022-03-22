@@ -10,32 +10,6 @@ interface IfNFT {
     function totalSupply() external returns(uint256);
 }
 
-interface IV2Router {
-    function addLiquidityETH(
-        address _token,
-        uint _amountTokenDesired,
-        uint _amountTokenMin,
-        uint _amountETHMin,
-        address _to,
-        uint _deadline
-    ) external payable returns (uint _amountToken, uint _amountETH, uint _liquidity);
-
-    function removeLiquidityETH(
-        address _token,
-        uint _liquidity,
-        uint _amountTokenMin,
-        uint _amountETHMin,
-        address _to,
-        uint _deadline
-    ) external returns (uint _amountToken, uint _amountETH);
-}
-
-interface IFNFTStaking {
-    function deposit(uint256 _pid, uint256 _amount) external;
-
-    function withdraw(uint256 _pid, uint256 _amount) external;
-}
-
 contract Ifo is Ownable {
     using SafeERC20 for IERC20;
 
@@ -88,6 +62,7 @@ contract Ifo is Ownable {
     error TxFailed();
     error NotWhitelisted();
     error OverLimit();
+    error NoLiquidityProvided();
 
     constructor(
         address _fNFT,
@@ -234,76 +209,10 @@ contract Ifo is Ownable {
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
 
-    function provideLiquidity(        
-        address _router,
-
-        uint _amountTokenDesired,
-        uint _amountTokenMin,
-        uint _amountETHMin,
-
-        uint _deadline
-    ) external payable onlyOwner returns(uint _amountToken, uint _amountETH, uint _liquidity) {
-        if (!ended) revert SaleActive();
-        if (FNFT.balanceOf(address(this)) < _amountTokenDesired) revert OverLimit();
-        //TODO: Set LP price protection?
-
-        (_amountToken, _amountETH, _liquidity) = IV2Router(_router).addLiquidityETH{
-            value:msg.value
-        }(address(FNFT), _amountTokenDesired, _amountTokenMin, _amountETHMin, address(this), _deadline);
-        
-        liquidity += _liquidity;
-
-        emit LiquidityAdded(_amountToken, _amountETH, _liquidity);
+    // @notice approve fNFT usage by other contracts, such as CreatorFNFTUtility
+    function approve(address recipient) public onlyOwner {
+        FNFT.approve(recipient, 1e18);
     }
-
-    function removeLiquidity(
-        address _router,
-        
-        uint _liquidity,
-        uint _amountTokenMin,
-        uint _amountETHMin,
-        uint _deadline
-    ) external onlyOwner  returns (uint _amountToken, uint _amountETH) {
-        if (!ended) revert SaleActive();
-        if (_liquidity > liquidity) revert OverLimit();
-    
-        (_amountToken, _amountETH) = IV2Router(_router).removeLiquidityETH(
-            address(FNFT), liquidity, _amountTokenMin, _amountETHMin, address(this), _deadline
-        );
-
-        liquidity -= _liquidity;
-
-        _safeTransferETH(msg.sender, _amountETH);
-
-        emit LiquidityRemoved(_amountToken, _amountETH, _liquidity);
-    }
-    
-    function harvestLPRewards() external onlyOwner {
-        if (!ended) revert SaleActive();
-
-        // address(this).balance - totalRaised
-    }
-
-    function stakeFNFT(address _staking, uint _pid, uint _amount) external onlyOwner {
-        if (!ended) revert SaleActive();
-        if (FNFT.balanceOf(address(this)) < _amount) revert OverLimit();
-
-        IFNFTStaking(_staking).deposit(_pid, _amount);
-    }
-
-    function unstakeFNFT(address _staking, uint _pid, uint _amount) external onlyOwner {
-        if (!ended) revert SaleActive();
-
-        IFNFTStaking(_staking).withdraw(_pid, _amount);
-
-        harvestStakeRewards();
-    }
-
-    function harvestStakeRewards() public onlyOwner {
-        
-    }
-
-    receive() external payable {}
 
     //Helper functions
 
