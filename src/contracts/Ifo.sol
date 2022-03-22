@@ -172,7 +172,7 @@ contract Ifo is Ownable {
         user.amount = user.amount + msg.value;
         totalRaised = totalRaised + msg.value;
 
-        uint256 payout = msg.value * 1e18 / price / 1e18; // fNFT to mint for msg.value
+        uint256 payout = msg.value * 1e18 / price; // fNFT to mint for msg.value
 
         totalSold = totalSold + payout;
 
