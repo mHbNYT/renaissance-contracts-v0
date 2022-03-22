@@ -26,6 +26,7 @@ contract Orderbook is Ownable {
     error NotEnoughBalance();
     error NotEnoughPayment();
     error NotEnoughSupply();
+    error TxFailed();
 
     enum OrderType {
         buy,
@@ -83,7 +84,7 @@ contract Orderbook is Ownable {
         totalEthInEscrow[msg.sender] -= order.amount * order.price;
         delete orders[_fNFT][_oid];
 
-        payable(msg.sender).transfer(order.amount * order.price);   
+        _safeTransferETH(msg.sender, order.amount * order.price);
 
         emit BuyOrderRemoved(_fNFT, _oid, msg.sender);
     }
@@ -115,9 +116,10 @@ contract Orderbook is Ownable {
         uint tax = getTax(msg.value);
 
         if (tax != 0) {
-            payable(dao).transfer(tax);
+            _safeTransferETH(dao, tax);
         }
-        payable(order.host).transfer(msg.value - tax);
+
+        _safeTransferETH(order.host, msg.value - tax);        
         IERC20(_fNFT).safeTransferFrom(address(this), msg.sender, _amount);
 
         emit BuyOrderFulfilled(_fNFT, _oid, msg.sender, order.host, _amount);
@@ -137,9 +139,10 @@ contract Orderbook is Ownable {
         totalEthInEscrow[order.host] -= totalCost;
                 
         if (tax != 0) {
-            payable(dao).transfer(tax);
+            _safeTransferETH(dao, tax);            
         }
-        payable(msg.sender).transfer(totalCost - tax);
+        _safeTransferETH(msg.sender, totalCost - tax);            
+        
         IERC20(_fNFT).safeTransferFrom(address(this), order.host, _amount);
 
         emit SellOrderFulfilled(_fNFT, _oid, order.host, msg.sender, _amount);
@@ -165,5 +168,12 @@ contract Orderbook is Ownable {
         
         emit DaoChanged(dao, _dao);
         dao = _dao;
+    }
+
+    //Helper functions
+
+    function _safeTransferETH(address to, uint value) private {
+        (bool success,) = to.call{value:value}(new bytes(0));
+        if (!success) revert TxFailed();        
     }
 }

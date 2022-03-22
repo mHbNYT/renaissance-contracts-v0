@@ -10,6 +10,17 @@ interface IfNFT {
     function totalSupply() external returns(uint256);
 }
 
+interface IV2Router {
+    function addLiquidityETH(
+        address token,
+        uint amountTokenDesired,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+}
+
 contract Ifo is Ownable {
     using SafeERC20 for IERC20;
 
@@ -39,6 +50,7 @@ contract Ifo is Ownable {
     event Mint(address token, address indexed who, uint256 amount);
     event SaleStarted(uint256 block);
     event SaleEnded(uint256 block);
+    event AdminProfitWithdrawal(address _fNFT, uint256 _amount);        
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _fNFT, uint256 _amount);
     
@@ -151,29 +163,7 @@ contract Ifo is Ownable {
     }
 
     /**
-     *  @notice transfer ERC20 token to DAO multisig
-     */
-    function adminWithdrawETH() external onlyOwner {
-        if (!ended) revert SaleActive();
-        uint ethBalance = address(this).balance;  
-        (bool sent, ) = msg.sender.call{value: ethBalance}("");
-        if (!sent) revert TxFailed();
-
-        emit AdminETHWithdrawal(address(FNFT), ethBalance);        
-    }
-
-    function adminWithdrawFNFT() external onlyOwner {
-        if (!ended) revert SaleActive();
-        //TODO: Add redemption check
-
-        uint fNFTBalance = IfNFT( address(FNFT) ).balanceOf(address(this));
-        FNFT.safeTransfer( address(msg.sender), fNFTBalance);
-
-        emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
-    }
-
-    /**
-     *  @notice it deposits FRAX for the sale
+     *  @notice it deposits ETH for the sale
      */
     function deposit() external payable checkIfPaused {
         if (!started) revert SaleUnstarted();
@@ -201,5 +191,76 @@ contract Ifo is Ownable {
     function getUserRemainingAllocation(address _user) external view returns ( uint256 ) {
         UserInfo memory user = userInfo[_user];
         return cap - user.amount;
+    }
+
+    //Managerial
+
+    function adminWithdrawProfit() external onlyOwner {
+        if (!ended) revert SaleActive();
+        
+        totalRaised = 0;
+
+        _safeTransferETH(msg.sender, totalRaised);
+
+        emit AdminProfitWithdrawal(address(FNFT), totalRaised);        
+    }
+
+    function adminWithdrawFNFT() external onlyOwner {
+        if (!ended) revert SaleActive();
+        //TODO: Add redemption check
+
+        uint fNFTBalance = IfNFT( address(FNFT) ).balanceOf(address(this));
+        FNFT.safeTransfer( address(msg.sender), fNFTBalance);
+
+        emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
+    }
+
+    function provideLP(        
+        address _router,
+
+        uint amountADesired,
+        uint amountAMin,
+        uint amountBMin,
+
+        uint _deadline
+    ) external payable onlyOwner {
+        if (!ended) revert SaleActive();
+        if (FNFT.balanceOf(address(this)) < amountADesired) revert OverLimit();
+        //TODO: Set LP price protection?
+
+        IV2Router(_router).addLiquidityETH{value:msg.value}(address(FNFT), amountADesired, amountAMin, amountBMin, address(this), _deadline);
+    }
+
+    function removeLP() external onlyOwner {
+        if (!ended) revert SaleActive();
+    
+            
+    }
+    
+    function harvestLPRewards() external onlyOwner {
+        if (!ended) revert SaleActive();
+
+        // address(this).balance - totalRaised
+    }
+
+    function stakeFNFT() external onlyOwner {
+
+    }
+
+    function unstakeFNFT() external onlyOwner {
+
+    }
+
+    function harvestStakeRewards() external onlyOwner {
+
+    }
+
+    receive() external payable {}
+
+    //Helper functions
+
+    function _safeTransferETH(address to, uint value) private {
+        (bool success,) = to.call{value:value}(new bytes(0));
+        if (!success) revert TxFailed();        
     }
 }
