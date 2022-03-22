@@ -27,7 +27,13 @@ interface IV2Router {
         uint _amountETHMin,
         address _to,
         uint _deadline
-    ) public returns (uint _amountToken, uint _amountETH) {
+    ) external returns (uint _amountToken, uint _amountETH);
+}
+
+interface IFNFTStaking {
+    function deposit(uint256 _pid, uint256 _amount) external;
+
+    function withdraw(uint256 _pid, uint256 _amount) external;
 }
 
 contract Ifo is Ownable {
@@ -65,6 +71,7 @@ contract Ifo is Ownable {
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _fNFT, uint256 _amount);
     event LiquidityAdded(uint amountToken, uint amountETH, uint liquidity);
+    event LiquidityRemoved(uint amountToken, uint amountETH, uint liquidity);
     
     error InvalidAddress();
     error NotOwner();    
@@ -252,17 +259,21 @@ contract Ifo is Ownable {
     function removeLiquidity(
         address _router,
         
+        uint _liquidity,
         uint _amountTokenMin,
         uint _amountETHMin,
         uint _deadline
     ) external onlyOwner  returns (uint _amountToken, uint _amountETH) {
         if (!ended) revert SaleActive();
+        if (_liquidity > liquidity) revert OverLimit();
     
-        (amountToken, amountETH) = IV2Router(_router).removeLiquidityETH(
+        (_amountToken, _amountETH) = IV2Router(_router).removeLiquidityETH(
             address(FNFT), liquidity, _amountTokenMin, _amountETHMin, address(this), _deadline
         );
 
-        _safeTransferETH(msg.sender, amountETH);
+        liquidity -= _liquidity;
+
+        _safeTransferETH(msg.sender, _amountETH);
 
         emit LiquidityRemoved(_amountToken, _amountETH, _liquidity);
     }
@@ -273,16 +284,23 @@ contract Ifo is Ownable {
         // address(this).balance - totalRaised
     }
 
-    function stakeFNFT() external onlyOwner {
+    function stakeFNFT(address _staking, uint _pid, uint _amount) external onlyOwner {
+        if (!ended) revert SaleActive();
+        if (FNFT.balanceOf(address(this)) < _amount) revert OverLimit();
 
+        IFNFTStaking(_staking).deposit(_pid, _amount);
     }
 
-    function unstakeFNFT() external onlyOwner {
+    function unstakeFNFT(address _staking, uint _pid, uint _amount) external onlyOwner {
+        if (!ended) revert SaleActive();
 
+        IFNFTStaking(_staking).withdraw(_pid, _amount);
+
+        harvestStakeRewards();
     }
 
-    function harvestStakeRewards() external onlyOwner {
-
+    function harvestStakeRewards() public onlyOwner {
+        
     }
 
     receive() external payable {}
