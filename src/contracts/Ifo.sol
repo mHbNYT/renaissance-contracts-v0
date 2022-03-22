@@ -12,13 +12,22 @@ interface IfNFT {
 
 interface IV2Router {
     function addLiquidityETH(
-        address token,
-        uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+        address _token,
+        uint _amountTokenDesired,
+        uint _amountTokenMin,
+        uint _amountETHMin,
+        address _to,
+        uint _deadline
+    ) external payable returns (uint _amountToken, uint _amountETH, uint _liquidity);
+
+    function removeLiquidityETH(
+        address _token,
+        uint _liquidity,
+        uint _amountTokenMin,
+        uint _amountETHMin,
+        address _to,
+        uint _deadline
+    ) public returns (uint _amountToken, uint _amountETH) {
 }
 
 contract Ifo is Ownable {
@@ -35,12 +44,14 @@ contract Ifo is Ownable {
     uint256 public price; // initial price per fNFT
     uint256 public cap; // cap per user
     uint256 public totalRaised; // total ETH raised by sale
-    uint256 public totalSold; // total fNFT sold by sale
+    uint256 public totalSold; // total fNFT sold by sale    
 
     bool public allowWhitelisting; // whether the ifo operates through WL
     bool public started; // true when sale is started
     bool public ended; // true when sale is ended
     bool public contractPaused; // circuit breaker
+
+    uint256 public liquidity = 0; //liquidity deployed by the creator
 
     mapping(address => UserInfo) public userInfo;
     mapping(address => bool) public whitelisted; // True if user is whitelisted
@@ -53,6 +64,7 @@ contract Ifo is Ownable {
     event AdminProfitWithdrawal(address _fNFT, uint256 _amount);        
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _fNFT, uint256 _amount);
+    event LiquidityAdded(uint amountToken, uint amountETH, uint liquidity);
     
     error InvalidAddress();
     error NotOwner();    
@@ -215,26 +227,44 @@ contract Ifo is Ownable {
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
 
-    function provideLP(        
+    function provideLiquidity(        
         address _router,
 
-        uint amountADesired,
-        uint amountAMin,
-        uint amountBMin,
+        uint _amountTokenDesired,
+        uint _amountTokenMin,
+        uint _amountETHMin,
 
         uint _deadline
-    ) external payable onlyOwner {
+    ) external payable onlyOwner returns(uint _amountToken, uint _amountETH, uint _liquidity) {
         if (!ended) revert SaleActive();
-        if (FNFT.balanceOf(address(this)) < amountADesired) revert OverLimit();
+        if (FNFT.balanceOf(address(this)) < _amountTokenDesired) revert OverLimit();
         //TODO: Set LP price protection?
 
-        IV2Router(_router).addLiquidityETH{value:msg.value}(address(FNFT), amountADesired, amountAMin, amountBMin, address(this), _deadline);
+        (_amountToken, _amountETH, _liquidity) = IV2Router(_router).addLiquidityETH{
+            value:msg.value
+        }(address(FNFT), _amountTokenDesired, _amountTokenMin, _amountETHMin, address(this), _deadline);
+        
+        liquidity += _liquidity;
+
+        emit LiquidityAdded(_amountToken, _amountETH, _liquidity);
     }
 
-    function removeLP() external onlyOwner {
+    function removeLiquidity(
+        address _router,
+        
+        uint _amountTokenMin,
+        uint _amountETHMin,
+        uint _deadline
+    ) external onlyOwner  returns (uint _amountToken, uint _amountETH) {
         if (!ended) revert SaleActive();
     
-            
+        (amountToken, amountETH) = IV2Router(_router).removeLiquidityETH(
+            address(FNFT), liquidity, _amountTokenMin, _amountETHMin, address(this), _deadline
+        );
+
+        _safeTransferETH(msg.sender, amountETH);
+
+        emit LiquidityRemoved(_amountToken, _amountETH, _liquidity);
     }
     
     function harvestLPRewards() external onlyOwner {
