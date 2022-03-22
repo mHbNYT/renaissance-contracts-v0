@@ -210,8 +210,9 @@ contract Ifo is Ownable {
     }
 
     // @notice approve fNFT usage by other contracts, such as CreatorFNFTUtility
-    function approve(address recipient) public onlyOwner {
-        FNFT.approve(recipient, 1e18);
+    
+    function approve(address _recipient) public onlyOwner {
+        FNFT.safeApprove(_recipient, 1e18);
     }
 
     //Helper functions
