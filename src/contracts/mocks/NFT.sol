@@ -10,13 +10,11 @@ contract MockNFT is ERC721, Ownable {
 
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("MockNFT", "MOCK") {
+    constructor() ERC721("TestName", "TEST") {
         _tokenIdCounter.increment();
     }
 
-    function safeMint(address to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-        _safeMint(to, tokenId);
-    }
+  function mint(address _to, uint256 _id) external {
+    _mint(_to, _id);
+  }
 }
