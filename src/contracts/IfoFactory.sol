@@ -2,12 +2,7 @@
 pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ifo.sol";
-
-interface IIfo {
-    function balanceOf(address _account) external returns(uint256);
-    function totalSupply() external returns(uint256);
-}
+import "./Ifo.sol";
 
 contract IfoFactory is Ownable {
     mapping(address => address) public ifo;
@@ -35,16 +30,14 @@ contract IfoFactory is Ownable {
         uint256 _cap,
         bool _allowWhitelisting
     ) external returns(address) {
-        if ( ifo[_fNFT] == address(0) ) revert AlreadyExists();
-        if ( _fNFT == address(0) ) revert InvalidAddress();
-        if (IfNFT( address(_fNFT) ).balanceOf(msg.sender) != IfNFT( address(_fNFT) ).totalSupply() ) revert OnlyFullOwner();
-        if (
-            _amountForSale == 0 || 
-            _amountForSale > IfNFT( address(_fNFT) ).balanceOf(msg.sender) || 
-            _amountForSale % _cap != 0
-        ) revert InvalidAmountForSale();
-        if ( _price == 0 ) revert PriceZero();
-        if ( _cap == 0 ) revert CapZero();
+        require( ifo[_fNFT] == address(0), "Ifo: exists");
+        require( _fNFT != address(0), "Ifo: _fNFT 0");
+        require( IfNFT( address(_fNFT) ).balanceOf(msg.sender) == IfNFT( address(_fNFT) ).totalSupply(), "Ifo: not owner" );
+        require( _amountForSale != 0, "Ifo: amountForSale 0");
+        require( _amountForSale <= IfNFT( address(_fNFT) ).balanceOf(msg.sender), "Ifo: amountForSale over limit");        
+        require( _amountForSale % _cap == 0, "Ifo: amountForSale undivisible");
+        require( _price != 0, "Ifo: price 0" );
+        require( _cap != 0, "Ifo: cap 0" );
 
         address _ifo = address(new Ifo(
             _fNFT,

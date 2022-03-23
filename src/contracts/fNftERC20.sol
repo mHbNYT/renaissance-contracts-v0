@@ -7,7 +7,7 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {FNFTController} from "./FNFTController.sol";
+import {FNFTController} from "./fNFTController.sol";
 import "../test/utils/console.sol";
 
 /// @title FNFTERC20
