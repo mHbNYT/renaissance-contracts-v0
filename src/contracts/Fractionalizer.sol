@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import {FNFTController} from "./FNFTController.sol";
-import {FNFTERC20} from "./fNFTERC20.sol";
+import {FNFTController} from "./fNFTController.sol";
+import {FNFTERC20} from "./fNftERC20.sol";
 import "../test/utils/console.sol";
 
 contract Fractionalizer is Ownable {
