@@ -20,7 +20,7 @@ const config: HardhatUserConfig = {
           },
         },
       },
-    ],
+    ]
   },
   paths: {
     sources: "./src/contracts",
