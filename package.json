@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "forge test --hh -vvvv",
+    "test": "forge test -vvvv",
     "build": "forge build"
   },
   "author": "",
