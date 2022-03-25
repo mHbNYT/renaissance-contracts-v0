@@ -9,7 +9,7 @@ import "./InitializedProxy.sol";
 import "./Settings.sol";
 import "./Ifo.sol";
 
-contract ERC721VaultFactory is Ownable, Pausable {
+contract IFOFactory is Ownable, Pausable {
   /// @notice the number of ERC721 vaults
   uint256 public vaultCount;
 

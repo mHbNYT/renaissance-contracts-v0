@@ -6,12 +6,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-interface IfNFT {
+interface IFNFT {
     function balanceOf(address _account) external returns(uint256);
     function totalSupply() external returns(uint256);
 }
 
-contract Ifo is OwnableUpgradeable {
+contract IFO is OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
@@ -83,8 +83,8 @@ contract Ifo is OwnableUpgradeable {
         // set storage variables
         if (_fNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_fNFT);
-        uint initiatorSupply = IfNFT( address(FNFT) ).balanceOf(msg.sender);
-        if (initiatorSupply <= IfNFT( address(FNFT) ).totalSupply()) revert NotOwner();
+        uint initiatorSupply = IFNFT( address(FNFT) ).balanceOf(msg.sender);
+        if (initiatorSupply <= IFNFT( address(FNFT) ).totalSupply()) revert NotOwner();
         if (
             _amountForSale == 0 || 
             _amountForSale > initiatorSupply ||
@@ -210,10 +210,9 @@ contract Ifo is OwnableUpgradeable {
     }
 
     function adminWithdrawFNFT() external onlyOwner {
-        if (!ended) revert SaleActive();
-        //TODO: Add redemption check
+        if (!ended) revert SaleActive();        
 
-        uint fNFTBalance = IfNFT( address(FNFT) ).balanceOf(address(this));
+        uint fNFTBalance = IFNFT( address(FNFT) ).balanceOf(address(this));
         FNFT.safeTransfer( address(msg.sender), fNFTBalance);
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);

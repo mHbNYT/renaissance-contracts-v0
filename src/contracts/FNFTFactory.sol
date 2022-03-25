@@ -9,14 +9,14 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import "./InitializedProxy.sol";
 import "./Settings.sol";
-import "./ERC721TokenVault.sol";
+import "./FNFT.sol";
 
-contract ERC721VaultFactory is Ownable, Pausable {
-  /// @notice the number of ERC721 vaults
-  uint256 public vaultCount;
+contract FNFTFactory is Ownable, Pausable {
+  /// @notice the number of ERC721 fnfts
+  uint256 public fnftCount;
 
   /// @notice the mapping of vault number to vault contract
-  mapping(uint256 => address) public vaults;
+  mapping(uint256 => address) public fnfts;
 
   /// @notice a settings contract controlled by governance
   address public immutable settings;
@@ -27,7 +27,7 @@ contract ERC721VaultFactory is Ownable, Pausable {
 
   constructor(address _settings) {
     settings = _settings;
-    logic = address(new TokenVault(_settings));
+    logic = address(new FNFT(_settings));
   }
 
   /// @notice the function to mint a new vault
@@ -58,14 +58,14 @@ contract ERC721VaultFactory is Ownable, Pausable {
       )
     );
 
-    emit Mint(_token, _id, _listPrice, vault, vaultCount);
+    emit Mint(_token, _id, _listPrice, vault, fnftCount);
 
     IERC721(_token).safeTransferFrom(msg.sender, vault, _id);
     
-    vaults[vaultCount] = vault;
-    vaultCount++;
+    fnfts[fnftCount] = vault;
+    fnftCount++;
 
-    return vaultCount - 1;
+    return fnftCount - 1;
   }
 
   function pause() external onlyOwner {
