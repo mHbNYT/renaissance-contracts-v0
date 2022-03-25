@@ -4,19 +4,22 @@ pragma solidity 0.8.11;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 interface IfNFT {
     function balanceOf(address _account) external returns(uint256);
     function totalSupply() external returns(uint256);
 }
 
-contract Ifo is Ownable {
+contract Ifo is OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
         uint256 amount; // Amount ETH deposited by user
         uint256 debt; // total fNFT claimed thus fNFT debt
     }
+
+    address public immutable settings;
     
     IERC20 public FNFT; // fNFT the ifo contract sells
     IERC20 public ETH; // for user deposits
@@ -64,13 +67,20 @@ contract Ifo is Ownable {
     error OverLimit();
     error NoLiquidityProvided();
 
-    constructor(
+    constructor(address _settings) {
+        settings = _settings;        
+    }
+
+    function initialize(
         address _fNFT,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
         bool _allowWhitelisting
-    ) {        
+    ) external initializer {
+        // initialize inherited contracts
+         __Ownable_init();
+        // set storage variables
         if (_fNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_fNFT);
         uint initiatorSupply = IfNFT( address(FNFT) ).balanceOf(msg.sender);
