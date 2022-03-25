@@ -20,7 +20,32 @@ const config: HardhatUserConfig = {
           },
         },
       },
-    ]
+    ],
+  },
+  defaultNetwork: "localhost",
+  networks: {
+    hardhat: {
+      chainId: +process.env.AURORA_LOCAL_CHAINID!,
+      accounts: {
+        mnemonic: process.env.AURORA_LOCAL_PRIVATE_KEY,
+      },
+    },
+    aurora_testnet: {
+      url: process.env.AURORA_TEST_URI,
+      chainId: +process.env.AURORA_TEST_CHAINID!,
+      accounts: [process.env.AURORA_TEST_PRIVATE_KEY!],
+      timeout: 600000,
+      gasPrice: 2000000000,
+      gas: 8000000  
+    },
+    aurora_mainnet: {
+      url: process.env.AURORA_MAIN_URI,
+      chainId: +process.env.AURORA_MAIN_CHAINID!,
+      accounts: [process.env.AURORA_MAIN_PRIVATE_KEY!],
+      timeout: 600000,
+      gasPrice: 2000000000,
+      gas: 8000000
+    }
   },
   paths: {
     sources: "./src/contracts",
