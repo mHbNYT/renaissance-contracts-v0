@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./InitializedProxy.sol";
 import "./Settings.sol";
-import "./Ifo.sol";
+import "./IFO.sol";
 
 contract IFOFactory is Ownable, Pausable {
   /// @notice the number of ERC721 vaults
@@ -35,7 +35,7 @@ contract IFOFactory is Ownable, Pausable {
 
   constructor(address _settings) {
     settings = _settings;
-    logic = address(new Ifo(_settings));
+    logic = address(new IFO(_settings));
   }
 
   /// @notice the function to create a ifo
