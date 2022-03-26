@@ -4,17 +4,19 @@ pragma solidity 0.8.11;
 import "./libraries/PriceOracleLibrary.sol";
 import "./libraries/UQ112x112.sol";
 import "./libraries/UniswapV2Library.sol";
+import "./libraries/math/FixedPoint.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+
 contract PriceOracle is Ownable{
-    using UQ112x112 for uint224;
+    using FixedPoint for *;
 
     /**
     1. Store cumulative prices for each pair in the pool
     2. Update to calculate twap and update for each pair
      */
-    uint public constant PERIOD = 24 hours;
+    uint public constant PERIOD = 10 minutes;
     
     // Map of pair address to PairInfo struct, which contains cumulative price, last block timestamps, and etc.
     mapping(address => PairInfo) private pairMap;
@@ -26,8 +28,8 @@ contract PriceOracle is Ownable{
         address token1;
         uint price0CumulativeLast;
         uint price1CumulativeLast;
-        uint224 price0Average;
-        uint224 price1Average; 
+        FixedPoint.uq112x112 price0Average;
+        FixedPoint.uq112x112 price1Average; 
         uint32 blockTimestampLast;
         bool exists; 
     }
@@ -68,10 +70,12 @@ contract PriceOracle is Ownable{
 
         // Overflow is desired, casting never truncates.
         // Cumulative price is in (uq112x112 price * seconds) uits so we simply wrap it after division by the time elapsed.
-        uint224 price0Average = UQ112x112.encode(uint112(price0Cumulative - pairInfo.price0CumulativeLast)).uqdiv(timeElapsed);
-        uint224 price1Average = UQ112x112.encode(uint112(price1Cumulative - pairInfo.price1CumulativeLast)).uqdiv(timeElapsed);
+        FixedPoint.uq112x112 memory price0Average = FixedPoint.uq112x112(uint224((price0Cumulative - pairInfo.price0CumulativeLast) / timeElapsed));
+        FixedPoint.uq112x112 memory price1Average = FixedPoint.uq112x112(uint224((price1Cumulative - pairInfo.price1CumulativeLast) / timeElapsed));
         pairInfo.price0Average = price0Average;
         pairInfo.price1Average = price1Average;
+        pairInfo.price0CumulativeLast = price0Cumulative;
+        pairInfo.price1CumulativeLast = price1Cumulative;
         pairInfo.blockTimestampLast = blockTimestamp;
     }
 
@@ -81,10 +85,10 @@ contract PriceOracle is Ownable{
         require(pairInfo.exists == true, "Pair does not exist.");
 
         if (_token == pairInfo.token0) {
-            amountOut = uint144(pairInfo.price0Average * _amountIn);
+            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
         } else {
             require(_token == pairInfo.token1, "Invalid token.");
-            amountOut = uint144(pairInfo.price1Average * _amountIn);
+            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
         }
     }
     

@@ -3,9 +3,10 @@ pragma solidity 0.8.11;
 
 import "../interfaces/IUniswapV2Pair.sol";
 import "./UQ112x112.sol";
+import "./math/FixedPoint.sol";
 
 library PriceOracleLibrary {
-    using UQ112x112 for uint224;
+    using FixedPoint for *;
 
     uint8 public constant RESOLUTION = 112;
 
@@ -29,9 +30,9 @@ library PriceOracleLibrary {
             uint32 timeElapsed = blockTimestamp - blockTimestampLast;
             // addition overflow is desired
             // counterfactual
-            price0Cumulative += uint(UQ112x112.encode(reserve1).uqdiv(reserve0)) * timeElapsed;
+            price0Cumulative += uint(FixedPoint.fraction(reserve1, reserve0)._x) * timeElapsed;
             // counterfactual
-            price1Cumulative += uint(UQ112x112.encode(reserve0).uqdiv(reserve1)) * timeElapsed;
+            price1Cumulative += uint(FixedPoint.fraction(reserve0, reserve1)._x) * timeElapsed;
         }
     }
 }
