@@ -47,7 +47,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     address payable public winning;
 
     enum State {
-        inactive,
+        inactive,        
         live,
         ended,
         redeemed

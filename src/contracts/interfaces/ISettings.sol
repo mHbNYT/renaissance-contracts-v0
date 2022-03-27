@@ -21,4 +21,5 @@ interface ISettings {
 
     function feeReceiver() external returns(address payable);
 
+    function creatorIFOLock() external returns(bool);
 }

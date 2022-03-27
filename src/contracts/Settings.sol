@@ -48,6 +48,9 @@ contract Settings is Ownable, ISettings {
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
+    /// @notice the boolean whether creator should have access to the creator's fNFT shares after IFO
+    bool public override creatorIFOLock;
+
     event UpdateMaxAuctionLength(uint256 _old, uint256 _new);
 
     event UpdateMinAuctionLength(uint256 _old, uint256 _new);
@@ -66,6 +69,8 @@ contract Settings is Ownable, ISettings {
 
     event UpdateFeeReceiver(address _old, address _new);
 
+    event UpdateCreatorIFOLock(bool _lock);
+
     constructor() {
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
@@ -75,6 +80,7 @@ contract Settings is Ownable, ISettings {
         minBidIncrease = 50;     // 5%
         maxCuratorFee = 100;
         minVotePercentage = 250; // 25%
+        creatorIFOLock = false;
     }
 
     function setMaxAuctionLength(uint256 _length) external onlyOwner {
@@ -151,4 +157,9 @@ contract Settings is Ownable, ISettings {
         feeReceiver = _receiver;
     }
 
+    function setCreatorIFOLock(bool  _lock) external onlyOwner {
+        emit UpdateCreatorIFOLock(_lock);
+
+        creatorIFOLock = _lock;
+    }
 }
