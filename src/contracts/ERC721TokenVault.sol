@@ -6,16 +6,10 @@ import "./interfaces/IWETH.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import {IPriceOracle} from "./PriceOracle.sol";
 
 contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
     using Address for address;
-
-    /// -----------------------------------
-    /// -------- BASIC INFORMATION --------
-    /// -----------------------------------
-
-    /// @notice weth address
-    address public constant weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
     /// -----------------------------------
     /// -------- TOKEN INFORMATION --------
@@ -78,7 +72,7 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
     uint256 public votingTokens;
 
     /// @notice a mapping of users to their desired token price
-    mapping(address => uint256) public userPrices;
+    mapping(address => uint256) public userReservePrice;
 
     /// ------------------------
     /// -------- EVENTS --------
@@ -133,7 +127,7 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
         fee = _fee;
         lastClaimed = block.timestamp;
         auctionState = State.inactive;
-        userPrices[_curator] = _listPrice;
+        userReservePrice[_curator] = _listPrice;
 
         _mint(_curator, _supply);
     }
@@ -163,14 +157,14 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
         require(msg.sender == Ownable(settings).owner(), "remove:not gov");
         require(auctionState == State.inactive, "update:auction live cannot update price");
 
-        uint256 old = userPrices[_user];
+        uint256 old = userReservePrice[_user];
         require(0 != old, "update:not an update");
         uint256 weight = balanceOf(_user);
 
         votingTokens -= weight;
         reserveTotal -= weight * old;
 
-        userPrices[_user] = 0;
+        userReservePrice[_user] = 0;
 
         emit PriceUpdate(_user, 0);
     }
@@ -254,11 +248,29 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
 
+    function buyItNow() external payable {
+        require(auctionState == State.inactive, "buy:only inactive");
+        IPriceOracle priceOracle = ISettings(settings).priceOracle();
+
+        uint256 marketCap = priceOracle.getfNFTPriceETH(address(this), totalSupply());
+        uint256 buyItNowPrice = (marketCap * 15) / 10;
+        require(msg.value >= buyItNowPrice, "buy:not enough ETH");
+
+        _claimFees();
+
+        // transfer erc721 to buyer
+        IERC721(token).transferFrom(address(this), winning, id);
+
+        auctionState = State.ended;
+
+        emit Won(winning, livePrice);
+    }
+
     /// @notice a function for an end user to update their desired sale price
     /// @param _new the desired price in ETH
     function updateUserPrice(uint256 _new) external {
         require(auctionState == State.inactive, "update:auction live cannot update price");
-        uint256 old = userPrices[msg.sender];
+        uint256 old = userReservePrice[msg.sender];
         require(_new != old, "update:not an update");
         uint256 weight = balanceOf(msg.sender);
 
@@ -299,7 +311,7 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
             reserveTotal = reserveTotal + (weight * _new) - (weight * old);
         }
 
-        userPrices[msg.sender] = _new;
+        userReservePrice[msg.sender] = _new;
 
         emit PriceUpdate(msg.sender, _new);
     }
@@ -314,25 +326,36 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 _amount
     ) internal virtual override {
         if (auctionState == State.inactive) {
-            uint256 fromPrice = userPrices[_from];
-            uint256 toPrice = userPrices[_to];
+            uint256 sendersReservePrice = userReservePrice[_from];
+            uint256 receiversReservePrice = userReservePrice[_to];
 
             // only do something if users have different reserve price
-            if (toPrice != fromPrice) {
-                // new holder is not a voter
-                if (toPrice == 0) {
-                    // get the average reserve price ignoring the senders amount
+            if (receiversReservePrice != sendersReservePrice) {
+                // Receiver has not voted on a reserve price
+                // NOTE: the sender address could have voted or not
+                if (receiversReservePrice == 0) {
+                    // subtract the total amount of tokens voting on what the reserve price should be
+                    // NOTE: there would never be a situation where the sender has not voted, because all the tokens are minted to the curator on init,
+                    //     _and_ the curator's votes are initially set at the list price
                     votingTokens -= _amount;
-                    reserveTotal -= _amount * fromPrice;
+                    // subtract the avg reserve price by the amount of tokens the
+                    reserveTotal -= _amount * sendersReservePrice;
                 }
-                // old holder is not a voter
-                else if (fromPrice == 0) {
+                // the new holder is a voter (implied from the `else`) _and_ old holder is not a voter
+                else if (sendersReservePrice == 0) {
+                    // since the new holder is a voter: add the tokens being sent to the amount of tokens currently voting
                     votingTokens += _amount;
-                    reserveTotal += _amount * toPrice;
+                    // _and_ since they are a voter:
+                    // multiply the amount of tokens they're receiving by their previously set reserve price, since they have specified their reservePrice already
+                    reserveTotal += _amount * receiversReservePrice;
                 }
                 // both holders are voters
                 else {
-                    reserveTotal = reserveTotal + (_amount * toPrice) - (_amount * fromPrice);
+                    // set the new reserve price to the previous reserve price, plus the difference between the receivers reserve and the senders reserve (NOTE: could be negative)
+                    // - edge cases:
+                    //      - the sender and receiver are the only voters and they have the same vote ✅
+                    //      - the sender and receiver are the only voters but the receivers reserve is higher than the senders reserve ✅
+                    reserveTotal = reserveTotal + (_amount * receiversReservePrice) - (_amount * sendersReservePrice);
                 }
             }
         }
@@ -424,8 +447,8 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
             // If the transfer fails, wrap and send as WETH, so that
             // the auction is not impeded and the recipient still
             // can claim ETH via the WETH contract (similar to escrow).
-            IWETH(weth).deposit{value: value}();
-            IWETH(weth).transfer(to, value);
+            IWETH(ISettings(settings).WETH()).deposit{value: value}();
+            IWETH(ISettings(settings).WETH()).transfer(to, value);
             // At this point, the recipient can unwrap WETH.
         }
     }
