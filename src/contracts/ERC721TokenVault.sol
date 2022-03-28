@@ -267,53 +267,53 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
     }
 
     /// @notice a function for an end user to update their desired sale price
-    /// @param _new the desired price in ETH
-    function updateUserPrice(uint256 _new) external {
+    /// @param newUserReserve the desired price in ETH
+    function updateUserPrice(uint256 newUserReserve) external {
         require(auctionState == State.inactive, "update:auction live cannot update price");
-        uint256 old = userReservePrice[msg.sender];
-        require(_new != old, "update:not an update");
+        uint256 previousUserReserve = userReservePrice[msg.sender];
+        require(newUserReserve != previousUserReserve, "update:not an update");
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
             votingTokens = weight;
-            reserveTotal = weight * _new;
+            reserveTotal = weight * newUserReserve;
         }
         // they are the only one voting
-        else if (weight == votingTokens && old != 0) {
-            reserveTotal = weight * _new;
+        else if (weight == votingTokens && previousUserReserve != 0) {
+            reserveTotal = weight * newUserReserve;
         }
         // previously they were not voting
-        else if (old == 0) {
+        else if (previousUserReserve == 0) {
             uint256 averageReserve = reserveTotal / votingTokens;
 
             uint256 reservePriceMin = (averageReserve * ISettings(settings).minReserveFactor()) / 1000;
-            require(_new >= reservePriceMin, "update:reserve price too low");
+            require(newUserReserve >= reservePriceMin, "update:reserve price too low");
             uint256 reservePriceMax = (averageReserve * ISettings(settings).maxReserveFactor()) / 1000;
-            require(_new <= reservePriceMax, "update:reserve price too high");
+            require(newUserReserve <= reservePriceMax, "update:reserve price too high");
 
             votingTokens += weight;
-            reserveTotal += weight * _new;
+            reserveTotal += weight * newUserReserve;
         }
         // they no longer want to vote
-        else if (_new == 0) {
+        else if (newUserReserve == 0) {
             votingTokens -= weight;
-            reserveTotal -= weight * old;
+            reserveTotal -= weight * previousUserReserve;
         }
         // they are updating their vote
         else {
-            uint256 averageReserve = (reserveTotal - (old * weight)) / (votingTokens - weight);
+            uint256 averageReserve = (reserveTotal - (previousUserReserve * weight)) / (votingTokens - weight);
 
             uint256 reservePriceMin = (averageReserve * ISettings(settings).minReserveFactor()) / 1000;
-            require(_new >= reservePriceMin, "update:reserve price too low");
+            require(newUserReserve >= reservePriceMin, "update:reserve price too low");
             uint256 reservePriceMax = (averageReserve * ISettings(settings).maxReserveFactor()) / 1000;
-            require(_new <= reservePriceMax, "update:reserve price too high");
+            require(newUserReserve <= reservePriceMax, "update:reserve price too high");
 
-            reserveTotal = reserveTotal + (weight * _new) - (weight * old);
+            reserveTotal = reserveTotal + (weight * newUserReserve) - (weight * previousUserReserve);
         }
 
-        userReservePrice[msg.sender] = _new;
+        userReservePrice[msg.sender] = newUserReserve;
 
-        emit PriceUpdate(msg.sender, _new);
+        emit PriceUpdate(msg.sender, newUserReserve);
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
@@ -359,6 +359,15 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
                 }
             }
         }
+    }
+
+    function _afterTokenTransfer(
+        address,
+        address,
+        uint256
+    ) internal virtual override {
+        IPriceOracle priceOracle = ISettings(settings).priceOracle();
+        priceOracle.updatefNFTTWAP(address(this));
     }
 
     /// @notice kick off an auction. Must send reservePrice in ETH

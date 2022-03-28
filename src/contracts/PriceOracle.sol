@@ -13,6 +13,8 @@ interface IPriceOracle {
 
     function updatePairInfo(address _pair) external;
 
+    function updatefNFTTWAP(address fNFT) external;
+
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut);
 }
 
@@ -73,6 +75,30 @@ contract PriceOracle is IPriceOracle, Ownable {
     }
 
     function updatePairInfo(address _pair) external {
+        _updatePairInfo(_pair);
+    }
+
+    function updatefNFTTWAP(address fNFT) external {
+        address pair = UniswapV2Library.pairFor(FACTORY, WETH, fNFT);
+        _updatePairInfo(pair);
+    }
+
+    // note this will always return 0 before update has been called successfully for the first time.
+    function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut) {
+        address pair = UniswapV2Library.pairFor(FACTORY, _fNFT, WETH);
+        PairInfo memory pairInfo = getTwap[pair];
+        require(pairInfo.exists == true, "PairInfo does not exist");
+        require(pairInfo.totalUpdates > 10, "Pair has not been updated enough");
+
+        if (_fNFT == pairInfo.token0) {
+            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
+        } else {
+            require(_fNFT == pairInfo.token1, "Invalid token");
+            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
+        }
+    }
+
+    function _updatePairInfo(address _pair) internal {
         PairInfo storage pairInfo = getTwap[_pair];
 
         // we want an update to silently skip because it's updated from the token contract itself
@@ -98,21 +124,6 @@ contract PriceOracle is IPriceOracle, Ownable {
                 pairInfo.blockTimestampLast = blockTimestamp;
                 pairInfo.totalUpdates++;
             }
-        }
-    }
-
-    // note this will always return 0 before update has been called successfully for the first time.
-    function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut) {
-        address pair = UniswapV2Library.pairFor(FACTORY, _fNFT, WETH);
-        PairInfo memory pairInfo = getTwap[pair];
-        require(pairInfo.exists == true, "PairInfo does not exist");
-        require(pairInfo.totalUpdates > 10, "Pair has not been updated enough");
-
-        if (_fNFT == pairInfo.token0) {
-            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
-        } else {
-            require(_fNFT == pairInfo.token1, "Invalid token");
-            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
         }
     }
 }
