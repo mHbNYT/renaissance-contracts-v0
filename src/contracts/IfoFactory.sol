@@ -33,9 +33,9 @@ contract IFOFactory is Ownable, Pausable {
 
   error AlreadyExists();
 
-  constructor(address _settings) {
-    settings = _settings;
-    logic = address(new IFO(_settings));
+  constructor(address _ifoSettings) {
+    settings = _ifoSettings;
+    logic = address(new IFO(_ifoSettings));
   }
 
   /// @notice the function to create a ifo

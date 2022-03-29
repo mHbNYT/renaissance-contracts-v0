@@ -28,6 +28,7 @@ contract IFO is OwnableUpgradeable {
     uint256 public cap; // cap per user
     uint256 public totalRaised; // total ETH raised by sale
     uint256 public totalSold; // total fNFT sold by sale    
+    uint256 public endBlock; // 
 
     bool public allowWhitelisting; // whether the ifo operates through WL
     bool public started; // true when sale is started
@@ -61,6 +62,7 @@ contract IFO is OwnableUpgradeable {
     error SaleAlreadyStarted();
     error SaleUnstarted();
     error SaleAlreadyEnded();    
+    error DeadlineActive();
     error SaleActive();
     error TxFailed();
     error NotWhitelisted();
@@ -96,20 +98,21 @@ contract IFO is OwnableUpgradeable {
         amountForSale = _amountForSale;        
         price = _price;
         cap = _cap;
-        allowWhitelisting = _allowWhitelisting;
+        allowWhitelisting = _allowWhitelisting;        
 
         FNFT.safeTransferFrom(msg.sender, address(this), initiatorSupply);
+    }
+
+    modifier checkDeadline() {
+        if (block.number > endBlock && endBlock != 0) {
+            end();
+        }
+        _;
     }
 
     //* @notice modifer to check if contract is paused
     modifier whitelistingAllowed() {
         if (!allowWhitelisting) revert WhitelistingDisallowed();        
-        _;
-    }
-
-    //* @notice modifer to check if contract is paused
-    modifier checkIfPaused() {
-        if (contractPaused) revert ContractPaused();        
         _;
     }
 
@@ -145,14 +148,22 @@ contract IFO is OwnableUpgradeable {
     }
 
     // @notice Starts the sale
-    function start() external onlyOwner {        
+    function start(uint _blockDuration) external onlyOwner {        
         if (started) revert SaleAlreadyStarted();
+
+        if (_blockDuration == 0) {
+            endBlock = 0;
+        } else {
+            endBlock = block.number + _blockDuration;
+        }
+        
         started = true;
         emit SaleStarted(block.number);
     }
 
     // @notice Ends the sale
-    function end() external onlyOwner {
+    function end() public onlyOwner {
+        if (block.number < endBlock) revert DeadlineActive();
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
 
@@ -160,16 +171,10 @@ contract IFO is OwnableUpgradeable {
         emit SaleEnded(block.number);
     }
 
-    // @notice lets owner pause contract
-    function togglePause() external onlyOwner returns (bool){
-        contractPaused = !contractPaused;
-        return contractPaused;
-    }
-
     /**
      *  @notice it deposits ETH for the sale
      */
-    function deposit() external payable checkIfPaused {
+    function deposit() external payable checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();   
         if (allowWhitelisting == true) {
@@ -199,7 +204,7 @@ contract IFO is OwnableUpgradeable {
 
     //Managerial
 
-    function adminWithdrawProfit() external onlyOwner {
+    function adminWithdrawProfit() external checkDeadline onlyOwner {
         if (!ended) revert SaleActive();
         
         totalRaised = 0;
@@ -209,8 +214,8 @@ contract IFO is OwnableUpgradeable {
         emit AdminProfitWithdrawal(address(FNFT), totalRaised);        
     }
 
-    function adminWithdrawFNFT() external onlyOwner {
-        if (!ended) revert SaleActive();        
+    function adminWithdrawFNFT() external checkDeadline onlyOwner {
+        if (!ended) revert SaleActive();
 
         uint fNFTBalance = IFNFT( address(FNFT) ).balanceOf(address(this));
         FNFT.safeTransfer( address(msg.sender), fNFTBalance);
@@ -221,6 +226,8 @@ contract IFO is OwnableUpgradeable {
     // @notice approve fNFT usage by other contracts, such as CreatorFNFTUtility
     
     function approve(address _recipient) public onlyOwner {
+        if (!ended) revert SaleActive();
+
         FNFT.safeApprove(_recipient, 1e18);
     }
 
