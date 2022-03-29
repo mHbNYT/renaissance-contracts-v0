@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./Settings.sol";
+import "./FNFTSettings.sol";
 import "./interfaces/IWETH.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -192,7 +192,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function updateAuctionLength(uint256 _length) external {
         require(msg.sender == curator, "update:not curator");
         require(
-            _length >= ISettings(settings).minAuctionLength() && _length <= ISettings(settings).maxAuctionLength(),
+            _length >= IFNFTSettings(settings).minAuctionLength() && _length <= IFNFTSettings(settings).maxAuctionLength(),
             "update:invalid auction length"
         );
 
@@ -205,7 +205,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function updateFee(uint256 _fee) external {
         require(msg.sender == curator, "update:not curator");
         require(_fee < fee, "update:can't raise");
-        require(_fee <= ISettings(settings).maxCuratorFee(), "update:cannot increase fee this high");
+        require(_fee <= IFNFTSettings(settings).maxCuratorFee(), "update:cannot increase fee this high");
 
         _claimFees();
 
@@ -232,8 +232,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 curatorMint = sinceLastClaim * feePerSecond;
 
         // now lets do the same for governance
-        address govAddress = ISettings(settings).feeReceiver();
-        uint256 govFee = ISettings(settings).governanceFee();
+        address govAddress = IFNFTSettings(settings).feeReceiver();
+        uint256 govFee = IFNFTSettings(settings).governanceFee();
         currentAnnualFee = (govFee * totalSupply()) / 1000;
         feePerSecond = currentAnnualFee / 31536000;
         uint256 govMint = sinceLastClaim * feePerSecond;
@@ -274,9 +274,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else if (old == 0) {
             uint256 averageReserve = reserveTotal / votingTokens;
 
-            uint256 reservePriceMin = (averageReserve * ISettings(settings).minReserveFactor()) / 1000;
+            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
             require(_new >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * ISettings(settings).maxReserveFactor()) / 1000;
+            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
             require(_new <= reservePriceMax, "update:reserve price too high");
 
             votingTokens += weight;
@@ -291,9 +291,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else {
             uint256 averageReserve = (reserveTotal - (old * weight)) / (votingTokens - weight);
 
-            uint256 reservePriceMin = (averageReserve * ISettings(settings).minReserveFactor()) / 1000;
+            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
             require(_new >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * ISettings(settings).maxReserveFactor()) / 1000;
+            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
             require(_new <= reservePriceMax, "update:reserve price too high");
 
             reserveTotal = reserveTotal + (weight * _new) - (weight * old);
@@ -343,7 +343,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         require(auctionState == State.inactive, "start:no auction starts");
         require(msg.value >= reservePrice(), "start:too low bid");
         require(
-            votingTokens * 1000 >= ISettings(settings).minVotePercentage() * totalSupply(),
+            votingTokens * 1000 >= IFNFTSettings(settings).minVotePercentage() * totalSupply(),
             "start:not enough voters"
         );
 
@@ -359,7 +359,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable {
         require(auctionState == State.live, "bid:auction is not live");
-        uint256 increase = ISettings(settings).minBidIncrease() + 1000;
+        uint256 increase = IFNFTSettings(settings).minBidIncrease() + 1000;
         require(msg.value * 1000 >= livePrice * increase, "bid:too low bid");
         require(block.timestamp < auctionEnd, "bid:auction ended");
 

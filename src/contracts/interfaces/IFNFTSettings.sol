@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface ISettings {
+interface IFNFTSettings {
 
     function maxAuctionLength() external returns(uint256);
 
