@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "./interfaces/IIFOSettings.sol";
 
 interface IFNFT {
     function balanceOf(address _account) external returns(uint256);
@@ -19,7 +20,7 @@ contract IFO is OwnableUpgradeable {
         uint256 debt; // total fNFT claimed thus fNFT debt
     }
 
-    address public immutable settings;
+    IIFOSettings public immutable settings;
     
     IERC20 public FNFT; // fNFT the ifo contract sells
     IERC20 public ETH; // for user deposits
@@ -28,12 +29,15 @@ contract IFO is OwnableUpgradeable {
     uint256 public cap; // cap per user
     uint256 public totalRaised; // total ETH raised by sale
     uint256 public totalSold; // total fNFT sold by sale    
-    uint256 public endBlock; // 
+    
+    uint256 public duration; // ifo duration
+    uint256 public startBlock; // block started
+    uint256 public pauseBlock; // block paused
 
     bool public allowWhitelisting; // whether the ifo operates through WL
     bool public started; // true when sale is started
     bool public ended; // true when sale is ended
-    bool public contractPaused; // circuit breaker
+    bool public paused; // circuit breaker
 
     uint256 public liquidity = 0; //liquidity deployed by the creator
 
@@ -56,6 +60,7 @@ contract IFO is OwnableUpgradeable {
     error InvalidAmountForSale();
     error InvalidPrice();
     error InvalidCap();
+    error InvalidDuration();
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();    
@@ -70,7 +75,7 @@ contract IFO is OwnableUpgradeable {
     error NoLiquidityProvided();
 
     constructor(address _settings) {
-        settings = _settings;        
+        settings = IIFOSettings(_settings);
     }
 
     function initialize(
@@ -78,6 +83,7 @@ contract IFO is OwnableUpgradeable {
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
+        uint256 _duration,
         bool _allowWhitelisting
     ) external initializer {
         // initialize inherited contracts
@@ -94,19 +100,27 @@ contract IFO is OwnableUpgradeable {
         ) revert InvalidAmountForSale();        
         if (_price == 0) revert InvalidPrice();        
         if (_cap == 0) revert InvalidCap();
+        if (_duration < settings.minimumDuration() || _duration > settings.maximumDuration()) revert InvalidDuration();
 
         amountForSale = _amountForSale;        
         price = _price;
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;        
+        duration = _duration;
 
         FNFT.safeTransferFrom(msg.sender, address(this), initiatorSupply);
     }
 
     modifier checkDeadline() {
-        if (block.number > endBlock && endBlock != 0) {
+        if (block.number > startBlock + duration && duration != 0) {
             end();
         }
+        _;
+    }
+
+    //* @notice modifer to check if contract is paused
+    modifier checkPaused() {
+        if (paused) revert ContractPaused();        
         _;
     }
 
@@ -148,23 +162,38 @@ contract IFO is OwnableUpgradeable {
     }
 
     // @notice Starts the sale
-    function start(uint _blockDuration) external onlyOwner {        
+    function start() external onlyOwner {
         if (started) revert SaleAlreadyStarted();
+        if (ended) revert SaleAlreadyEnded();
 
-        if (_blockDuration == 0) {
-            endBlock = 0;
-        } else {
-            endBlock = block.number + _blockDuration;
-        }
+        startBlock = block.number;
         
         started = true;
         emit SaleStarted(block.number);
     }
 
-    // @notice Ends the sale
-    function end() public onlyOwner {
-        if (block.number < endBlock) revert DeadlineActive();
+    // @notice lets owner pause contract
+    function togglePause() external onlyOwner returns (bool){
         if (!started) revert SaleUnstarted();
+        if (ended) revert SaleAlreadyEnded();
+
+        if (paused) {
+            duration += block.number - pauseBlock;
+            paused = false;
+        } else {
+            pauseBlock = block.number;
+            paused = true;
+        }        
+        return paused;
+    }
+
+    // @notice Ends the sale
+    function end() public onlyOwner checkPaused {        
+        if (!started) revert SaleUnstarted();
+        if (
+            block.number < startBlock + duration || // If not past duration
+            settings.minimumDuration() > block.number - startBlock // If tries to end before minimum duration
+        ) revert DeadlineActive();
         if (ended) revert SaleAlreadyEnded();
 
         ended = true;
@@ -174,7 +203,7 @@ contract IFO is OwnableUpgradeable {
     /**
      *  @notice it deposits ETH for the sale
      */
-    function deposit() external payable checkDeadline {
+    function deposit() external payable checkPaused checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();   
         if (allowWhitelisting == true) {

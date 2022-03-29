@@ -16,6 +16,8 @@ contract IFOSettings is Ownable, IIFOSettings {
 
     constructor() {
         creatorIFOLock = false;
+        minimumDuration = 86400; // 1 day;
+        maximumDuration = 7776000; // 90 days;
     }
 
     function setCreatorIFOLock(bool  _lock) external onlyOwner {
