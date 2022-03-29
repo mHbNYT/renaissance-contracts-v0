@@ -158,16 +158,25 @@ contract VaultTest is DSTest, ERC721Holder {
     }
 
     function testTransferBetweenUsers() public {
-        console.log("this balance",vault.balanceOf(address(this)) / 1e18);
+        console.log("this balance", vault.balanceOf(address(this)) / 1e18);
         console.log("this reserve price", vault.userReservePrice(address(this)) / 1e18);
-        console.log("user1 reserve price",vault.userReservePrice(address(user1)) / 1e18);
+        console.log("user1 reserve price", vault.userReservePrice(address(user1)) / 1e18);
         console.log("voting tokens", vault.votingTokens() / 1e18);
+        console.log("actual vault reserve price", vault.reservePrice() / 1e18);
         console.log("TRANSFER__________________");
-        vault.transfer(address(user1), 20 ether);
-        console.log("voting tokens", vault.votingTokens()/ 1e18);
-        console.log("this reserve price",vault.userReservePrice(address(this)) / 1e18);
-        console.log("user1 balance",vault.balanceOf(address(user1)) / 1e18);
-        console.log("user1 reserve price",vault.userReservePrice(address(user1)) / 1e18);
+        vault.transfer(address(user1), 100 ether);
+        console.log("voting tokens", vault.votingTokens() / 1e18);
+        console.log("this reserve price", vault.userReservePrice(address(this)) / 1e18);
+        console.log("user1 balance", vault.balanceOf(address(user1)) / 1e18);
+        console.log("user1 reserve price", vault.userReservePrice(address(user1)) / 1e18);
+        console.log("actual vault reserve price", vault.reservePrice() / 1e18);
+        console.log("TRANSFER__________________");
+        user1.call_transfer((address(user2)), 20 ether);
+        console.log("voting tokens", vault.votingTokens() / 1e18);
+        console.log("user2 reserve price", vault.userReservePrice(address(user2)) / 1e18);
+        console.log("user2 balance", vault.balanceOf(address(user2)) / 1e18);
+        console.log("user2 reserve price", vault.userReservePrice(address(user2)) / 1e18);
+        console.log("actual vault reserve price", vault.reservePrice() / 1e18);
     }
 
     function testPause() public {
