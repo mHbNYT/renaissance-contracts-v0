@@ -15,6 +15,12 @@ interface IPriceOracle {
 
     function updatefNFTTWAP(address fNFT) external;
 
+    function consult(
+        address _token,
+        address _pair,
+        uint256 _amountIn
+    ) external view returns (uint256 amountOut);
+
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut);
 }
 
@@ -81,6 +87,21 @@ contract PriceOracle is IPriceOracle, Ownable {
     function updatefNFTTWAP(address fNFT) external {
         address pair = UniswapV2Library.pairFor(FACTORY, WETH, fNFT);
         _updatePairInfo(pair);
+    }
+
+    function consult(
+        address _token,
+        address _pair,
+        uint256 _amountIn
+    ) external view returns (uint256 amountOut) {
+        PairInfo memory pairInfo = getTwap[_pair];
+        require(pairInfo.exists == true, "Pair does not exist.");
+        if (_token == pairInfo.token0) {
+            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
+        } else {
+            require(_token == pairInfo.token1, "Invalid token.");
+            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
+        }
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
