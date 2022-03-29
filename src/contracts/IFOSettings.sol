@@ -9,15 +9,17 @@ contract IFOSettings is Ownable, IIFOSettings {
     bool public override creatorIFOLock;
     uint public override minimumDuration;
     uint public override maximumDuration;
+    address public override creatorUtilityContract;
 
     event UpdateCreatorIFOLock(bool _lock);
     event UpdateMinimumDuration(uint _blocks);
     event UpdateMaximumDuration(uint _blocks);
+    event UpdateCreatorUtilityContract(address _utility);
 
     constructor() {
         creatorIFOLock = false;
         minimumDuration = 86400; // 1 day;
-        maximumDuration = 7776000; // 90 days;
+        maximumDuration = 7776000; // 90 days;        
     }
 
     function setCreatorIFOLock(bool  _lock) external onlyOwner {
@@ -36,5 +38,11 @@ contract IFOSettings is Ownable, IIFOSettings {
         emit UpdateMaximumDuration(_blocks);
 
         maximumDuration = _blocks;
+    }
+
+    function setCreatorUtilityContract(address _utility) external onlyOwner {
+        emit UpdateCreatorUtilityContract(_utility);
+
+        creatorUtilityContract = _utility;
     }
 }

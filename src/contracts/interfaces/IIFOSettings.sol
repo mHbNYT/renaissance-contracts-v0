@@ -5,4 +5,5 @@ interface IIFOSettings {
     function creatorIFOLock() external returns(bool);
     function minimumDuration() external returns(uint);
     function maximumDuration() external returns(uint);
+    function creatorUtilityContract() external returns(address);
 }

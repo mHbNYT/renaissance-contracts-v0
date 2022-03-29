@@ -10,6 +10,7 @@ import "./interfaces/IIFOSettings.sol";
 interface IFNFT {
     function balanceOf(address _account) external returns(uint256);
     function totalSupply() external returns(uint256);
+    function auctionState() external returns(uint256);
 }
 
 contract IFO is OwnableUpgradeable {
@@ -18,6 +19,14 @@ contract IFO is OwnableUpgradeable {
     struct UserInfo {
         uint256 amount; // Amount ETH deposited by user
         uint256 debt; // total fNFT claimed thus fNFT debt
+    }
+
+    enum FNFTState {
+        inactive,
+        presale,
+        live,
+        ended,
+        redeemed
     }
 
     IIFOSettings public immutable settings;
@@ -73,6 +82,8 @@ contract IFO is OwnableUpgradeable {
     error NotWhitelisted();
     error OverLimit();
     error NoLiquidityProvided();
+    error FNFTLocked();
+    error NotAdmin();
 
     constructor(address _settings) {
         settings = IIFOSettings(_settings);
@@ -245,6 +256,10 @@ contract IFO is OwnableUpgradeable {
 
     function adminWithdrawFNFT() external checkDeadline onlyOwner {
         if (!ended) revert SaleActive();
+        if (
+            settings.creatorIFOLock() && 
+            IFNFT(address(FNFT)).auctionState() != uint(FNFTState.redeemed)
+        ) revert FNFTLocked();
 
         uint fNFTBalance = IFNFT( address(FNFT) ).balanceOf(address(this));
         FNFT.safeTransfer( address(msg.sender), fNFTBalance);
@@ -256,6 +271,7 @@ contract IFO is OwnableUpgradeable {
     
     function approve(address _recipient) public onlyOwner {
         if (!ended) revert SaleActive();
+        if (msg.sender != settings.creatorUtilityContract()) revert NotAdmin();
 
         FNFT.safeApprove(_recipient, 1e18);
     }
