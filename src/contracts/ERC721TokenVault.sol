@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import {IPriceOracle} from "./PriceOracle.sol";
+import {console} from "../test/utils/utils.sol";
+
 
 contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
     using Address for address;
@@ -328,7 +330,6 @@ contract TokenVault is ERC20Upgradeable, ERC721HolderUpgradeable {
         if (auctionState == State.inactive) {
             uint256 sendersReservePrice = userReservePrice[_from];
             uint256 receiversReservePrice = userReservePrice[_to];
-
             // only do something if users have different reserve price
             if (receiversReservePrice != sendersReservePrice) {
                 // Receiver has not voted on a reserve price

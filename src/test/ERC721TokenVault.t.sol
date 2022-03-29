@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 import "ds-test/test.sol";
 
 import {Settings} from "../contracts/Settings.sol";
+import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {ERC721VaultFactory, ERC721Holder} from "../contracts/ERC721VaultFactory.sol";
 import {TokenVault} from "../contracts/ERC721TokenVault.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
-import {console} from "./utils/console.sol";
-import {CheatCodes} from "./utils/cheatcodes.sol";
+import {console, CheatCodes, SetupEnvironment} from "./utils/utils.sol";
 
 contract User is ERC721Holder {
     TokenVault public vault;
@@ -109,6 +109,8 @@ contract Curator {
 contract VaultTest is DSTest, ERC721Holder {
     CheatCodes public vm;
 
+    WETH public weth;
+    IPriceOracle public priceOracle;
     ERC721VaultFactory public factory;
     Settings public settings;
     MockNFT public token;
@@ -123,9 +125,9 @@ contract VaultTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        vm = CheatCodes(HEVM_ADDRESS);
+        (vm, weth, , priceOracle) = SetupEnvironment.setup();
 
-        settings = new Settings();
+        settings = new Settings(address(weth), address(priceOracle));
 
         settings.setGovernanceFee(10);
 
@@ -139,8 +141,6 @@ contract VaultTest is DSTest, ERC721Holder {
         factory.mint("testName", "TEST", address(token), 1, 100e18, 1 ether, 50);
 
         vault = TokenVault(factory.vaults(0));
-
-        vm.etch(vault.weth(), type(WETH).creationCode);
 
         // create a curator account
         curator = new Curator(address(factory));
@@ -157,7 +157,20 @@ contract VaultTest is DSTest, ERC721Holder {
         payable(address(user4)).transfer(10 ether);
     }
 
-    function testpause() public {
+    function testTransferBetweenUsers() public {
+        console.log("this balance",vault.balanceOf(address(this)) / 1e18);
+        console.log("this reserve price", vault.userReservePrice(address(this)) / 1e18);
+        console.log("user1 reserve price",vault.userReservePrice(address(user1)) / 1e18);
+        console.log("voting tokens", vault.votingTokens() / 1e18);
+        console.log("TRANSFER__________________");
+        vault.transfer(address(user1), 20 ether);
+        console.log("voting tokens", vault.votingTokens()/ 1e18);
+        console.log("this reserve price",vault.userReservePrice(address(this)) / 1e18);
+        console.log("user1 balance",vault.balanceOf(address(user1)) / 1e18);
+        console.log("user1 reserve price",vault.userReservePrice(address(user1)) / 1e18);
+    }
+
+    function testPause() public {
         factory.pause();
         factory.unpause();
         MockNFT temp = new MockNFT();
@@ -182,7 +195,7 @@ contract VaultTest is DSTest, ERC721Holder {
     /// -------- GOV FUNCTIONS --------
     /// -------------------------------
 
-    function testkickCurator() public {
+    function testKickCurator() public {
         vault.updateCurator(address(curator));
         assertTrue(vault.curator() == address(curator));
         vault.kickCurator(address(this));
@@ -193,13 +206,13 @@ contract VaultTest is DSTest, ERC721Holder {
         curator.call_kickCurator(address(curator));
     }
 
-    function testchangeReserve() public {
+    function testChangeReserve() public {
         // reserve price here should not change
         vault.transfer(address(user1), 50e18);
         assertEq(vault.reservePrice(), 1 ether);
         assertEq(vault.votingTokens(), 50e18);
 
-        assertEq(vault.userPrices(address(user1)), 0);
+        assertEq(vault.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
@@ -207,18 +220,18 @@ contract VaultTest is DSTest, ERC721Holder {
 
         // lets pretend user1 found an exploit to push up their reserve price
         vault.removeReserve(address(user1));
-        assertEq(vault.userPrices(address(user1)), 0);
+        assertEq(vault.userReservePrice(address(user1)), 0);
         assertEq(vault.reservePrice(), 1 ether);
         assertEq(vault.votingTokens(), 50e18);
     }
 
-    function testFail_changeReserve() public {
+    function testFail_ChangeReserve() public {
         // reserve price here should not change
         vault.transfer(address(user1), 50e18);
         assertEq(vault.reservePrice(), 1 ether);
         assertEq(vault.votingTokens(), 50e18);
 
-        assertEq(vault.userPrices(address(user1)), 0);
+        assertEq(vault.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
@@ -276,17 +289,17 @@ contract VaultTest is DSTest, ERC721Holder {
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
 
-    function testinitialReserve() public {
+    function testInitialReserve() public {
         assertEq(vault.reservePrice(), 1 ether);
     }
 
-    function testreservePriceTransfer() public {
+    function testReservePriceTransfer() public {
         // reserve price here should not change
         vault.transfer(address(user1), 50e18);
         assertEq(vault.reservePrice(), 1 ether);
         assertEq(vault.votingTokens(), 50e18);
 
-        assertEq(vault.userPrices(address(user1)), 0);
+        assertEq(vault.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
@@ -308,7 +321,7 @@ contract VaultTest is DSTest, ERC721Holder {
         assertEq(vault.reservePrice(), 1 ether);
     }
 
-    function testbid() public {
+    function testBid() public {
         vault.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
         vault.transfer(address(user2), 25e18);
@@ -357,7 +370,7 @@ contract VaultTest is DSTest, ERC721Holder {
         assertTrue(vault.auctionState() == TokenVault.State.ended);
     }
 
-    function testredeem() public {
+    function testRedeem() public {
         vault.redeem();
 
         assertTrue(vault.auctionState() == TokenVault.State.redeemed);
@@ -387,7 +400,7 @@ contract VaultTest is DSTest, ERC721Holder {
         user1.call_start(1.05 ether);
     }
 
-    function testlistPriceZero() public {
+    function testListPriceZero() public {
         token.mint(address(this), 2);
 
         factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50);
@@ -409,11 +422,11 @@ contract VaultTest is DSTest, ERC721Holder {
         userTemp.call_start(1.05 ether);
     }
 
-    function testtransfer() public {
+    function testTransfer() public {
         vault.transfer(address(user1), 25e18);
     }
 
-    function testauctionEndCurator0() public {
+    function testAuctionEndCurator0() public {
         vault.updateFee(0);
         vault.updateCurator(address(0));
         settings.setGovernanceFee(0);

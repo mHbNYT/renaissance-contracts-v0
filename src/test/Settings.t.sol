@@ -17,10 +17,9 @@ contract SettingsTest is DSTest {
     MockNFT public token2;
 
     function setUp() public {
-        // hevm "cheatcode", see: https://github.com/dapphub/dapptools/tree/master/src/hevm#cheat-codes
         cheatcodes = CheatCodes(HEVM_ADDRESS);
 
-        settings = new Settings();
+        settings = new Settings(address(0), address(0));
 
         token = new MockNFT();
         token2 = new MockNFT();
