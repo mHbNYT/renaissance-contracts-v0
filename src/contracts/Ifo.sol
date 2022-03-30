@@ -6,12 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IIFOSettings.sol";
-
-interface IFNFT {
-    function balanceOf(address _account) external returns(uint256);
-    function totalSupply() external returns(uint256);
-    function auctionState() external returns(uint256);
-}
+import "./interfaces/IFNFT.sol";
 
 contract IFO is OwnableUpgradeable {
     using SafeERC20 for IERC20;
@@ -58,9 +53,9 @@ contract IFO is OwnableUpgradeable {
     event Mint(address token, address indexed who, uint256 amount);
     event SaleStarted(uint256 block);
     event SaleEnded(uint256 block);
-    event AdminProfitWithdrawal(address _fNFT, uint256 _amount);        
+    event AdminProfitWithdrawal(address _FNFT, uint256 _amount);        
     event AdminETHWithdrawal(address _eth, uint256 _amount);
-    event AdminFNFTWithdrawal(address _fNFT, uint256 _amount);
+    event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);
     event LiquidityAdded(uint amountToken, uint amountETH, uint liquidity);
     event LiquidityRemoved(uint amountToken, uint amountETH, uint liquidity);
     
@@ -70,6 +65,7 @@ contract IFO is OwnableUpgradeable {
     error InvalidPrice();
     error InvalidCap();
     error InvalidDuration();
+    error InvalidReservePrice();
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();    
@@ -90,7 +86,7 @@ contract IFO is OwnableUpgradeable {
     }
 
     function initialize(
-        address _fNFT,
+        address _FNFT,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
@@ -100,18 +96,24 @@ contract IFO is OwnableUpgradeable {
         // initialize inherited contracts
          __Ownable_init();
         // set storage variables
-        if (_fNFT == address(0)) revert InvalidAddress();
-        FNFT = IERC20(_fNFT);
-        uint initiatorSupply = IFNFT( address(FNFT) ).balanceOf(msg.sender);
-        if (initiatorSupply <= IFNFT( address(FNFT) ).totalSupply()) revert NotOwner();
+        if (_FNFT == address(0)) revert InvalidAddress();
+        FNFT = IERC20(_FNFT);
+        IFNFT fnft = IFNFT( address(FNFT) );
+        uint initiatorSupply = fnft.balanceOf(msg.sender);
+        // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
+        if (initiatorSupply <= fnft.totalSupply()) revert NotOwner();
+        // make sure amount for sale is not bigger than the supply if FNFT
         if (
             _amountForSale == 0 || 
-            _amountForSale > initiatorSupply ||
-            _amountForSale % _cap != 0
-        ) revert InvalidAmountForSale();        
-        if (_price == 0) revert InvalidPrice();        
+            _amountForSale > initiatorSupply
+            // _amountForSale % _cap != 0
+        ) revert InvalidAmountForSale();
+        if (_price == 0) revert InvalidPrice();
         if (_cap == 0) revert InvalidCap();
+        // expect ifo duration to be between minimum and maximum durations set by the DAO        
         if (_duration < settings.minimumDuration() || _duration > settings.maximumDuration()) revert InvalidDuration();
+        // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
+        if (_price * fnft.totalSupply() > fnft.userPrices(msg.sender)) revert InvalidReservePrice();
 
         amountForSale = _amountForSale;        
         price = _price;
@@ -267,8 +269,7 @@ contract IFO is OwnableUpgradeable {
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
 
-    // @notice approve fNFT usage by other contracts, such as CreatorFNFTUtility
-    
+    // @notice approve fNFT usage by creator utility contract
     function approve(address _recipient) public onlyOwner {
         if (!ended) revert SaleActive();
         if (msg.sender != settings.creatorUtilityContract()) revert NotAdmin();

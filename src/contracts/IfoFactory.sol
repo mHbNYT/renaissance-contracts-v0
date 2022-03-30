@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./InitializedProxy.sol";
-import "./Settings.sol";
 import "./IFO.sol";
+import "./interfaces/IFNFT.sol";
 
 contract IFOFactory is Ownable, Pausable {
   /// @notice the number of ERC721 vaults
@@ -21,10 +21,9 @@ contract IFOFactory is Ownable, Pausable {
   /// @notice the TokenVault logic contract
   address public immutable logic;
 
-  mapping(address => address) public ifo;
-
   event IfoCreated(
-    address _fNFT,
+    address _IFO,
+    address _FNFT,
     uint256 _amountForSale,
     uint256 _price,
     uint256 _cap,
@@ -39,41 +38,38 @@ contract IFOFactory is Ownable, Pausable {
   }
 
   /// @notice the function to create a ifo
-  /// @param _fNFT the desired name of the vault
+  /// @param _FNFT the desired name of the vault
   /// @param _amountForSale the desired sumbol of the vault
   /// @param _price the ERC721 token address fo the NFT
   /// @param _cap the uint256 ID of the token
   /// @param _allowWhitelisting the initial price of the NFT
   function create(
-    address _fNFT,
+    address _FNFT,
     uint256 _amountForSale,
     uint256 _price,
     uint256 _cap,
     bool _allowWhitelisting
   ) external whenNotPaused {
-      if ( ifo[_fNFT] == address(0) ) revert AlreadyExists();
-
     bytes memory _initializationCalldata =
       abi.encodeWithSignature(
         "initialize(address,uint256,uint256,uint256,bool)",
-        _fNFT,
+        _FNFT,
         _amountForSale,
         _price,
         _cap,
         _allowWhitelisting
     );
 
-    address _ifo = address(
+    address _IFO = address(
       new InitializedProxy(
         logic,
         _initializationCalldata
       )
     );
 
-    ifo[_fNFT] = _ifo;
-
     emit IfoCreated(
-        _fNFT,
+        _IFO,
+        _FNFT,
         _amountForSale,
         _price,
         _cap,

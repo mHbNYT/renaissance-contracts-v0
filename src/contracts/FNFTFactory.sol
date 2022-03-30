@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import "./InitializedProxy.sol";
-import "./Settings.sol";
 import "./FNFT.sol";
 
 contract FNFTFactory is Ownable, Pausable {
@@ -20,13 +19,14 @@ contract FNFTFactory is Ownable, Pausable {
 
   /// @notice a settings contract controlled by governance
   address public immutable settings;
+  
   /// @notice the TokenVault logic contract
   address public immutable logic;
 
   event Mint(address indexed token, uint256 id, uint256 price, address vault, uint256 vaultId);
 
   constructor(address _settings) {
-    settings = _settings;
+    settings = _settings;    
     logic = address(new FNFT(_settings));
   }
 

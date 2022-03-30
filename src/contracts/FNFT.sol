@@ -47,8 +47,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     address payable public winning;
 
     enum State {
-        inactive,
-        presale,
+        inactive,        
         live,
         ended,
         redeemed
@@ -66,6 +65,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the address who initially deposited the NFT
     address public curator;
 
+    ///
+
     /// @notice the AUM fee paid to the curator yearly. 3 decimals. ie. 100 = 10%
     uint256 public fee;
 
@@ -77,6 +78,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice the number of ownership tokens voting on the reserve price at any given time
     uint256 public votingTokens;
+
+    /// @notice initial price of NFT set by curator on creation
+    uint256 public initialReserve;
 
     /// @notice a mapping of users to their desired token price
     mapping(address => uint256) public userPrices;
@@ -121,7 +125,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 _listPrice,
         uint256 _fee,
         string memory _name,
-        string memory _symbol
+        string memory _symbol        
     ) external initializer {
         // initialize inherited contracts
         __ERC20_init(_name, _symbol);
@@ -134,7 +138,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         fee = _fee;
         lastClaimed = block.timestamp;
         auctionState = State.inactive;
-        userPrices[_curator] = _listPrice;
+        initialReserve = _listPrice;   
 
         _mint(_curator, _supply);
     }
@@ -264,6 +268,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
+            _validateUserPrice(initialReserve, _new);
+
             votingTokens = weight;
             reserveTotal = weight * _new;
         }
@@ -275,10 +281,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else if (old == 0) {
             uint256 averageReserve = reserveTotal / votingTokens;
 
-            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-            require(_new >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-            require(_new <= reservePriceMax, "update:reserve price too high");
+            _validateUserPrice(averageReserve, _new);
 
             votingTokens += weight;
             reserveTotal += weight * _new;
@@ -292,10 +295,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else {
             uint256 averageReserve = (reserveTotal - (old * weight)) / (votingTokens - weight);
 
-            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-            require(_new >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-            require(_new <= reservePriceMax, "update:reserve price too high");
+            _validateUserPrice(averageReserve, _new);
 
             reserveTotal = reserveTotal + (weight * _new) - (weight * old);
         }
@@ -303,6 +303,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         userPrices[msg.sender] = _new;
 
         emit PriceUpdate(msg.sender, _new);
+    }
+
+    /// @notice makes sure that the new price does not impact the reserve drastically
+    function _validateUserPrice(uint256 _reserve, uint256 _new) private {
+        uint256 reservePriceMin = (_reserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
+        require(_new >= reservePriceMin, "update:reserve price too low");
+        uint256 reservePriceMax = (_reserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
+        require(_new <= reservePriceMax, "update:reserve price too high");
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
