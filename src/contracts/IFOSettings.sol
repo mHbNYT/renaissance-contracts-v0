@@ -7,34 +7,34 @@ import "./interfaces/IIFOSettings.sol";
 contract IFOSettings is Ownable, IIFOSettings {
     /// @notice the boolean whether creator should have access to the creator's fNFT shares after IFO
     bool public override creatorIFOLock;
-    uint public override minimumDuration;
-    uint public override maximumDuration;
+    uint256 public override minimumDuration;
+    uint256 public override maximumDuration;
     address public override creatorUtilityContract;
 
     event UpdateCreatorIFOLock(bool _lock);
-    event UpdateMinimumDuration(uint _blocks);
-    event UpdateMaximumDuration(uint _blocks);
+    event UpdateMinimumDuration(uint256 _blocks);
+    event UpdateMaximumDuration(uint256 _blocks);
     event UpdateCreatorUtilityContract(address _utility);
 
     constructor() {
         creatorIFOLock = false;
         minimumDuration = 86400; // 1 day;
-        maximumDuration = 7776000; // 90 days;        
+        maximumDuration = 7776000; // 90 days;
     }
 
-    function setCreatorIFOLock(bool  _lock) external onlyOwner {
+    function setCreatorIFOLock(bool _lock) external onlyOwner {
         emit UpdateCreatorIFOLock(_lock);
 
         creatorIFOLock = _lock;
     }
 
-    function setMinimumDuration(uint _blocks) external onlyOwner {
+    function setMinimumDuration(uint256 _blocks) external onlyOwner {
         emit UpdateMinimumDuration(_blocks);
 
         minimumDuration = _blocks;
     }
 
-    function setMaximumDuration(uint _blocks) external onlyOwner {
+    function setMaximumDuration(uint256 _blocks) external onlyOwner {
         emit UpdateMaximumDuration(_blocks);
 
         maximumDuration = _blocks;

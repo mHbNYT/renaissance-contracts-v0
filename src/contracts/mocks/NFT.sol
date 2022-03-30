@@ -14,7 +14,7 @@ contract MockNFT is ERC721, Ownable {
         _tokenIdCounter.increment();
     }
 
-  function mint(address _to, uint256 _id) external {
-    _mint(_to, _id);
-  }
+    function mint(address _to, uint256 _id) external {
+        _mint(_to, _id);
+    }
 }

@@ -45,27 +45,27 @@ library BitMath {
         require(x > 0, "BitMath::leastSignificantBit: zero");
 
         r = 255;
-        if (x & type(uint).max > 0) {
+        if (x & type(uint256).max > 0) {
             r -= 128;
         } else {
             x >>= 128;
         }
-        if (x & type(uint).max > 0) {
+        if (x & type(uint256).max > 0) {
             r -= 64;
         } else {
             x >>= 64;
         }
-        if (x & type(uint).max > 0) {
+        if (x & type(uint256).max > 0) {
             r -= 32;
         } else {
             x >>= 32;
         }
-        if (x & type(uint).max > 0) {
+        if (x & type(uint256).max > 0) {
             r -= 16;
         } else {
             x >>= 16;
         }
-        if (x & type(uint).max > 0) {
+        if (x & type(uint256).max > 0) {
             r -= 8;
         } else {
             x >>= 8;

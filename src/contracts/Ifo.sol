@@ -25,15 +25,15 @@ contract IFO is OwnableUpgradeable {
     }
 
     IIFOSettings public immutable settings;
-    
+
     IERC20 public FNFT; // fNFT the ifo contract sells
     IERC20 public ETH; // for user deposits
     uint256 public amountForSale; // amount of fNFT for sale
     uint256 public price; // initial price per fNFT
     uint256 public cap; // cap per user
     uint256 public totalRaised; // total ETH raised by sale
-    uint256 public totalSold; // total fNFT sold by sale    
-    
+    uint256 public totalSold; // total fNFT sold by sale
+
     uint256 public duration; // ifo duration
     uint256 public startBlock; // block started
     uint256 public pauseBlock; // block paused
@@ -53,12 +53,12 @@ contract IFO is OwnableUpgradeable {
     event Mint(address token, address indexed who, uint256 amount);
     event SaleStarted(uint256 block);
     event SaleEnded(uint256 block);
-    event AdminProfitWithdrawal(address _FNFT, uint256 _amount);        
+    event AdminProfitWithdrawal(address _FNFT, uint256 _amount);
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);
-    event LiquidityAdded(uint amountToken, uint amountETH, uint liquidity);
-    event LiquidityRemoved(uint amountToken, uint amountETH, uint liquidity);
-    
+    event LiquidityAdded(uint256 amountToken, uint256 amountETH, uint256 liquidity);
+    event LiquidityRemoved(uint256 amountToken, uint256 amountETH, uint256 liquidity);
+
     error InvalidAddress();
     error NotOwner();
     error InvalidAmountForSale();
@@ -71,7 +71,7 @@ contract IFO is OwnableUpgradeable {
     error TooManyWhitelists();
     error SaleAlreadyStarted();
     error SaleUnstarted();
-    error SaleAlreadyEnded();    
+    error SaleAlreadyEnded();
     error DeadlineActive();
     error SaleActive();
     error TxFailed();
@@ -94,23 +94,22 @@ contract IFO is OwnableUpgradeable {
         bool _allowWhitelisting
     ) external initializer {
         // initialize inherited contracts
-         __Ownable_init();
+        __Ownable_init();
         // set storage variables
         if (_FNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_FNFT);
-        IFNFT fnft = IFNFT( address(FNFT) );
-        uint initiatorSupply = fnft.balanceOf(msg.sender);
+        IFNFT fnft = IFNFT(address(FNFT));
+        uint256 initiatorSupply = fnft.balanceOf(msg.sender);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
         if (initiatorSupply <= fnft.totalSupply()) revert NotOwner();
         // make sure amount for sale is not bigger than the supply if FNFT
         if (
-            _amountForSale == 0 || 
-            _amountForSale > initiatorSupply
+            _amountForSale == 0 || _amountForSale > initiatorSupply
             // _amountForSale % _cap != 0
         ) revert InvalidAmountForSale();
         if (_price == 0) revert InvalidPrice();
         if (_cap == 0) revert InvalidCap();
-        // expect ifo duration to be between minimum and maximum durations set by the DAO        
+        // expect ifo duration to be between minimum and maximum durations set by the DAO
         if (_duration < settings.minimumDuration() || _duration > settings.maximumDuration()) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         if (_price * fnft.totalSupply() > fnft.userPrices(msg.sender)) revert InvalidReservePrice();
@@ -118,7 +117,7 @@ contract IFO is OwnableUpgradeable {
         amountForSale = _amountForSale;
         price = _price;
         cap = _cap;
-        allowWhitelisting = _allowWhitelisting;        
+        allowWhitelisting = _allowWhitelisting;
         duration = _duration;
 
         FNFT.safeTransferFrom(msg.sender, address(this), initiatorSupply);
@@ -133,7 +132,7 @@ contract IFO is OwnableUpgradeable {
 
     //* @notice modifer to check if contract is paused
     modifier checkPaused() {
-        if (paused) revert ContractPaused();        
+        if (paused) revert ContractPaused();
         _;
     }
 
@@ -180,13 +179,13 @@ contract IFO is OwnableUpgradeable {
         if (ended) revert SaleAlreadyEnded();
 
         startBlock = block.number;
-        
+
         started = true;
         emit SaleStarted(block.number);
     }
 
     // @notice lets owner pause contract
-    function togglePause() external onlyOwner returns (bool){
+    function togglePause() external onlyOwner returns (bool) {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
 
@@ -196,12 +195,12 @@ contract IFO is OwnableUpgradeable {
         } else {
             pauseBlock = block.number;
             paused = true;
-        }        
+        }
         return paused;
     }
 
     // @notice Ends the sale
-    function end() public onlyOwner checkPaused {        
+    function end() public onlyOwner checkPaused {
         if (!started) revert SaleUnstarted();
         if (
             block.number < startBlock + duration || // If not past duration
@@ -258,13 +257,11 @@ contract IFO is OwnableUpgradeable {
 
     function adminWithdrawFNFT() external checkDeadline onlyOwner {
         if (!ended) revert SaleActive();
-        if (
-            settings.creatorIFOLock() && 
-            IFNFT(address(FNFT)).auctionState() != uint(FNFTState.redeemed)
-        ) revert FNFTLocked();
+        if (settings.creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.redeemed))
+            revert FNFTLocked();
 
-        uint fNFTBalance = IFNFT( address(FNFT) ).balanceOf(address(this));
-        FNFT.safeTransfer( address(msg.sender), fNFTBalance);
+        uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
+        FNFT.safeTransfer(address(msg.sender), fNFTBalance);
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }

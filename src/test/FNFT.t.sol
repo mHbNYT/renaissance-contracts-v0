@@ -11,7 +11,6 @@ import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
 
-
 /// @author Nibble Market
 /// @title Tests for the vaults
 contract FNFTTest is DSTest, ERC721Holder {

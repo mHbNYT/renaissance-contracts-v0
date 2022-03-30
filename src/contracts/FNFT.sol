@@ -285,7 +285,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
-            _validateUserPrice(initialReserve, newUserReserve); //TODO test?
+            _validateUserPrice(initialReserve, newUserReserve); // TODO test?
 
             votingTokens = weight;
             reserveTotal = weight * newUserReserve;
