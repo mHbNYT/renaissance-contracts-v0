@@ -48,7 +48,7 @@ contract FNFTTest is DSTest, ERC721Holder {
         token.setApprovalForAll(address(factory), true);
         factory.mint("testName", "TEST", address(token), 1, 100 ether, 1 ether, 50);
 
-        fNFT = FNFT(factory.vaults(0));
+        fNFT = FNFT(factory.fnfts(0));
 
         // create a curator account
         curator = new Curator(address(factory));
@@ -324,7 +324,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50);
 
-        fNFT = FNFT(factory.vaults(1));
+        fNFT = FNFT(factory.fnfts(1));
 
         assertEq(fNFT.votingTokens(), 0);
     }
@@ -334,7 +334,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50);
 
-        fNFT = FNFT(factory.vaults(1));
+        fNFT = FNFT(factory.fnfts(1));
 
         User userTemp = new User(address(fNFT));
 

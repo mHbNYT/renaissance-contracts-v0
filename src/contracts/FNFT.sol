@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "./FNFTSettings.sol";
 
+import "./FNFTSettings.sol";
 import "./interfaces/IWETH.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -61,6 +62,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the address who initially deposited the NFT
     address public curator;
 
+    ///
+
     /// @notice the AUM fee paid to the curator yearly. 3 decimals. ie. 100 = 10%
     uint256 public fee;
 
@@ -73,11 +76,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the number of ownership tokens voting on the reserve price at any given time
     uint256 public votingTokens;
 
-    /// @notice a mapping of users to their desired token price
-    mapping(address => uint256) public userReservePrice;
-
     /// @notice initial price of NFT set by curator on creation
     uint256 public initialReserve;
+
+    /// @notice a mapping of users to their desired token price
+    mapping(address => uint256) public userReservePrice;
 
     /// ------------------------
     /// -------- EVENTS --------
@@ -282,6 +285,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
+            _validateUserPrice(initialReserve, newUserReserve); //TODO test?
+
             votingTokens = weight;
             reserveTotal = weight * newUserReserve;
         }
@@ -293,10 +298,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else if (previousUserReserve == 0) {
             uint256 averageReserve = reserveTotal / votingTokens;
 
-            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-            require(newUserReserve >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-            require(newUserReserve <= reservePriceMax, "update:reserve price too high");
+            _validateUserPrice(averageReserve, newUserReserve);
 
             votingTokens += weight;
             reserveTotal += weight * newUserReserve;
@@ -310,10 +312,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         else {
             uint256 averageReserve = (reserveTotal - (previousUserReserve * weight)) / (votingTokens - weight);
 
-            uint256 reservePriceMin = (averageReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-            require(newUserReserve >= reservePriceMin, "update:reserve price too low");
-            uint256 reservePriceMax = (averageReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-            require(newUserReserve <= reservePriceMax, "update:reserve price too high");
+            _validateUserPrice(averageReserve, newUserReserve);
 
             reserveTotal = reserveTotal + (weight * newUserReserve) - (weight * previousUserReserve);
         }
@@ -321,6 +320,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         userReservePrice[msg.sender] = newUserReserve;
 
         emit PriceUpdate(msg.sender, newUserReserve);
+    }
+
+    /// @notice makes sure that the new price does not impact the reserve drastically
+    function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private {
+        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
+        require(newUserReserve >= reservePriceMin, "update:reserve price too low");
+        uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
+        require(newUserReserve <= reservePriceMax, "update:reserve price too high");
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
