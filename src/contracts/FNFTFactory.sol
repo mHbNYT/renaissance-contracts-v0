@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import "./InitializedProxy.sol";
-import "./Settings.sol";
-import "./ERC721TokenVault.sol";
+import "./FNFTSettings.sol";
+import "./FNFT.sol";
 
-contract ERC721VaultFactory is Ownable, Pausable {
+contract FNFTFactory is Ownable, Pausable {
   /// @notice the number of ERC721 vaults
   uint256 public vaultCount;
 
@@ -27,7 +27,7 @@ contract ERC721VaultFactory is Ownable, Pausable {
 
   constructor(address _settings) {
     settings = _settings;
-    logic = address(new TokenVault(_settings));
+    logic = address(new FNFT(_settings));
   }
 
   /// @notice the function to mint a new vault

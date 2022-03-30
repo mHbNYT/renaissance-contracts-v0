@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.11;
+import {IPriceOracle} from "./IPriceOracle.sol";
+import {IWETH} from "./IWETH.sol";
 
-import {IPriceOracle} from "../PriceOracle.sol";
-
-interface ISettings {
-    function WETH() external returns (address);
-
+interface IFNFTSettings {
     function priceOracle() external returns (IPriceOracle);
+
+    function WETH() external returns (IWETH);
 
     function maxAuctionLength() external returns (uint256);
 

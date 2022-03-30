@@ -7,22 +7,7 @@ import "./libraries/UniswapV2Library.sol";
 import "./libraries/math/FixedPoint.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface IPriceOracle {
-    // function getTwap(address _pair) external returns (PriceOracle.PairInfo memory pairInfo);
-
-    function updatePairInfo(address _pair) external;
-
-    function updatefNFTTWAP(address fNFT) external;
-
-    function consult(
-        address _token,
-        address _pair,
-        uint256 _amountIn
-    ) external view returns (uint256 amountOut);
-
-    function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut);
-}
+import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
 
 contract PriceOracle is IPriceOracle, Ownable {
     using FixedPoint for *;

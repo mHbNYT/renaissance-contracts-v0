@@ -2,11 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/ISettings.sol";
+import "./interfaces/IFNFTSettings.sol";
 import {IPriceOracle} from "./PriceOracle.sol";
+import {IWETH} from "./interfaces/IWETH.sol";
 
-contract Settings is Ownable, ISettings {
-    address public WETH;
+contract FNFTSettings is Ownable, IFNFTSettings {
+    IWETH public WETH;
 
     IPriceOracle public priceOracle;
 
@@ -73,7 +74,7 @@ contract Settings is Ownable, ISettings {
     event UpdateFeeReceiver(address _old, address _new);
 
     constructor(address _weth, address _priceOracle) {
-        WETH = _weth;
+        WETH = IWETH(_weth);
         priceOracle = IPriceOracle(_priceOracle);
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
