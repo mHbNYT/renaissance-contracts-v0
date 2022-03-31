@@ -45,9 +45,8 @@ contract FNFTTest is DSTest, ERC721Holder {
         token.mint(address(this), 1);
 
         token.setApprovalForAll(address(factory), true);
-        factory.mint("testName", "TEST", address(token), 1, 100 ether, 1 ether, 50);
 
-        fNFT = FNFT(factory.fnfts(0));
+        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 1, 100 ether, 1 ether, 50));
 
         // create a curator account
         curator = new Curator(address(factory));
@@ -321,9 +320,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testListPriceZero() public {
         token.mint(address(this), 2);
 
-        factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50);
-
-        fNFT = FNFT(factory.fnfts(1));
+        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
         assertEq(fNFT.votingTokens(), 0);
     }
@@ -331,9 +328,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testFail_listPriceZeroNoAuction() public {
         token.mint(address(this), 2);
 
-        factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50);
-
-        fNFT = FNFT(factory.fnfts(1));
+        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
         User userTemp = new User(address(fNFT));
 
