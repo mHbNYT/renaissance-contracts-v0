@@ -86,6 +86,7 @@ contract IFO is OwnableUpgradeable {
     }
 
     function initialize(
+        address _fractionalizer,
         address _FNFT,
         uint256 _amountForSale,
         uint256 _price,
@@ -99,12 +100,12 @@ contract IFO is OwnableUpgradeable {
         if (_FNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_FNFT);
         IFNFT fnft = IFNFT(address(FNFT));
-        uint256 initiatorSupply = fnft.balanceOf(msg.sender);
+        uint256 fractionalizerSupply = fnft.balanceOf(_fractionalizer);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (initiatorSupply < fnft.totalSupply()) revert NotOwner(initiatorSupply);
+        if (fractionalizerSupply < fnft.totalSupply()) revert NotOwner(fractionalizerSupply);
         // make sure amount for sale is not bigger than the supply if FNFT
         if (
-            _amountForSale == 0 || _amountForSale > initiatorSupply
+            _amountForSale == 0 || _amountForSale > fractionalizerSupply
             // _amountForSale % _cap != 0
         ) revert InvalidAmountForSale();
         if (_price == 0) revert InvalidPrice();
@@ -121,7 +122,7 @@ contract IFO is OwnableUpgradeable {
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;
 
-        FNFT.safeTransferFrom(msg.sender, address(this), initiatorSupply);
+        FNFT.safeTransferFrom(_fractionalizer, address(this), fractionalizerSupply);
     }
 
     modifier checkDeadline() {

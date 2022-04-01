@@ -51,9 +51,9 @@ contract IFOFactory is Ownable, Pausable {
         bool _allowWhitelisting
     ) external whenNotPaused {
         if (getIFO[_FNFT] != address(0)) revert IFOExists(_FNFT);
-
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             IFO.initialize.selector,
+            msg.sender,
             _FNFT,
             _amountForSale,
             _price,
@@ -62,11 +62,6 @@ contract IFOFactory is Ownable, Pausable {
             _allowWhitelisting
         );
 
-        address ifoAddress = predictIFOAddress(_FNFT, _amountForSale, _price, _cap, _duration, _allowWhitelisting);
-
-        IERC20(_FNFT).transferFrom(msg.sender, address(this), _amountForSale);
-        IERC20(_FNFT).approve(ifoAddress, _amountForSale);
-
         address _IFO = address(new InitializedProxy{salt: bytes32(IFO_SALT)}(logic, _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
@@ -74,6 +69,7 @@ contract IFOFactory is Ownable, Pausable {
     }
 
     function predictIFOAddress(
+        address _fractionalizer,
         address _FNFT,
         uint256 _amountForSale,
         uint256 _price,
@@ -83,6 +79,7 @@ contract IFOFactory is Ownable, Pausable {
     ) public view returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             IFO.initialize.selector,
+            _fractionalizer,
             _FNFT,
             _amountForSale,
             _price,
