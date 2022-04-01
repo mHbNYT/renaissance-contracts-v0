@@ -60,12 +60,12 @@ contract IFO is OwnableUpgradeable {
     event LiquidityRemoved(uint256 amountToken, uint256 amountETH, uint256 liquidity);
 
     error InvalidAddress();
-    error NotOwner();
+    error NotOwner(uint256 _amount);
     error InvalidAmountForSale();
     error InvalidPrice();
     error InvalidCap();
     error InvalidDuration();
-    error InvalidReservePrice();
+    error InvalidReservePrice(uint256 proposedPrice);
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();
@@ -101,7 +101,7 @@ contract IFO is OwnableUpgradeable {
         IFNFT fnft = IFNFT(address(FNFT));
         uint256 initiatorSupply = fnft.balanceOf(msg.sender);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (initiatorSupply <= fnft.totalSupply()) revert NotOwner();
+        if (initiatorSupply < fnft.totalSupply()) revert NotOwner(initiatorSupply);
         // make sure amount for sale is not bigger than the supply if FNFT
         if (
             _amountForSale == 0 || _amountForSale > initiatorSupply
@@ -112,7 +112,8 @@ contract IFO is OwnableUpgradeable {
         // expect ifo duration to be between minimum and maximum durations set by the DAO
         if (_duration < settings.minimumDuration() || _duration > settings.maximumDuration()) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
-        if (_price * fnft.totalSupply() > fnft.userPrices(msg.sender)) revert InvalidReservePrice();
+        //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
+        if ((_price * fnft.totalSupply()) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
 
         amountForSale = _amountForSale;
         price = _price;

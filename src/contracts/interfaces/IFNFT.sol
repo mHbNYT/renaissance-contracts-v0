@@ -8,5 +8,7 @@ interface IFNFT {
 
     function auctionState() external returns (uint256);
 
-    function userPrices(address _user) external returns (uint256);
+    function initialReserve() external returns (uint256);
+
+    function userReservePrice(address _user) external returns (uint256);
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "ds-test/test.sol";
 
 import {IFNFTSettings, FNFTSettings} from "../contracts/FNFTSettings.sol";
+import {IIFOSettings, IFOSettings} from "../contracts/IFOSettings.sol";
 import {IPriceOracle} from "../contracts/interfaces/IPriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
@@ -21,11 +22,11 @@ contract IFOTest is DSTest, ERC721Holder {
     FNFTFactory public fnftFactory;
     IFOFactory public ifoFactory;
     FNFTSettings public fNFTSettings;
+    IFOSettings public ifoSettings;
     WETH public weth;
     IPriceOracle public priceOracle;
     MockNFT public nft;
-    FNFT public fnft;
-    IFO public ifo;
+    FNFT public fractionalizedNFT;
 
     User public user1;
     User public user2;
@@ -41,24 +42,36 @@ contract IFOTest is DSTest, ERC721Holder {
         fNFTSettings = new FNFTSettings(address(weth), address(priceOracle));
         fNFTSettings.setGovernanceFee(10);
 
+        ifoSettings = new IFOSettings();
+
         fnftFactory = new FNFTFactory(address(fNFTSettings));
-        ifoFactory = new IFOFactory(address(fNFTSettings));
+        ifoFactory = new IFOFactory(address(ifoSettings));
 
         nft = new MockNFT();
 
         nft.mint(address(this), 1);
 
         nft.setApprovalForAll(address(fnftFactory), true);
-        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(nft), 1, 100e18, 100 ether, 50));
+        fractionalizedNFT = FNFT(
+            fnftFactory.mint(
+                "testName",
+                "TEST",
+                address(nft),
+                1, // tokenId
+                1000e18, //supply: minted to the fractionalizer
+                20 ether, // listPrice: the initial reserve price
+                50 // the % * 10 fee minted to the fractionalizer anually
+            )
+        );
 
         // create a curator account
         curator = new Curator(address(fnftFactory));
 
         // create 3 users and provide funds through HEVM store
-        user1 = new User(address(fnft));
-        user2 = new User(address(fnft));
-        user3 = new User(address(fnft));
-        user4 = new UserNoETH(address(fnft));
+        user1 = new User(address(fractionalizedNFT));
+        user2 = new User(address(fractionalizedNFT));
+        user3 = new User(address(fractionalizedNFT));
+        user4 = new UserNoETH(address(fractionalizedNFT));
 
         payable(address(user1)).transfer(10 ether);
         payable(address(user2)).transfer(10 ether);
@@ -67,15 +80,38 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testPause() public {
-        // ifoFactory.pause();
-        // ifoFactory.unpause();
-        // fnft.transfer(address(ifoFactory), 10 ether);
-        // ifoFactory.create(address(fnft), 100 ether, 1 ether, 1 ether, false);
+        ifoFactory.pause();
+        ifoFactory.unpause();
+    }
+
+    function testCreateIfo() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            1e18, // max amount someone can buy
+            30 days, //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
+
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), fractionalizedNFT.totalSupply());
+        assertEq(fNFTIfo.duration(), 30 days);
+        // assertEq(fNFTIfo.owner(), address(this));
     }
 
     function testCannotCreateWhenPaused() public {
-        //     // ifoFactory.pause();
-        //     // vm.expectRevert(bytes("Pausable: paused"));
-        //     ifoFactory.create(address(fnft), 100e18, 1 ether, 1 ether, false);
+        ifoFactory.pause();
+        uint256 thisBalance = fractionalizedNFT.balanceOf(address(this));
+        vm.expectRevert(bytes("Pausable: paused"));
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            thisBalance, //amountForSale
+            0.02 ether, //price per token
+            1e18, // max amount someone can buy
+            30 days, //sale duration
+            false // allow whitelist
+        );
     }
 }
