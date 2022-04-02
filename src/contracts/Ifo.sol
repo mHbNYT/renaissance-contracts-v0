@@ -57,7 +57,7 @@ contract IFO is OwnableUpgradeable {
     event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
 
     error InvalidAddress();
-    error NotOwner(uint256 _amount);
+    error NotEnoughSupply();
     error InvalidAmountForSale();
     error InvalidPrice();
     error InvalidCap();
@@ -99,7 +99,7 @@ contract IFO is OwnableUpgradeable {
         IFNFT fnft = IFNFT(address(FNFT));
         uint256 fractionalizerSupply = fnft.balanceOf(_fractionalizer);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (fractionalizerSupply < fnft.totalSupply()) revert NotOwner(fractionalizerSupply);
+        if (fractionalizerSupply < fnft.totalSupply()) revert NotEnoughSupply();
         // make sure amount for sale is not bigger than the supply if FNFT
         if (
             _amountForSale == 0 || _amountForSale > fractionalizerSupply
@@ -117,9 +117,7 @@ contract IFO is OwnableUpgradeable {
         price = _price;
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
-        duration = _duration;
-
-        FNFT.safeTransferFrom(_fractionalizer, address(this), fractionalizerSupply);
+        duration = _duration;        
     }
 
     modifier checkDeadline() {
@@ -176,6 +174,7 @@ contract IFO is OwnableUpgradeable {
     function start() external onlyOwner {
         if (started) revert SaleAlreadyStarted();
         if (ended) revert SaleAlreadyEnded();
+        if (FNFT.balanceOf(address(this)) < FNFT.totalSupply()) revert NotEnoughSupply();
 
         startBlock = block.number;
 
