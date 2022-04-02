@@ -18,11 +18,13 @@ struct PairInfo {
 }
 
 interface IPriceOracle {
-    function getTwap(address _pair) external view returns (PairInfo memory);
+    function getPairInfo(address _token0, address _token1) external view returns (PairInfo memory);
 
-    function updatePairInfo(address _pair) external;
+    function getPairInfo(address _pair) external view returns (PairInfo memory);
 
-    function updatefNFTTWAP(address fNFT) external;
+    function updatePairInfo(address _token0, address _token1) external;
+
+    function updatefNFTPairInfo(address _fNFT) external;
 
     function consult(
         address _token,
@@ -33,4 +35,10 @@ interface IPriceOracle {
     function getPairAddress(address _token0, address _token1) external view returns (address pairAddress);
 
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut);
+
+    function WETH() external view returns (address);
+
+    function period() external view returns (uint256);
+    
+    function minimumPairInfoUpdate() external view returns (uint256);
 }

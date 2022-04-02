@@ -4,9 +4,9 @@ import {IPriceOracle} from "./IPriceOracle.sol";
 import {IWETH} from "./IWETH.sol";
 
 interface IFNFTSettings {
-    function priceOracle() external returns (IPriceOracle);
+    function priceOracle() external returns (address);
 
-    function WETH() external returns (IWETH);
+    function WETH() external returns (address);
 
     function maxAuctionLength() external returns (uint256);
 

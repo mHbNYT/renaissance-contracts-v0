@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "../math/SafeMath.sol";
+import "../../../contracts/libraries/math/SafeMath.sol";
 
 interface IUniswapV2ERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);

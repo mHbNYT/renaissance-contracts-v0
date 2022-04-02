@@ -5,3 +5,4 @@ import "./cheatcodes.sol";
 import "./console.sol";
 import "./setupTests.sol";
 import "./user.sol";
+import "./pair.sol";

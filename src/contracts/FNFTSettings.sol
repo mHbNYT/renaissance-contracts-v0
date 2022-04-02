@@ -3,13 +3,12 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IFNFTSettings.sol";
-import {IPriceOracle} from "./PriceOracle.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 
 contract FNFTSettings is Ownable, IFNFTSettings {
-    IWETH public WETH;
+    address public WETH;
 
-    IPriceOracle public priceOracle;
+    address public priceOracle;
 
     /// @notice the maximum auction length
     uint256 public override maxAuctionLength;
@@ -97,8 +96,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     error MultiplierTooLow();
 
     constructor(address _weth, address _priceOracle) {
-        WETH = IWETH(_weth);
-        priceOracle = IPriceOracle(_priceOracle);
+        WETH = _weth;
+        priceOracle = _priceOracle;
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
         feeReceiver = payable(msg.sender);
@@ -112,8 +111,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setPriceOracle(address _newOracle) external onlyOwner {
-        emit UpdatePriceOracle(address(priceOracle), _newOracle);
-        priceOracle = IPriceOracle(_newOracle);
+        emit UpdatePriceOracle(priceOracle, _newOracle);
+        priceOracle = _newOracle;
     }
 
     function setMaxAuctionLength(uint256 _length) external onlyOwner {

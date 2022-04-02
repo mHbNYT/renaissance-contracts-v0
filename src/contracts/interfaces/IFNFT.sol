@@ -11,4 +11,10 @@ interface IFNFT {
     function initialReserve() external returns (uint256);
 
     function userReservePrice(address _user) external returns (uint256);
+
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    function transfer(address to, uint256 amount) external returns (bool);
+    
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }

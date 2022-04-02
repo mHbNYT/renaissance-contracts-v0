@@ -1,12 +1,11 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity 0.8.11;
 
-import "../interfaces/IUniswapV2Pair.sol";
-import "./math/SafeMath.sol";
+import "../../../contracts/interfaces/IUniswapV2Pair.sol";
+import "../../../contracts/libraries/math/SafeMath.sol";
 
 library UniswapV2Library {
     using SafeMath for uint256;
-
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
         require(tokenA != tokenB, "UniswapV2Library: IDENTICAL_ADDRESSES");
@@ -29,7 +28,7 @@ library UniswapV2Library {
                                 hex"ff",
                                 factory,
                                 keccak256(abi.encodePacked(token0, token1)),
-                                hex"754e1d90e536e4c1df81b7f030f47b4ca80c87120e145c294f098c83a6cb5ace" // init code hash
+                                hex"f857e783ed7736b9ce192c8308b9cbb878f4739b2c7d56888cf8e75db6ab11cf" // init code hash
                             )
                         )
                     )

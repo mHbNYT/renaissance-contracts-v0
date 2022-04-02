@@ -7,6 +7,7 @@ import "ds-test/test.sol";
 import {IFNFTSettings, FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {IIFOSettings, IFOSettings} from "../contracts/IFOSettings.sol";
 import {IPriceOracle} from "../contracts/interfaces/IPriceOracle.sol";
+import {PriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
@@ -38,7 +39,7 @@ contract IFOTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, , priceOracle) = SetupEnvironment.setup();
+        (vm, weth, , priceOracle, , , ) = SetupEnvironment.setup(10 ether, 10 ether);
 
         fNFTSettings = new FNFTSettings(address(weth), address(priceOracle));
         fNFTSettings.setGovernanceFee(10);

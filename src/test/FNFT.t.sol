@@ -8,9 +8,10 @@ import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
+import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
-import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
+import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWithFNFTAndWETH} from "./utils/utils.sol";
 
 /// @author Nibble Market
 /// @title Tests for the vaults
@@ -19,6 +20,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
     WETH public weth;
     IPriceOracle public priceOracle;
+    IUniswapV2Factory public pairFactory;
     FNFTFactory public factory;
     FNFTSettings public settings;
     MockNFT public token;
@@ -29,10 +31,12 @@ contract FNFTTest is DSTest, ERC721Holder {
     User public user3;
     UserNoETH public user4;
 
+    PairWithFNFTAndWETH public pair;
+
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, , priceOracle) = SetupEnvironment.setup();
+        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);
 
         settings = new FNFTSettings(address(weth), address(priceOracle));
 
@@ -46,6 +50,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         token.setApprovalForAll(address(factory), true);
 
+        // FNFT minted on this test contract address.
         fNFT = FNFT(factory.mint("testName", "TEST", address(token), 1, 100 ether, 1 ether, 50));
 
         // create a curator account
@@ -56,7 +61,7 @@ contract FNFTTest is DSTest, ERC721Holder {
         user2 = new User(address(fNFT));
         user3 = new User(address(fNFT));
         user4 = new UserNoETH(address(fNFT));
-
+        
         payable(address(user1)).transfer(10 ether);
         payable(address(user2)).transfer(10 ether);
         payable(address(user3)).transfer(10 ether);
