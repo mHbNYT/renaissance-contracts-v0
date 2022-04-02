@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "ds-test/test.sol";
+import "../../../lib/ds-test/src/test.sol";
 
 import {FNFTFactory, ERC721Holder} from "../../contracts/FNFTFactory.sol";
 import {FNFT} from "../../contracts/FNFT.sol";

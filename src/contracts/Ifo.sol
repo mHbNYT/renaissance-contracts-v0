@@ -48,16 +48,13 @@ contract IFO is OwnableUpgradeable {
     mapping(address => UserInfo) public userInfo;
     mapping(address => bool) public whitelisted; // True if user is whitelisted
 
-    event Deposit(address indexed who, uint256 amount, uint256 payout);
-    event Withdraw(address token, address indexed who, uint256 amount);
-    event Mint(address token, address indexed who, uint256 amount);
-    event SaleStarted(uint256 block);
-    event SaleEnded(uint256 block);
+    event Deposit(address indexed _who, uint256 _amount, uint256 _payout);
+    event SaleStarted(uint256 _block);
+    event SaleEnded(uint256 _block);
+    event PauseTriggered(bool _paused, uint256 _block);
     event AdminProfitWithdrawal(address _FNFT, uint256 _amount);
     event AdminETHWithdrawal(address _eth, uint256 _amount);
-    event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);
-    event LiquidityAdded(uint256 amountToken, uint256 amountETH, uint256 liquidity);
-    event LiquidityRemoved(uint256 amountToken, uint256 amountETH, uint256 liquidity);
+    event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
 
     error InvalidAddress();
     error NotOwner(uint256 _amount);
@@ -198,6 +195,7 @@ contract IFO is OwnableUpgradeable {
             pauseBlock = block.number;
             paused = true;
         }
+        emit PauseTriggered(paused, block.number);
         return paused;
     }
 

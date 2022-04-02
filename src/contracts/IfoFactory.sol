@@ -20,9 +20,9 @@ contract IFOFactory is Ownable, Pausable {
 
     bytes4 public constant IFO_SALT = 0xefefefef;
 
-    event IfoCreated(
-        address _IFO,
-        address _FNFT,
+    event IFOCreated(
+        address indexed _IFO,
+        address indexed _FNFT,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
@@ -65,7 +65,7 @@ contract IFOFactory is Ownable, Pausable {
         address _IFO = address(new InitializedProxy{salt: bytes32(IFO_SALT)}(logic, _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
-        emit IfoCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
+        emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
     }
 
     function predictIFOAddress(
