@@ -2,8 +2,6 @@
 pragma solidity ^0.8.11;
 
 import "./FNFTSettings.sol";
-
-import "./FNFTSettings.sol";
 import "./interfaces/IWETH.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";

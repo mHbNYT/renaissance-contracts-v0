@@ -3,12 +3,11 @@ pragma solidity 0.8.11;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IIFOSettings.sol";
 import "./interfaces/IFNFT.sol";
 
-contract IFO is OwnableUpgradeable {
+contract IFO is Initializable {
     using SafeERC20 for IERC20;
 
     struct UserInfo {
@@ -24,7 +23,7 @@ contract IFO is OwnableUpgradeable {
         redeemed
     }
 
-    IIFOSettings public immutable settings;
+    address public settings;
 
     IERC20 public FNFT; // fNFT the ifo contract sells
     IERC20 public ETH; // for user deposits
@@ -56,6 +55,7 @@ contract IFO is OwnableUpgradeable {
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
 
+    error NotOwner();
     error InvalidAddress();
     error NotEnoughSupply();
     error InvalidAmountForSale();
@@ -76,10 +76,9 @@ contract IFO is OwnableUpgradeable {
     error OverLimit();
     error NoLiquidityProvided();
     error FNFTLocked();
-    error NotAdmin();
 
     constructor(address _settings) {
-        settings = IIFOSettings(_settings);
+        settings = _settings;
     }
     
     function initialize(
@@ -98,8 +97,6 @@ contract IFO is OwnableUpgradeable {
         //If IFO should be governed by whitelists
         bool _allowWhitelisting
     ) external initializer {
-        // initialize inherited contracts
-        __Ownable_init();
         // set storage variables
         if (_FNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_FNFT);
@@ -116,7 +113,7 @@ contract IFO is OwnableUpgradeable {
         if (_price == 0) revert InvalidPrice();
         if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
         // expect ifo duration to be between minimum and maximum durations set by the DAO
-        if (_duration < settings.minimumDuration() || _duration > settings.maximumDuration()) revert InvalidDuration();
+        if (_duration < IIFOSettings(settings).minimumDuration() || _duration > IIFOSettings(settings).maximumDuration()) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
         if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
@@ -126,6 +123,11 @@ contract IFO is OwnableUpgradeable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;        
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != Ownable(settings).owner()) revert NotOwner();
+        _;
     }
 
     /// @notice checks if whitelist period is over and ends whitelist
@@ -146,13 +148,6 @@ contract IFO is OwnableUpgradeable {
     modifier whitelistingAllowed() {
         if (!allowWhitelisting) revert WhitelistingDisallowed();
         _;
-    }
-
-    /** @notice If wrong FNFT
-    *   @param _address: address of FNFT
-    */
-    function updatefNFTAddress(address _address) external onlyOwner {
-        FNFT = IERC20(_address);
     }
 
     /**
@@ -256,6 +251,20 @@ contract IFO is OwnableUpgradeable {
 
     //Managerial
 
+    /** @notice after redeploying settings contract
+        @param _settings: new settings contract
+    */
+    function setSettings(address _settings) external onlyOwner {
+        settings = _settings;
+    }
+
+    /** @notice If wrong FNFT
+    *   @param _address: address of FNFT
+    */
+    function updatefNFTAddress(address _address) external onlyOwner {
+        FNFT = IERC20(_address);
+    }
+
     /// @notice withdraws ETH from sale only after IFO over
     function adminWithdrawProfit() external checkDeadline onlyOwner {
         if (!ended) revert SaleActive();
@@ -270,7 +279,7 @@ contract IFO is OwnableUpgradeable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyOwner {
         if (!ended) revert SaleActive();
-        if (settings.creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.redeemed))
+        if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.redeemed))
             revert FNFTLocked();
 
         uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
@@ -283,7 +292,7 @@ contract IFO is OwnableUpgradeable {
     function approve() public onlyOwner {
         if (!ended) revert SaleActive();        
 
-        FNFT.safeApprove(settings.creatorUtilityContract(), 1e18);
+        FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), 1e18);
     }
 
     //Helper functions
