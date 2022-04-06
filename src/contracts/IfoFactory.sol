@@ -2,34 +2,37 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-
 import "./InitializedProxy.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
+import {console} from "../test/utils/utils.sol";
 
 contract IFOFactory is Ownable, Pausable {
-    /// @notice the number of ERC721 vaults
-    uint256 public vaultCount;
+    using SafeERC20 for IERC20;
 
-    /// @notice the mapping of vault number to vault contract
-    mapping(uint256 => address) public vaults;
+    /// @notice the mapping of fNFT to IFO address
+    mapping(address => address) public getIFO;
 
     /// @notice a settings contract controlled by governance
     address public immutable settings;
+
     /// @notice the TokenVault logic contract
     address public immutable logic;
 
-    event IfoCreated(
-        address _IFO,
-        address _FNFT,
+    bytes4 public constant IFO_SALT = 0xefefefef;
+
+    event IFOCreated(
+        address indexed _IFO,
+        address indexed _FNFT,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
         bool _allowWhitelisting
     );
 
-    error AlreadyExists();
+    error IFOExists(address nft);
 
     constructor(address _ifoSettings) {
         settings = _ifoSettings;
@@ -47,20 +50,27 @@ contract IFOFactory is Ownable, Pausable {
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
+        uint256 _duration,
         bool _allowWhitelisting
     ) external whenNotPaused {
-        bytes memory _initializationCalldata = abi.encodeWithSignature(
-            "initialize(address,uint256,uint256,uint256,bool)",
+        if (getIFO[_FNFT] != address(0)) revert IFOExists(_FNFT);
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            IFO.initialize.selector,
+            msg.sender,
             _FNFT,
             _amountForSale,
             _price,
             _cap,
+            _duration,
             _allowWhitelisting
         );
 
         address _IFO = address(new InitializedProxy(logic, _initializationCalldata));
+        getIFO[_FNFT] = _IFO;
 
-        emit IfoCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
+        IERC20(_FNFT).safeTransferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
+
+        emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
     }
 
     function pause() external onlyOwner {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "ds-test/test.sol";
+import "../../../lib/ds-test/src/test.sol";
 import {CheatCodes} from "./cheatcodes.sol";
 import {WETH} from "../../contracts/mocks/WETH.sol";
 import {PriceOracle} from "../../contracts/PriceOracle.sol";

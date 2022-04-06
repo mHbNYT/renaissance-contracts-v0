@@ -33,7 +33,7 @@ const config: HardhatUserConfig = {
     aurora_testnet: {
       url: process.env.AURORA_TEST_URI,
       chainId: +process.env.AURORA_TEST_CHAINID!,
-      accounts: [`0x${process.env.AURORA_TEST_PRIVATE_KEY}`],
+      accounts: [`${process.env.AURORA_TEST_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000  
@@ -41,7 +41,7 @@ const config: HardhatUserConfig = {
     aurora_mainnet: {
       url: process.env.AURORA_MAIN_URI,
       chainId: +process.env.AURORA_MAIN_CHAINID!,
-      accounts: [`0x${process.env.AURORA_MAIN_PRIVATE_KEY}`],
+      accounts: [`${process.env.AURORA_MAIN_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000
