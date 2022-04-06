@@ -23,9 +23,9 @@ contract FNFTFactory is Ownable, Pausable {
 
     event FNFTCreated(address indexed token, uint256 id, uint256 price, address fNFT, bytes32 fNFTId);
 
-    constructor(address _settings) {
-        settings = _settings;
-        logic = address(new FNFT(_settings));
+    constructor(address _fNFTSettings) {
+        settings = _fNFTSettings;
+        logic = address(new FNFT(_fNFTSettings));
     }
 
     /// @notice the function to mint a fNFT
@@ -44,8 +44,8 @@ contract FNFTFactory is Ownable, Pausable {
         uint256 _listPrice,
         uint256 _fee
     ) external whenNotPaused returns (address) {
-        bytes memory _initializationCalldata = abi.encodeWithSignature(
-            "initialize(address,address,uint256,uint256,uint256,uint256,string,string)",
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            FNFT.initialize.selector,
             msg.sender,
             _nft,
             _tokenId,

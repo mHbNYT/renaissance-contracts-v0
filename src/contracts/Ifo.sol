@@ -6,6 +6,7 @@ import "./interfaces/IFNFT.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {console} from "../test/utils/utils.sol";
 
 contract IFO is Initializable {
     using SafeERC20 for IERC20;
@@ -23,11 +24,7 @@ contract IFO is Initializable {
         redeemed
     }
 
-    address public curator;
-    address public settings;
-
     IERC20 public FNFT; // fNFT the ifo contract sells
-    IERC20 public ETH; // for user deposits
     uint256 public amountForSale; // amount of fNFT for sale
     uint256 public price; // initial price per fNFT
     uint256 public cap; // cap per user
@@ -43,7 +40,8 @@ contract IFO is Initializable {
     bool public ended; // true when sale is ended
     bool public paused; // circuit breaker
 
-    uint256 public liquidity = 0; //liquidity deployed by the creator
+    address public curator;
+    address public immutable settings;
 
     mapping(address => UserInfo) public userInfo;
     mapping(address => bool) public whitelisted; // True if user is whitelisted
@@ -103,22 +101,21 @@ contract IFO is Initializable {
         if (_FNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_FNFT);
         IFNFT fnft = IFNFT(address(FNFT));
-        uint256 fractionalizerSupply = fnft.balanceOf(_curator);
+        uint256 curatorSupply = fnft.balanceOf(_curator);
         uint256 totalSupply = fnft.totalSupply();
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (fractionalizerSupply < totalSupply) revert NotEnoughSupply();
+        if (curatorSupply < totalSupply) revert NotEnoughSupply();
         // make sure amount for sale is not bigger than the supply if FNFT
         if (
-            _amountForSale == 0 || _amountForSale > fractionalizerSupply
+            _amountForSale == 0 || _amountForSale > curatorSupply
             // _amountForSale % _cap != 0
         ) revert InvalidAmountForSale();
-        if (_price == 0) revert InvalidPrice();
         if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
         // expect ifo duration to be between minimum and maximum durations set by the DAO
         if (_duration < IIFOSettings(settings).minimumDuration() || _duration > IIFOSettings(settings).maximumDuration()) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
-        if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
+        // if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
 
         curator = _curator;
         amountForSale = _amountForSale;
@@ -255,15 +252,6 @@ contract IFO is Initializable {
     function getUserRemainingAllocation(address _user) external view returns (uint256) {
         UserInfo memory user = userInfo[_user];
         return cap - user.amount;
-    }
-
-    //Managerial
-
-    /** @notice after redeploying settings contract
-        @param _settings: new settings contract
-    */
-    function setSettings(address _settings) external onlyOwner {
-        settings = _settings;
     }
 
     /** @notice If wrong FNFT

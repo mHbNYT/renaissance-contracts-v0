@@ -52,8 +52,7 @@ contract IFOFactory is Ownable, Pausable {
         uint256 _cap,
         uint256 _duration,
         bool _allowWhitelisting
-    ) external whenNotPaused {
-        if (getIFO[_FNFT] != address(0)) revert IFOExists(_FNFT);
+    ) external whenNotPaused returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             IFO.initialize.selector,
             msg.sender,
@@ -71,6 +70,8 @@ contract IFOFactory is Ownable, Pausable {
         IERC20(_FNFT).safeTransferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
 
         emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
+
+        return _IFO;
     }
 
     function pause() external onlyOwner {
