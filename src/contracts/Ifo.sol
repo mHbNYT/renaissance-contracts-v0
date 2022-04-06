@@ -23,6 +23,7 @@ contract IFO is Initializable {
         redeemed
     }
 
+    address public curator;
     address public settings;
 
     IERC20 public FNFT; // fNFT the ifo contract sells
@@ -56,6 +57,7 @@ contract IFO is Initializable {
     event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
 
     error NotOwner();
+    error NotCurator();
     error InvalidAddress();
     error NotEnoughSupply();
     error InvalidAmountForSale();
@@ -83,7 +85,7 @@ contract IFO is Initializable {
     
     function initialize(
         //original owner
-        address _fractionalizer,
+        address _curator,
         //FNFT address
         address _FNFT,
         //Amount of FNFT for sale in IFO
@@ -101,7 +103,7 @@ contract IFO is Initializable {
         if (_FNFT == address(0)) revert InvalidAddress();
         FNFT = IERC20(_FNFT);
         IFNFT fnft = IFNFT(address(FNFT));
-        uint256 fractionalizerSupply = fnft.balanceOf(_fractionalizer);
+        uint256 fractionalizerSupply = fnft.balanceOf(_curator);
         uint256 totalSupply = fnft.totalSupply();
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
         if (fractionalizerSupply < totalSupply) revert NotEnoughSupply();
@@ -118,11 +120,17 @@ contract IFO is Initializable {
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
         if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
 
+        curator = _curator;
         amountForSale = _amountForSale;
         price = _price;
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;        
+    }
+
+    modifier onlyCurator() {
+        if (msg.sender != curator) revert NotCurator();
+        _;
     }
 
     modifier onlyOwner() {
@@ -154,7 +162,7 @@ contract IFO is Initializable {
      *  @notice adds a single whitelist to the sale
      *  @param _address: address to whitelist
      */
-    function addWhitelist(address _address) external onlyOwner whitelistingAllowed {
+    function addWhitelist(address _address) external onlyCurator whitelistingAllowed {
         whitelisted[_address] = true;
     }
 
@@ -162,7 +170,7 @@ contract IFO is Initializable {
      *  @notice adds multiple whitelist to the sale
      *  @param _addresses: dynamic array of addresses to whitelist
      */
-    function addMultipleWhitelists(address[] calldata _addresses) external onlyOwner whitelistingAllowed {
+    function addMultipleWhitelists(address[] calldata _addresses) external onlyCurator whitelistingAllowed {
         if (_addresses.length > 333) revert TooManyWhitelists();
         for (uint256 i = 0; i < _addresses.length; i++) {
             whitelisted[_addresses[i]] = true;
@@ -173,12 +181,12 @@ contract IFO is Initializable {
      *  @notice removes a single whitelist from the sale
      *  @param _address: address to remove from whitelist
      */
-    function removeWhitelist(address _address) external onlyOwner whitelistingAllowed {
+    function removeWhitelist(address _address) external onlyCurator whitelistingAllowed {
         whitelisted[_address] = false;
     }
 
     /// @notice Starts the sale and checks if all FNFT is in IFO
-    function start() external onlyOwner {
+    function start() external onlyCurator {
         if (started) revert SaleAlreadyStarted();
         if (ended) revert SaleAlreadyEnded();
         if (FNFT.balanceOf(address(this)) < FNFT.totalSupply()) revert NotEnoughSupply();
@@ -190,7 +198,7 @@ contract IFO is Initializable {
     }
 
     /// @notice lets owner pause contract. Pushes back the IFO end date
-    function togglePause() external onlyOwner returns (bool) {
+    function togglePause() external onlyCurator returns (bool) {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
 
@@ -206,7 +214,7 @@ contract IFO is Initializable {
     }
 
     /// @notice Ends the sale
-    function end() public onlyOwner checkPaused {
+    function end() public onlyCurator checkPaused {
         if (!started) revert SaleUnstarted();
         if (
             block.number < startBlock + duration || // If not past duration
@@ -266,7 +274,7 @@ contract IFO is Initializable {
     }
 
     /// @notice withdraws ETH from sale only after IFO over
-    function adminWithdrawProfit() external checkDeadline onlyOwner {
+    function adminWithdrawProfit() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
 
         totalRaised = 0;
@@ -277,7 +285,7 @@ contract IFO is Initializable {
     }
 
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
-    function adminWithdrawFNFT() external checkDeadline onlyOwner {
+    function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
         if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.redeemed))
             revert FNFTLocked();
@@ -289,7 +297,7 @@ contract IFO is Initializable {
     }
 
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
-    function approve() public onlyOwner {
+    function approve() public onlyCurator {
         if (!ended) revert SaleActive();        
 
         FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), 1e18);

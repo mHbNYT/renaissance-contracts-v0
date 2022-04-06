@@ -97,8 +97,7 @@ contract IFOTest is DSTest, ERC721Holder {
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
         assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), fractionalizedNFT.totalSupply());
-        assertEq(fNFTIfo.duration(), 30 days);
-        // assertEq(fNFTIfo.owner(), address(this));
+        assertEq(fNFTIfo.duration(), 30 days);        
     }
 
     function testCannotCreateWhenPaused() public {
