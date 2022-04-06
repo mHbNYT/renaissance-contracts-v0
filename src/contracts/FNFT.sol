@@ -108,6 +108,23 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     event FeeClaimed(uint256 fee);
 
+    error NotGov();
+    error NotCurator();    
+    error AuctionLive();
+    error NotAnUpdate();
+    error InvalidAuctionLength();
+    error CanNotRaise();
+    error FeeTooHigh();
+    error AuctionEnded();
+    error NotEnoughETH();
+    error PriceTooLow();
+    error PriceTooHigh();
+    error BidTooLow();
+    error NotEnoughVoters();
+    error AuctionNotLive();
+    error AuctionNotEnded();
+    error NoTokens();
+
     constructor(address _settings) {
         settings = _settings;
     }
@@ -139,6 +156,16 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         _mint(_curator, _supply);
     }
 
+    modifier onlyCurator() {
+        if (msg.sender != curator) revert NotCurator();
+        _;
+    }
+
+    modifier onlyGov() {
+        if (msg.sender != Ownable(settings).owner()) revert NotGov();
+        _;
+    }
+
     /// --------------------------------
     /// -------- VIEW FUNCTIONS --------
     /// --------------------------------
@@ -153,19 +180,17 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice allow governance to boot a bad actor curator
     /// @param _curator the new curator
-    function kickCurator(address _curator) external {
-        require(msg.sender == Ownable(settings).owner(), "kick:not gov");
-
+    function kickCurator(address _curator) external onlyGov {
         curator = _curator;
     }
 
     /// @notice allow governance to remove bad reserve prices
-    function removeReserve(address _user) external {
-        require(msg.sender == Ownable(settings).owner(), "remove:not gov");
-        require(auctionState == State.inactive, "update:auction live cannot update price");
+    function removeReserve(address _user) external onlyGov {     
+        if (auctionState != State.inactive) revert AuctionLive();
 
         uint256 old = userReservePrice[_user];
-        require(0 != old, "update:not an update");
+        if (old == 0) revert NotAnUpdate();
+
         uint256 weight = balanceOf(_user);
 
         votingTokens -= weight;
@@ -182,21 +207,15 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice allow curator to update the curator address
     /// @param _curator the new curator
-    function updateCurator(address _curator) external {
-        require(msg.sender == curator, "update:not curator");
-
+    function updateCurator(address _curator) external onlyCurator {
         curator = _curator;
     }
 
     /// @notice allow curator to update the auction length
     /// @param _length the new base price
-    function updateAuctionLength(uint256 _length) external {
-        require(msg.sender == curator, "update:not curator");
-        require(
-            _length >= IFNFTSettings(settings).minAuctionLength() &&
-                _length <= IFNFTSettings(settings).maxAuctionLength(),
-            "update:invalid auction length"
-        );
+    function updateAuctionLength(uint256 _length) external onlyCurator {
+        if (_length < IFNFTSettings(settings).minAuctionLength() || 
+        _length > IFNFTSettings(settings).maxAuctionLength()) revert InvalidAuctionLength();        
 
         auctionLength = _length;
         emit UpdateAuctionLength(_length);
@@ -204,10 +223,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice allow the curator to change their fee
     /// @param _fee the new fee
-    function updateFee(uint256 _fee) external {
-        require(msg.sender == curator, "update:not curator");
-        require(_fee < fee, "update:can't raise");
-        require(_fee <= IFNFTSettings(settings).maxCuratorFee(), "update:cannot increase fee this high");
+    function updateFee(uint256 _fee) external onlyCurator {
+        if (_fee >= fee) revert CanNotRaise();
+        if (_fee > IFNFTSettings(settings).maxCuratorFee()) revert FeeTooHigh();
 
         _claimFees();
 
@@ -222,7 +240,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @dev interal fuction to calculate and mint fees
     function _claimFees() internal {
-        require(auctionState != State.ended, "claim:cannot claim after auction ends");
+        if (auctionState == State.ended) revert AuctionEnded();
+        
 
         // get how much in fees the curator would make in a year
         uint256 currentAnnualFee = (fee * totalSupply()) / 1000;
@@ -257,12 +276,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// --------------------------------
 
     function buyItNow() external payable {
-        require(auctionState == State.inactive, "buy:only inactive");
+        if (auctionState != State.inactive) revert AuctionLive();        
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
 
         uint256 marketCap = priceOracle.getfNFTPriceETH(address(this), totalSupply());
         uint256 buyItNowPrice = (marketCap * 15) / 10;
-        require(msg.value >= buyItNowPrice, "buy:not enough ETH");
+        if (msg.value < buyItNowPrice) revert NotEnoughETH();        
 
         _claimFees();
 
@@ -277,9 +296,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice a function for an end user to update their desired sale price
     /// @param newUserReserve the desired price in ETH
     function updateUserPrice(uint256 newUserReserve) external {
-        require(auctionState == State.inactive, "update:auction live cannot update price");
+        if (auctionState != State.inactive) revert AuctionLive();
         uint256 previousUserReserve = userReservePrice[msg.sender];
-        require(newUserReserve != previousUserReserve, "update:not an update");
+        if (newUserReserve == previousUserReserve) revert NotAnUpdate();
+        
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
@@ -323,9 +343,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private {
         uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-        require(newUserReserve >= reservePriceMin, "update:reserve price too low");
+        if (newUserReserve < reservePriceMin) revert PriceTooLow();        
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-        require(newUserReserve <= reservePriceMax, "update:reserve price too high");
+        if (newUserReserve > reservePriceMax) revert PriceTooHigh();        
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
@@ -383,12 +403,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
-        require(auctionState == State.inactive, "start:no auction starts");
-        require(msg.value >= reservePrice(), "start:too low bid");
-        require(
-            votingTokens * 1000 >= IFNFTSettings(settings).minVotePercentage() * totalSupply(),
-            "start:not enough voters"
-        );
+        if (auctionState != State.inactive) revert AuctionLive();
+        if (msg.value < reservePrice()) revert BidTooLow();   
+        if (votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply()) revert NotEnoughVoters();        
 
         auctionEnd = block.timestamp + auctionLength;
         auctionState = State.live;
@@ -401,10 +418,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable {
-        require(auctionState == State.live, "bid:auction is not live");
+        if (auctionState != State.live) revert AuctionNotLive();        
         uint256 increase = IFNFTSettings(settings).minBidIncrease() + 1000;
-        require(msg.value * 1000 >= livePrice * increase, "bid:too low bid");
-        require(block.timestamp < auctionEnd, "bid:auction ended");
+        if (msg.value * 1000 < livePrice * increase) revert BidTooLow();
+        if (block.timestamp >= auctionEnd) revert AuctionEnded();        
 
         // If bid is within 15 minutes of auction end, extend auction
         if (auctionEnd - block.timestamp <= 15 minutes) {
@@ -421,8 +438,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to end an auction after the timer has run out
     function end() external {
-        require(auctionState == State.live, "end:vault has already closed");
-        require(block.timestamp >= auctionEnd, "end:auction live");
+        if (auctionState != State.live) revert AuctionNotLive();
+        if (block.timestamp < auctionEnd) revert AuctionEnded();
 
         _claimFees();
 
@@ -436,7 +453,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
     function redeem() external {
-        require(auctionState == State.inactive, "redeem:no redeeming");
+        if (auctionState != State.inactive) revert AuctionLive();        
         _burn(msg.sender, totalSupply());
 
         // transfer erc721 to redeemer
@@ -449,9 +466,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to burn ERC20 tokens to receive ETH from ERC721 token purchase
     function cash() external {
-        require(auctionState == State.ended, "cash:vault not closed yet");
+        if (auctionState != State.ended) revert AuctionNotEnded();        
         uint256 bal = balanceOf(msg.sender);
-        require(bal > 0, "cash:no tokens to cash out");
+        if (bal <= 0) revert NoTokens();
+        
         uint256 share = (bal * address(this).balance) / totalSupply();
         _burn(msg.sender, bal);
 

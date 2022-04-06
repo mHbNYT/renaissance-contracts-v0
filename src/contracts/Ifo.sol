@@ -54,7 +54,7 @@ contract IFO is Initializable {
     event AdminETHWithdrawal(address _eth, uint256 _amount);
     event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
 
-    error NotOwner();
+    error NotGov();
     error NotCurator();
     error InvalidAddress();
     error NotEnoughSupply();
@@ -130,8 +130,8 @@ contract IFO is Initializable {
         _;
     }
 
-    modifier onlyOwner() {
-        if (msg.sender != Ownable(settings).owner()) revert NotOwner();
+    modifier onlyGov() {
+        if (msg.sender != Ownable(settings).owner()) revert NotGov();
         _;
     }
 
@@ -257,7 +257,7 @@ contract IFO is Initializable {
     /** @notice If wrong FNFT
     *   @param _address: address of FNFT
     */
-    function updatefNFTAddress(address _address) external onlyOwner {
+    function updatefNFTAddress(address _address) external onlyGov {
         FNFT = IERC20(_address);
     }
 
