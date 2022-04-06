@@ -56,4 +56,4 @@ install submodules
 install cargo
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh`
 run test
-`forge test -f https://moonriver.api.onfinality.io/public -vvv --force`
+`forge test -f https://rpc.api.moonbase.moonbeam.network -vvv --force`

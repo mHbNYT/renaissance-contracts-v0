@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import "./IFOSettings.sol";
+import "./interfaces/IFNFT.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./interfaces/IIFOSettings.sol";
-import "./interfaces/IFNFT.sol";
 
 contract IFO is Initializable {
     using SafeERC20 for IERC20;
@@ -210,7 +210,7 @@ contract IFO is Initializable {
         if (!started) revert SaleUnstarted();
         if (
             block.number < startBlock + duration || // If not past duration
-            settings.minimumDuration() > block.number - startBlock // If tries to end before minimum duration
+            IIFOSettings(settings).minimumDuration() > block.number - startBlock // If tries to end before minimum duration
         ) revert DeadlineActive();
         if (ended) revert SaleAlreadyEnded();
 
