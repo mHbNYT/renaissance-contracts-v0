@@ -16,6 +16,8 @@ contract IFOSettings is Ownable, IIFOSettings {
     event UpdateMaximumDuration(uint256 _blocks);
     event UpdateCreatorUtilityContract(address _utility);
 
+    error ZeroAddressDisallowed();
+
     constructor() {
         creatorIFOLock = false;
         minimumDuration = 86400; // 1 day;
@@ -41,6 +43,8 @@ contract IFOSettings is Ownable, IIFOSettings {
     }
 
     function setCreatorUtilityContract(address _utility) external onlyOwner {
+        if (_utility == address(0)) revert ZeroAddressDisallowed();        
+
         emit UpdateCreatorUtilityContract(_utility);
 
         creatorUtilityContract = _utility;
