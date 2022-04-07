@@ -43,8 +43,8 @@ contract PriceOracle is IPriceOracle, Ownable {
         FACTORY = _factory;
     }
 
-    function getPairAddress(address token0, address token1) external view returns (address) {
-        return _getPairAddress(token0, token1);
+    function getPairAddress(address _token0, address _token1) external view returns (address) {
+        return _getPairAddress(_token0, _token1);
     }    
 
     function addPairInfo(address token0, address token1) external onlyOwner {
