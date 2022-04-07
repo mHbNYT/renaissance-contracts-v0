@@ -355,7 +355,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         (,uint112 reserve1,) = pair.getReserves();
 
         bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
-        bool aboveQuorum = votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply();
+        bool aboveQuorum = votingTokens * 1000 > IFNFTSettings(settings).minVotePercentage() * totalSupply();
         uint256 _reservePrice = reservePrice();
 
         if (!aboveLiquidityThreshold && aboveQuorum) {
