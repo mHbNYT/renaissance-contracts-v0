@@ -275,6 +275,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
 
+    function salePrice() public view returns (uint256) {        
+        //TODO: Add minimum auction price calculation logic here
+        return reservePrice();
+    }
+
     function buyItNow() external payable {
         if (auctionState != State.inactive) revert AuctionLive();        
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
@@ -404,7 +409,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
         if (auctionState != State.inactive) revert AuctionLive();
-        if (msg.value < reservePrice()) revert BidTooLow();   
+        if (msg.value < salePrice()) revert BidTooLow();   
         if (votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply()) revert NotEnoughVoters();        
 
         auctionEnd = block.timestamp + auctionLength;

@@ -116,7 +116,7 @@ contract IFO is Initializable {
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
         // if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
-
+        
         curator = _curator;
         amountForSale = _amountForSale;
         price = _price;
@@ -241,6 +241,7 @@ contract IFO is Initializable {
 
         totalSold = totalSold + payout;
 
+        //TODO: Take fee here
         FNFT.safeTransferFrom(address(this), msg.sender, payout);
 
         emit Deposit(msg.sender, msg.value, payout);
