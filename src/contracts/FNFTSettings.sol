@@ -53,6 +53,9 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     /// @notice minimum size of fNFT-ETH LP pool for TWAP to take effect
     uint256 public override liquidityThreshold;
 
+    /// @notice instant buy allowed if bid > MC * instantBuyMultiplier 
+    uint256 public override instantBuyMultiplier;
+
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
@@ -74,9 +77,11 @@ contract FNFTSettings is Ownable, IFNFTSettings {
 
     event UpdateMinReserveFactor(uint256 _old, uint256 _new);
 
-    event UpdateLiquidityThreshold(uint _old, uint256 _new);
+    event UpdateLiquidityThreshold(uint256 _old, uint256 _new);
 
-    event UpdateFeeReceiver(address _old, address _new);
+    event UpdateInstantBuyMultiplier(uint256 _old, uint256 _new);
+
+    event UpdateFeeReceiver(address _old, address _new);    
 
     error MaxAuctionLengthTooHigh();
     error MaxAuctionLengthTooLow();
@@ -89,6 +94,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     error MaxReserveFactorTooLow();
     error MinReserveFactorTooHigh();
     error ZeroAddressDisallowed();
+    error MultiplierTooLow();
 
     constructor(address _weth, address _priceOracle) {
         WETH = IWETH(_weth);
@@ -102,6 +108,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
         maxCuratorFee = 100;
         minVotePercentage = 250; // 25%
         liquidityThreshold = 10e18; // ~$30,000 USD in ETH
+        instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
     }
 
     function setPriceOracle(address _newOracle) external onlyOwner {
@@ -181,6 +188,13 @@ contract FNFTSettings is Ownable, IFNFTSettings {
         liquidityThreshold = _threshold;
     }
 
+    function setInstantBuyMultiplier(uint256 _multiplier) external onlyOwner {
+        if (_multiplier < 10) revert MultiplierTooLow();
+
+        emit UpdateInstantBuyMultiplier(instantBuyMultiplier, _multiplier);
+
+        instantBuyMultiplier = _multiplier;
+    }
 
     function setFeeReceiver(address payable _receiver) external onlyOwner {
         if (_receiver == address(0)) revert ZeroAddressDisallowed();        

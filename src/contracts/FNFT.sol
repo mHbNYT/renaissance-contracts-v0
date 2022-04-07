@@ -314,7 +314,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
 
         uint256 marketCap = priceOracle.getfNFTPriceETH(address(this), totalSupply());
-        uint256 buyItNowPrice = (marketCap * 15) / 10;
+        uint256 buyItNowPrice = (marketCap * IFNFTSettings(settings).instantBuyMultiplier()) / 10;
         if (msg.value < buyItNowPrice) revert NotEnoughETH();        
 
         _claimFees();

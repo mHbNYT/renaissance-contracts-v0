@@ -26,5 +26,7 @@ interface IFNFTSettings {
 
     function liquidityThreshold() external returns (uint256);
 
+    function instantBuyMultiplier() external returns (uint256);
+
     function feeReceiver() external returns (address payable);
 }
