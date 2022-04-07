@@ -29,6 +29,7 @@ contract IFO is Initializable {
     uint256 public price; // initial price per fNFT
     uint256 public cap; // cap per user
     uint256 public totalRaised; // total ETH raised by sale
+    uint256 public profitRaised;
     uint256 public totalSold; // total fNFT sold by sale
 
     uint256 public duration; // ifo duration
@@ -232,17 +233,24 @@ contract IFO is Initializable {
         }
 
         UserInfo storage user = userInfo[msg.sender];
-        if (user.amount + msg.value > cap) revert OverLimit();
-
-        user.amount = user.amount + msg.value;
-        totalRaised = totalRaised + msg.value;
+        if (user.amount + msg.value > cap) revert OverLimit();        
 
         uint256 payout = (msg.value * 1e18) / price; // fNFT to mint for msg.value
 
         totalSold = totalSold + payout;
+        
+        address govAddress = IIFOSettings(settings).feeReceiver();
+        uint256 govFee = IIFOSettings(settings).governanceFee();
 
-        //TODO: Take fee here
+        uint256 fee = (govFee * msg.value) / 1000;
+        uint256 profit = msg.value - fee;
+
+        user.amount += msg.value;
+        totalRaised += msg.value;
+        profitRaised += profit;
+
         FNFT.safeTransferFrom(address(this), msg.sender, payout);
+        _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
     }
@@ -266,11 +274,11 @@ contract IFO is Initializable {
     function adminWithdrawProfit() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
 
-        totalRaised = 0;
+        profitRaised = 0;
 
-        _safeTransferETH(msg.sender, totalRaised);
+        _safeTransferETH(msg.sender, profitRaised);
 
-        emit AdminProfitWithdrawal(address(FNFT), totalRaised);
+        emit AdminProfitWithdrawal(address(FNFT), profitRaised);
     }
 
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
