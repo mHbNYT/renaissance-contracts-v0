@@ -12,5 +12,7 @@ interface IPriceOracle {
         uint256 _amountIn
     ) external view returns (uint256 amountOut);
 
+    function getPairAddress() external view returns (address pairAddress);
+
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut);
 }

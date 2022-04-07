@@ -50,6 +50,9 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     /// @notice the max % decrease from the initial
     uint256 public override minReserveFactor;
 
+    /// @notice minimum size of fNFT-ETH LP pool for TWAP to take effect
+    uint256 public override liquidityThreshold;
+
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
@@ -70,6 +73,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     event UpdateMaxReserveFactor(uint256 _old, uint256 _new);
 
     event UpdateMinReserveFactor(uint256 _old, uint256 _new);
+
+    event UpdateLiquidityThreshold(uint _old, uint256 _new);
 
     event UpdateFeeReceiver(address _old, address _new);
 
@@ -96,6 +101,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
         minBidIncrease = 50; // 5%
         maxCuratorFee = 100;
         minVotePercentage = 250; // 25%
+        liquidityThreshold = 10e18; // ~$30,000 USD in ETH
     }
 
     function setPriceOracle(address _newOracle) external onlyOwner {
@@ -168,6 +174,13 @@ contract FNFTSettings is Ownable, IFNFTSettings {
 
         minReserveFactor = _factor;
     }
+
+    function setLiquidityThreshold(uint256 _threshold) external onlyOwner {
+        emit UpdateLiquidityThreshold(liquidityThreshold, _threshold);
+
+        liquidityThreshold = _threshold;
+    }
+
 
     function setFeeReceiver(address payable _receiver) external onlyOwner {
         if (_receiver == address(0)) revert ZeroAddressDisallowed();        

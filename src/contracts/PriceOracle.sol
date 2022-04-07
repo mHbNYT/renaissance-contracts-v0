@@ -43,9 +43,13 @@ contract PriceOracle is IPriceOracle, Ownable {
         FACTORY = _factory;
     }
 
+    function getPairAddress(address token0, address token1) external view returns (address) {
+        return _getPairAddress(token0, token1);
+    }    
+
     function addPairInfo(address token0, address token1) external onlyOwner {
         // Get predetermined pair address.
-        address pairAddress = UniswapV2Library.pairFor(FACTORY, token0, token1);
+        address pairAddress = _getPairAddress(token0, token1);
         PairInfo storage pairInfo = getTwap[pairAddress];
         require(pairInfo.exists == false, "Pair already exists.");
 
@@ -131,5 +135,9 @@ contract PriceOracle is IPriceOracle, Ownable {
                 pairInfo.totalUpdates++;
             }
         }
+    }
+
+    function _getPairAddress(address token0, address token1) internal view returns (address) {
+        return UniswapV2Library.pairFor(FACTORY, token0, token1);
     }
 }

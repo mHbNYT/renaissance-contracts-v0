@@ -24,5 +24,7 @@ interface IFNFTSettings {
 
     function minReserveFactor() external returns (uint256);
 
+    function liquidityThreshold() external returns (uint256);
+
     function feeReceiver() external returns (address payable);
 }

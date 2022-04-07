@@ -3,9 +3,11 @@ pragma solidity ^0.8.11;
 
 import "./FNFTSettings.sol";
 import "./interfaces/IWETH.sol";
+import "./libraries/UniswapV2Library.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+
 import {IPriceOracle} from "./PriceOracle.sol";
 import {console} from "../test/utils/utils.sol";
 
@@ -275,12 +277,39 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
 
-    function salePrice() public view returns (uint256) {        
-        //TODO: Add minimum auction price calculation logic here
+    function salePrice() public returns (uint256) {        
+        //TODO: test this
+
+        IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
+        IUniswapV2Pair pair = IUniswapV2Pair(priceOracle.getPairAddress());
+
+        (,uint112 reserve1,) = pair.getReserves();
+
+        bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
+        bool aboveQuorum = votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply();
+        uint256 _reservePrice = reservePrice();
+
+        if (!aboveLiquidityThreshold && aboveQuorum) {
+            //average reserve
+            return _reservePrice;
+        } else if (!aboveLiquidityThreshold && !aboveQuorum) {
+            //initial reserve
+            return initialReserve;
+        } else if (aboveQuorum) {            
+            uint256 twapPrice = priceOracle.getfNFTPriceETH(address(this), 1e18);
+            //twap price if twap > reserve 
+            //reserve price if twap < reserve
+            return twapPrice > _reservePrice ? twapPrice : _reservePrice;            
+        } else {
+            //twap price
+            return priceOracle.getfNFTPriceETH(address(this), 1e18);            
+        }
+        
         return reservePrice();
     }
 
     function buyItNow() external payable {
+        //TODO: test this
         if (auctionState != State.inactive) revert AuctionLive();        
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
 
