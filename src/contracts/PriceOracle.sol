@@ -124,7 +124,7 @@ contract PriceOracle is IPriceOracle, Ownable {
                 pairInfo.blockTimestampLast = blockTimestamp;
                 pairInfo.totalUpdates++;
             }
-        }
+        } //TODO: else addPairInfo
     }
 
     function _getPairAddress(address token0, address token1) internal view returns (address) {

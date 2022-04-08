@@ -118,13 +118,13 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     error CanNotRaise();
     error FeeTooHigh();
     error AuctionEnded();
+    error AuctionNotEnded();
     error NotEnoughETH();
     error PriceTooLow();
     error PriceTooHigh();
     error BidTooLow();
     error NotEnoughVoters();
     error AuctionNotLive();
-    error AuctionNotEnded();
     error NoTokens();
 
     constructor(address _settings) {
@@ -216,8 +216,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice allow curator to update the auction length
     /// @param _length the new base price
     function updateAuctionLength(uint256 _length) external onlyCurator {
-        if (_length < IFNFTSettings(settings).minAuctionLength() || 
-        _length > IFNFTSettings(settings).maxAuctionLength()) revert InvalidAuctionLength();
+        if (
+            _length < IFNFTSettings(settings).minAuctionLength() || _length > IFNFTSettings(settings).maxAuctionLength()
+        ) revert InvalidAuctionLength();
 
         auctionLength = _length;
         emit UpdateAuctionLength(_length);
@@ -243,7 +244,6 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @dev interal fuction to calculate and mint fees
     function _claimFees() internal {
         if (auctionState == State.ended) revert AuctionEnded();
-        
 
         // get how much in fees the curator would make in a year
         uint256 currentAnnualFee = (fee * totalSupply()) / 1000;
@@ -481,7 +481,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice an external function to end an auction after the timer has run out
     function end() external {
         if (auctionState != State.live) revert AuctionNotLive();
-        if (block.timestamp < auctionEnd) revert AuctionEnded();
+        if (block.timestamp < auctionEnd) revert AuctionNotEnded();
 
         _claimFees();
 
