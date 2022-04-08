@@ -10,4 +10,4 @@ remappings = [
 ]
 
 [ci]
-verbosity = 4
+fuzz_runs = 20_000
