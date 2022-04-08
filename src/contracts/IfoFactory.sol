@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./InitializedProxy.sol";
-import "./IFO.sol";
+import "./Ifo.sol";
 import "./interfaces/IFNFT.sol";
 import {console} from "../test/utils/utils.sol";
 
