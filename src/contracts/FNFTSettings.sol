@@ -50,6 +50,12 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     /// @notice the max % decrease from the initial
     uint256 public override minReserveFactor;
 
+    /// @notice minimum size of fNFT-ETH LP pool for TWAP to take effect
+    uint256 public override liquidityThreshold;
+
+    /// @notice instant buy allowed if bid > MC * instantBuyMultiplier 
+    uint256 public override instantBuyMultiplier;
+
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
@@ -71,7 +77,24 @@ contract FNFTSettings is Ownable, IFNFTSettings {
 
     event UpdateMinReserveFactor(uint256 _old, uint256 _new);
 
-    event UpdateFeeReceiver(address _old, address _new);
+    event UpdateLiquidityThreshold(uint256 _old, uint256 _new);
+
+    event UpdateInstantBuyMultiplier(uint256 _old, uint256 _new);
+
+    event UpdateFeeReceiver(address _old, address _new);    
+
+    error MaxAuctionLengthTooHigh();
+    error MaxAuctionLengthTooLow();
+    error MinAuctionLengthTooHigh();
+    error MinAuctionLengthTooLow();
+    error GovFeeTooHigh();
+    error MinBidIncreaseTooHigh();
+    error MinBidIncreaseTooLow();
+    error MinVotePercentageTooHigh();
+    error MaxReserveFactorTooLow();
+    error MinReserveFactorTooHigh();
+    error ZeroAddressDisallowed();
+    error MultiplierTooLow();
 
     constructor(address _weth, address _priceOracle) {
         WETH = IWETH(_weth);
@@ -84,6 +107,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
         minBidIncrease = 50; // 5%
         maxCuratorFee = 100;
         minVotePercentage = 250; // 25%
+        liquidityThreshold = 10e18; // ~$30,000 USD in ETH
+        instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
     }
 
     function setPriceOracle(address _newOracle) external onlyOwner {
@@ -92,8 +117,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setMaxAuctionLength(uint256 _length) external onlyOwner {
-        require(_length <= maxMaxAuctionLength, "max auction length too high");
-        require(_length > minAuctionLength, "max auction length too low");
+        if (_length > maxMaxAuctionLength) revert MaxAuctionLengthTooHigh();
+        if (_length <= minAuctionLength) revert MaxAuctionLengthTooLow();
 
         emit UpdateMaxAuctionLength(maxAuctionLength, _length);
 
@@ -101,8 +126,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setMinAuctionLength(uint256 _length) external onlyOwner {
-        require(_length >= minMinAuctionLength, "min auction length too low");
-        require(_length < maxAuctionLength, "min auction length too high");
+        if (_length < minMinAuctionLength) revert MinAuctionLengthTooLow();
+        if (_length >= maxAuctionLength) revert MinAuctionLengthTooHigh();        
 
         emit UpdateMinAuctionLength(minAuctionLength, _length);
 
@@ -110,7 +135,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setGovernanceFee(uint256 _fee) external onlyOwner {
-        require(_fee <= maxGovFee, "fee too high");
+        if (_fee > maxGovFee) revert GovFeeTooHigh();
 
         emit UpdateGovernanceFee(governanceFee, _fee);
 
@@ -124,8 +149,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setMinBidIncrease(uint256 _min) external onlyOwner {
-        require(_min <= maxMinBidIncrease, "min bid increase too high");
-        require(_min >= minMinBidIncrease, "min bid increase too low");
+        if (_min > maxMinBidIncrease) revert MinBidIncreaseTooHigh();
+        if (_min < minMinBidIncrease) revert MinBidIncreaseTooLow();        
 
         emit UpdateMinBidIncrease(minBidIncrease, _min);
 
@@ -134,7 +159,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
 
     function setMinVotePercentage(uint256 _min) external onlyOwner {
         // 1000 is 100%
-        require(_min <= 1000, "min vote percentage too high");
+        if (_min > 1000) revert MinVotePercentageTooHigh();
 
         emit UpdateMinVotePercentage(minVotePercentage, _min);
 
@@ -142,7 +167,7 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setMaxReserveFactor(uint256 _factor) external onlyOwner {
-        require(_factor > minReserveFactor, "max reserve factor too low");
+        if (_factor <= minReserveFactor) revert MaxReserveFactorTooLow();        
 
         emit UpdateMaxReserveFactor(maxReserveFactor, _factor);
 
@@ -150,15 +175,29 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     }
 
     function setMinReserveFactor(uint256 _factor) external onlyOwner {
-        require(_factor < maxReserveFactor, "min reserve factor too high");
+        if (_factor >= maxReserveFactor) revert MinReserveFactorTooHigh();
 
         emit UpdateMinReserveFactor(minReserveFactor, _factor);
 
         minReserveFactor = _factor;
     }
 
+    function setLiquidityThreshold(uint256 _threshold) external onlyOwner {
+        emit UpdateLiquidityThreshold(liquidityThreshold, _threshold);
+
+        liquidityThreshold = _threshold;
+    }
+
+    function setInstantBuyMultiplier(uint256 _multiplier) external onlyOwner {
+        if (_multiplier < 10) revert MultiplierTooLow();
+
+        emit UpdateInstantBuyMultiplier(instantBuyMultiplier, _multiplier);
+
+        instantBuyMultiplier = _multiplier;
+    }
+
     function setFeeReceiver(address payable _receiver) external onlyOwner {
-        require(_receiver != address(0), "fees cannot go to 0 address");
+        if (_receiver == address(0)) revert ZeroAddressDisallowed();        
 
         emit UpdateFeeReceiver(feeReceiver, _receiver);
 

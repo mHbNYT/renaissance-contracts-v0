@@ -9,4 +9,8 @@ interface IIFOSettings {
     function maximumDuration() external returns (uint256);
 
     function creatorUtilityContract() external returns (address);
+
+    function governanceFee() external returns (uint256);
+
+    function feeReceiver() external returns (address payable);
 }
