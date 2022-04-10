@@ -24,12 +24,13 @@ contract IFOFactory is Ownable, Pausable {
     bytes4 public constant IFO_SALT = 0xefefefef;
 
     event IFOCreated(
-        address indexed _IFO,
-        address indexed _FNFT,
-        uint256 _amountForSale,
-        uint256 _price,
-        uint256 _cap,
-        bool _allowWhitelisting
+        address indexed IFO,
+        address indexed FNFT,
+        uint256 amountForSale,
+        uint256 price,
+        uint256 cap,
+        uint256 duration,
+        bool allowWhitelisting
     );
 
     error IFOExists(address nft);
@@ -69,7 +70,7 @@ contract IFOFactory is Ownable, Pausable {
 
         IERC20(_FNFT).safeTransferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
 
-        emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _allowWhitelisting);
+        emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _duration, _allowWhitelisting);
 
         return _IFO;
     }
