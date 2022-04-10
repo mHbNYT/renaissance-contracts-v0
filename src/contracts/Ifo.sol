@@ -47,7 +47,7 @@ contract IFO is Initializable {
     mapping(address => UserInfo) public userInfo;
     mapping(address => bool) public whitelisted; // True if user is whitelisted
 
-    event Deposit(address indexed who, uint256 amount, uint256 payout);
+    event Deposit(address indexed buyer, uint256 amount, uint256 payout);
     event Start(uint256 block);
     event End(uint256 block);
     event Pause(bool paused, uint256 block);
