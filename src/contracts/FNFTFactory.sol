@@ -21,11 +21,19 @@ contract FNFTFactory is Ownable, Pausable {
     /// @notice the TokenVault logic contract
     address public immutable logic;
 
-    event FNFTCreated(address indexed token, uint256 id, uint256 price, address fNFT, bytes32 fNFTId);
+    event FNFTCreated(
+        address indexed token, 
+        address FNFT, 
+        uint256 id, 
+        
+        uint256 price,         
+        string name, 
+        string symbol
+    );
 
-    constructor(address _fNFTSettings) {
-        settings = _fNFTSettings;
-        logic = address(new FNFT(_fNFTSettings));
+    constructor(address _fnftSettings) {
+        settings = _fnftSettings;
+        logic = address(new FNFT(_fnftSettings));
     }
 
     /// @notice the function to mint a fNFT
@@ -56,18 +64,19 @@ contract FNFTFactory is Ownable, Pausable {
             _symbol
         );
 
-        address fNFT = address(new InitializedProxy(logic, _initializationCalldata));
+        address fnft = address(new InitializedProxy(logic, _initializationCalldata));
 
-        bytes32 fNFTId = getfNFTId(_nft, _tokenId);
-        emit FNFTCreated(_nft, _tokenId, _listPrice, fNFT, fNFTId);
+        bytes32 fnftId = getFNFTId(_nft, _tokenId);
+        
+        emit FNFTCreated(_nft, fnft, _tokenId, _listPrice, _name, _symbol);
 
-        fnfts[fNFTId] = fNFT;
+        fnfts[fnftId] = fnft;
 
-        IERC721(_nft).safeTransferFrom(msg.sender, fNFT, _tokenId);
-        return address(fNFT);
+        IERC721(_nft).safeTransferFrom(msg.sender, fnft, _tokenId);
+        return address(fnft);
     }
 
-    function getfNFTId(address nftContract, uint256 tokenId) public pure returns (bytes32) {
+    function getFNFTId(address nftContract, uint256 tokenId) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(nftContract, tokenId));
     }
 
