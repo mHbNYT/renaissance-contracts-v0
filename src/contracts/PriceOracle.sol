@@ -7,7 +7,7 @@ import "./libraries/UniswapV2Library.sol";
 import "./libraries/math/FixedPoint.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {IPriceOracle} from "./interfaces/IPriceOracle.sol";
+import {IPriceOracle, PairInfo} from "./interfaces/IPriceOracle.sol";
 
 contract PriceOracle is IPriceOracle, Ownable {
     using FixedPoint for *;
@@ -19,38 +19,28 @@ contract PriceOracle is IPriceOracle, Ownable {
     uint256 public constant PERIOD = 10 minutes;
 
     // Map of pair address to PairInfo struct, which contains cumulative price, last block timestamps, and etc.
-    mapping(address => PairInfo) private getTwap;
+    mapping(address => PairInfo) private _getTwap;
 
     address public immutable WETH;
     address public immutable FACTORY;
-
-    // Struct that contains metadata of two token pair that is stored in the liquidity pool.
-    // Metadata used to calculated TWAP (Time-weighted average price).
-    struct PairInfo {
-        address token0;
-        address token1;
-        uint256 price0CumulativeLast;
-        uint256 price1CumulativeLast;
-        FixedPoint.uq112x112 price0Average;
-        FixedPoint.uq112x112 price1Average;
-        uint216 totalUpdates;
-        uint32 blockTimestampLast;
-        bool exists;
-    }
 
     constructor(address _factory, address _weth) {
         WETH = _weth;
         FACTORY = _factory;
     }
 
+    function getTwap(address _pair) external view returns (PairInfo memory pairInfo) {
+        pairInfo = _getTwap[_pair];
+    }
+
     function getPairAddress(address _token0, address _token1) external view returns (address) {
         return _getPairAddress(_token0, _token1);
-    }    
+    }
 
     function addPairInfo(address token0, address token1) external onlyOwner {
         // Get predetermined pair address.
         address pairAddress = _getPairAddress(token0, token1);
-        PairInfo storage pairInfo = getTwap[pairAddress];
+        PairInfo storage pairInfo = _getTwap[pairAddress];
         require(pairInfo.exists == false, "Pair already exists.");
 
         // Get pair information for the given pair address.
@@ -83,7 +73,7 @@ contract PriceOracle is IPriceOracle, Ownable {
         address _pair,
         uint256 _amountIn
     ) external view returns (uint256 amountOut) {
-        PairInfo memory pairInfo = getTwap[_pair];
+        PairInfo memory pairInfo = _getTwap[_pair];
         require(pairInfo.exists == true, "Pair does not exist.");
         if (_token == pairInfo.token0) {
             amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
@@ -96,7 +86,7 @@ contract PriceOracle is IPriceOracle, Ownable {
     // note this will always return 0 before update has been called successfully for the first time.
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut) {
         address pair = UniswapV2Library.pairFor(FACTORY, _fNFT, WETH);
-        PairInfo memory pairInfo = getTwap[pair];
+        PairInfo memory pairInfo = _getTwap[pair];
         require(pairInfo.exists == true, "PairInfo does not exist");
         require(pairInfo.totalUpdates > 10, "Pair has not been updated enough");
 
@@ -109,7 +99,7 @@ contract PriceOracle is IPriceOracle, Ownable {
     }
 
     function _updatePairInfo(address _pair) internal {
-        PairInfo storage pairInfo = getTwap[_pair];
+        PairInfo storage pairInfo = _getTwap[_pair];
 
         // we want an update to silently skip because it's updated from the token contract itself
         if (pairInfo.exists) {
@@ -134,7 +124,7 @@ contract PriceOracle is IPriceOracle, Ownable {
                 pairInfo.blockTimestampLast = blockTimestamp;
                 pairInfo.totalUpdates++;
             }
-        }
+        } //TODO: else addPairInfo
     }
 
     function _getPairAddress(address token0, address token1) internal view returns (address) {

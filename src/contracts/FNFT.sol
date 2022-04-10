@@ -111,20 +111,20 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     event FeeClaimed(uint256 fee);
 
     error NotGov();
-    error NotCurator();    
+    error NotCurator();
     error AuctionLive();
     error NotAnUpdate();
     error InvalidAuctionLength();
     error CanNotRaise();
     error FeeTooHigh();
     error AuctionEnded();
+    error AuctionNotEnded();
     error NotEnoughETH();
     error PriceTooLow();
     error PriceTooHigh();
     error BidTooLow();
     error NotEnoughVoters();
     error AuctionNotLive();
-    error AuctionNotEnded();
     error NoTokens();
 
     constructor(address _settings) {
@@ -187,7 +187,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     }
 
     /// @notice allow governance to remove bad reserve prices
-    function removeReserve(address _user) external onlyGov {     
+    function removeReserve(address _user) external onlyGov {
         if (auctionState != State.inactive) revert AuctionLive();
 
         uint256 old = userReservePrice[_user];
@@ -216,8 +216,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice allow curator to update the auction length
     /// @param _length the new base price
     function updateAuctionLength(uint256 _length) external onlyCurator {
-        if (_length < IFNFTSettings(settings).minAuctionLength() || 
-        _length > IFNFTSettings(settings).maxAuctionLength()) revert InvalidAuctionLength();        
+        if (
+            _length < IFNFTSettings(settings).minAuctionLength() || _length > IFNFTSettings(settings).maxAuctionLength()
+        ) revert InvalidAuctionLength();
 
         auctionLength = _length;
         emit UpdateAuctionLength(_length);
@@ -243,7 +244,6 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @dev interal fuction to calculate and mint fees
     function _claimFees() internal {
         if (auctionState == State.ended) revert AuctionEnded();
-        
 
         // get how much in fees the curator would make in a year
         uint256 currentAnnualFee = (fee * totalSupply()) / 1000;
@@ -283,12 +283,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     function buyItNow() external payable {
         //TODO: test this
-        if (auctionState != State.inactive) revert AuctionLive();        
+        if (auctionState != State.inactive) revert AuctionLive();
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
 
         uint256 marketCap = priceOracle.getfNFTPriceETH(address(this), totalSupply());
         uint256 buyItNowPrice = (marketCap * IFNFTSettings(settings).instantBuyMultiplier()) / 10;
-        if (msg.value < buyItNowPrice) revert NotEnoughETH();        
+        if (msg.value < buyItNowPrice) revert NotEnoughETH();
 
         _claimFees();
 
@@ -306,7 +306,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         if (auctionState != State.inactive) revert AuctionLive();
         uint256 previousUserReserve = userReservePrice[msg.sender];
         if (newUserReserve == previousUserReserve) revert NotAnUpdate();
-        
+
         uint256 weight = balanceOf(msg.sender);
 
         if (votingTokens == 0) {
@@ -350,13 +350,20 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function _getAuctionPrice() internal returns (uint256) {
         //TODO: test this
         IPriceOracle priceOracle = IFNFTSettings(settings).priceOracle();
-        IUniswapV2Pair pair = IUniswapV2Pair(priceOracle.getPairAddress(address(this), address(IFNFTSettings(settings).WETH())));
-
-        (,uint112 reserve1,) = pair.getReserves();
+        IUniswapV2Pair pair = IUniswapV2Pair(
+            priceOracle.getPairAddress(address(this), address(IFNFTSettings(settings).WETH()))
+        );
+        uint256 reserve1;
+        if (priceOracle.getTwap(address(pair)).exists) {
+            (, reserve1, ) = pair.getReserves();
+        }
 
         bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
         bool aboveQuorum = votingTokens * 1000 > IFNFTSettings(settings).minVotePercentage() * totalSupply();
         uint256 _reservePrice = reservePrice();
+        // console.log("aboveLiquidityThreshold", aboveLiquidityThreshold);
+        // console.log("aboveQuorum", aboveQuorum);
+        // console.log("_reservePrice", _reservePrice);
 
         if (!aboveLiquidityThreshold && aboveQuorum) {
             //average reserve
@@ -364,23 +371,23 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         } else if (!aboveLiquidityThreshold && !aboveQuorum) {
             //initial reserve
             return initialReserve;
-        } else if (aboveQuorum) {            
+        } else if (aboveQuorum) {
             uint256 twapPrice = priceOracle.getfNFTPriceETH(address(this), 1e18);
-            //twap price if twap > reserve 
+            //twap price if twap > reserve
             //reserve price if twap < reserve
-            return twapPrice > _reservePrice ? twapPrice : _reservePrice;            
+            return twapPrice > _reservePrice ? twapPrice : _reservePrice;
         } else {
             //twap price
-            return priceOracle.getfNFTPriceETH(address(this), 1e18);            
+            return priceOracle.getfNFTPriceETH(address(this), 1e18);
         }
     }
 
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private {
         uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-        if (newUserReserve < reservePriceMin) revert PriceTooLow();        
+        if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-        if (newUserReserve > reservePriceMax) revert PriceTooHigh();        
+        if (newUserReserve > reservePriceMax) revert PriceTooHigh();
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
@@ -439,8 +446,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
         if (auctionState != State.inactive) revert AuctionLive();
-        if (msg.value < _getAuctionPrice()) revert BidTooLow();   
-        if (votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply()) revert NotEnoughVoters();        
+        if (msg.value < _getAuctionPrice()) revert BidTooLow();
+        if (votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply()) revert NotEnoughVoters();
 
         auctionEnd = block.timestamp + auctionLength;
         auctionState = State.live;
@@ -453,10 +460,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable {
-        if (auctionState != State.live) revert AuctionNotLive();        
+        if (auctionState != State.live) revert AuctionNotLive();
         uint256 increase = IFNFTSettings(settings).minBidIncrease() + 1000;
         if (msg.value * 1000 < livePrice * increase) revert BidTooLow();
-        if (block.timestamp >= auctionEnd) revert AuctionEnded();        
+        if (block.timestamp >= auctionEnd) revert AuctionEnded();
 
         // If bid is within 15 minutes of auction end, extend auction
         if (auctionEnd - block.timestamp <= 15 minutes) {
@@ -474,7 +481,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice an external function to end an auction after the timer has run out
     function end() external {
         if (auctionState != State.live) revert AuctionNotLive();
-        if (block.timestamp < auctionEnd) revert AuctionEnded();
+        if (block.timestamp < auctionEnd) revert AuctionNotEnded();
 
         _claimFees();
 
@@ -488,7 +495,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
     function redeem() external {
-        if (auctionState != State.inactive) revert AuctionLive();        
+        if (auctionState != State.inactive) revert AuctionLive();
         _burn(msg.sender, totalSupply());
 
         // transfer erc721 to redeemer
@@ -501,10 +508,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to burn ERC20 tokens to receive ETH from ERC721 token purchase
     function cash() external {
-        if (auctionState != State.ended) revert AuctionNotEnded();        
+        if (auctionState != State.ended) revert AuctionNotEnded();
         uint256 bal = balanceOf(msg.sender);
         if (bal <= 0) revert NoTokens();
-        
+
         uint256 share = (bal * address(this).balance) / totalSupply();
         _burn(msg.sender, bal);
 
