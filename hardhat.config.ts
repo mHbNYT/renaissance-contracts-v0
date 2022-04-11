@@ -57,12 +57,11 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     WETH: {
-      aurora_testnet: process.env.AURORA_TEST_WETH || null,
       aurora_mainnet: process.env.AURORA_MAIN_WETH || null
     },
     DAO: {
-      hardhat: 1,
-      aurora_testnet: process.env.AURORA_TEST_DAO || null,
+      hardhat: 2,
+      aurora_testnet: 2,
       aurora_mainnet: process.env.AURORA_MAIN_DAO || null,
     }
   },
