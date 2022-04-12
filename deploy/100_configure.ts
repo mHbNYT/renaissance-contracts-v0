@@ -15,4 +15,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   await FNFTSettings.setPriceOracle(priceOracleInfo.address);
 };
+func.tags = ['main', 'local', 'seed'];
 export default func;
