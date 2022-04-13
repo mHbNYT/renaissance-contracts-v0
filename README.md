@@ -58,14 +58,12 @@ install cargo
 run test
 `forge test -f https://rpc.api.moonbase.moonbeam.network -vvv --force`
 
-## setup seed data
+## setup seed data / subgraph
 -checkout nft-marketplace branch zaz/seed-data-1
 -run yarn install and forge install and whatever else to setup project
 -then run yarn dev:seed
 --this will start a local hardhat node with seed data from the first 2 and a few other unfinished sceanrios (sceanrio 3 almost finished)
 
-
-(this is where i need you to experiment scott)
 -after start local hardhat node with seed data the logs printed out will give you an rpc address to your hardhat rpc (should look like this: http://127.0.0.1:8545/
 
 -go to subgraph directory and update the docker-compose.yml file "ethereum" environment variable to point to your local hardhat RPC. it should look like this: 'mainnet:http://127.0.0.1:8545/'
