@@ -363,7 +363,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await IFO5.connect(signer).deposit({value});
   });
 
-  await mineNBlocks(86400); // mine here to allow sales time to finish
+  // mine here to allow sales time to finish and also to allow IFO5 duration to complete
+  await mineNBlocks(86400);
 
   // Pause IFO, NFT4 sceanrio ends here
   await IFO4.togglePause();
