@@ -233,9 +233,11 @@ contract IFO is Initializable {
         }
 
         UserInfo storage user = userInfo[msg.sender];
-        if (user.amount + msg.value > cap) revert OverLimit();        
 
-        uint256 payout = (msg.value * 1e18) / price; // fNFT to mint for msg.value
+        uint256 payout = msg.value / price; // fNFT to mint for msg.value
+
+        if (user.amount + payout > cap) revert OverLimit();
+
 
         totalSold = totalSold + payout;
         
@@ -245,11 +247,11 @@ contract IFO is Initializable {
         uint256 fee = (govFee * msg.value) / 1000;
         uint256 profit = msg.value - fee;
 
-        user.amount += msg.value;
+        user.amount += payout;
         totalRaised += msg.value;
         profitRaised += profit;
 
-        FNFT.safeTransferFrom(address(this), msg.sender, payout);
+        FNFT.safeTransfer(msg.sender, payout);
         _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
