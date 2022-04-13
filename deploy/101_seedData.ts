@@ -19,7 +19,6 @@ import { parseFixed } from '@ethersproject/bignumber';
  */
 
 
-
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {getNamedAccounts} = hre;
   const {get, deploy} = hre.deployments;
@@ -296,7 +295,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     fNFT2Address, // fNft
     10, // amount for sale
     parseFixed('1', 16), // price
-    1, // cap
+    await fNft2.totalSupply(), // cap
     1_000_000, //duration
     false // allow whitelisting
   );
@@ -306,9 +305,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     fNFT3Address, // fNft
     500, // amount for sale
     parseFixed('1', 18), // price
-    100, // cap
+    await fNft3.totalSupply(), // cap
     1_000_000, //dduration
-    true // allow whitelisting
+    false // allow whitelisting
   );
   const IFO3Address = await IFOFactory.getIFO(fNFT3Address)
 
@@ -317,7 +316,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     fNFT4Address, // fNft
     1_000, // amount for sale
     parseFixed('1', 16), // price
-    1, // cap
+    await fNft4.totalSupply(), // cap
     1_000_000, //duration
     false // allow whitelisting
   );
@@ -328,9 +327,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     fNFT5Address, // fNft
     100, // amount for sale
     parseFixed('1', 15), // price
-    100, // cap
-    1_000_000, //dduration
-    true // allow whitelisting
+    await fNft5.totalSupply(), // cap
+    86400, // short duration for purposes of testing
+    false // allow whitelisting
   );
   const IFO5Address = await IFOFactory.getIFO(fNFT5Address);
 
@@ -344,8 +343,45 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await IFO4.start();
   await IFO5.start();
 
-  // TODO scenarios left to do: 3,4,5,6,7,8,9
+  const signers = await ethers.getSigners();
 
+  // SIMULATE RANDOM IFO SALE
+
+  // NFT3 scenario is done after this loop.
+  signers.forEach(async signer => { // 20 addresses
+    const value = await IFO3.price();
+    await IFO3.connect(signer).deposit({value});
+  });
+
+  signers.slice(10, 20).forEach(async (signer) => {
+    const value = await IFO4.price();
+    await IFO4.connect(signer).deposit({value});
+  });
+
+  signers.slice(0, 9).forEach(async (signer) => {
+    const value = await IFO5.price();
+    await IFO5.connect(signer).deposit({value});
+  });
+
+  await mineNBlocks(86400); // mine here to allow sales time to finish
+
+  // Pause IFO, NFT4 sceanrio ends here
+  await IFO4.togglePause();
+
+
+  // END IFO, NFT5 sceanrio ends here
+  await IFO5.end();
+
+  // TODO sceanrio 6,7,8,9
 };
+
+async function mineNBlocks(n:number) {
+  for (let index = 0; index < n; index++) {
+    console.log(`Mining progress ${index}/${n}...`);
+    await ethers.provider.send('evm_mine', []);
+  }
+}
+
+
 func.tags = ['seed'];
 export default func;
