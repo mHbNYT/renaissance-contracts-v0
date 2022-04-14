@@ -47,13 +47,12 @@ contract IFO is Initializable {
     mapping(address => UserInfo) public userInfo;
     mapping(address => bool) public whitelisted; // True if user is whitelisted
 
-    event Deposit(address indexed _who, uint256 _amount, uint256 _payout);
-    event SaleStarted(uint256 _block);
-    event SaleEnded(uint256 _block);
-    event PauseTriggered(bool _paused, uint256 _block);
-    event AdminProfitWithdrawal(address _FNFT, uint256 _amount);
-    event AdminETHWithdrawal(address _eth, uint256 _amount);
-    event AdminFNFTWithdrawal(address _FNFT, uint256 _amount);    
+    event Deposit(address indexed buyer, uint256 amount, uint256 payout);
+    event Start(uint256 block);
+    event End(uint256 block);
+    event Pause(bool paused, uint256 block);
+    event AdminProfitWithdrawal(address FNFT, uint256 amount);    
+    event AdminFNFTWithdrawal(address FNFT, uint256 amount);    
 
     error NotGov();
     error NotCurator();
@@ -192,8 +191,10 @@ contract IFO is Initializable {
         startBlock = block.number;
 
         started = true;
-        emit SaleStarted(block.number);
+        emit Start(block.number);
     }
+
+    //TODO: Add a circute breaker controlled by the DAO
 
     /// @notice lets owner pause contract. Pushes back the IFO end date
     function togglePause() external onlyCurator returns (bool) {
@@ -207,7 +208,7 @@ contract IFO is Initializable {
             pauseBlock = block.number;
             paused = true;
         }
-        emit PauseTriggered(paused, block.number);
+        emit Pause(paused, block.number);
         return paused;
     }
 
@@ -221,7 +222,7 @@ contract IFO is Initializable {
         if (ended) revert SaleAlreadyEnded();
 
         ended = true;
-        emit SaleEnded(block.number);
+        emit End(block.number);
     }
     
     ///@notice it deposits ETH for the sale
