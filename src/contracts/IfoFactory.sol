@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./InitializedProxy.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
-import {console} from "../test/utils/utils.sol";
 
 contract IFOFactory is Ownable, Pausable {
     using SafeERC20 for IERC20;

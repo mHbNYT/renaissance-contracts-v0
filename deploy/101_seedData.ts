@@ -183,7 +183,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('2', 18), // initialPrice === 2e18
     100, // fee (10%)
   );
-  const fNFT2Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft2CollectionInfo.address, 2));
+  const fNFT2Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft2CollectionInfo.address, 2));
   
   // NFT3
   await FNFTFactory.mint(
@@ -195,7 +195,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('2', 18), // initialPrice == 2e18
     30, // fee (3%)
   );
-  const fNFT3Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft3CollectionInfo.address, 3));
+  const fNFT3Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft3CollectionInfo.address, 3));
 
   // NFT4
   await FNFTFactory.mint(
@@ -207,7 +207,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('1', 16), // initialPrice
     5, // fee (.5%)
   );
-  const fNFT4Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft4CollectionInfo.address, 4));
+  const fNFT4Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft4CollectionInfo.address, 4));
 
   // NFT5
   await FNFTFactory.mint(
@@ -219,7 +219,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('1', 18), // initialPrice === 1e18
     10, // fee (1%)
   );
-  const fNFT5Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft5CollectionInfo.address, 5));
+  const fNFT5Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft5CollectionInfo.address, 5));
 
   // NFT6
   await FNFTFactory.mint(
@@ -231,7 +231,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('2', 18), // initialPrice === 2e18
     100, // fee (10%)
   );
-  const fNFT6Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft6CollectionInfo.address, 6));
+  const fNFT6Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft6CollectionInfo.address, 6));
 
   // NFT7
   await FNFTFactory.mint(
@@ -243,7 +243,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('2', 18), // initialPrice == 2e18
     30, // fee (3%)
   );
-  const fNFT7Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft7CollectionInfo.address, 7));
+  const fNFT7Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft7CollectionInfo.address, 7));
 
   // NFT8
   await FNFTFactory.mint(
@@ -255,7 +255,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('1', 16), // initialPrice
     5, // fee (.5%)
   );
-  const fNFT8Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft8CollectionInfo.address, 8));
+  const fNFT8Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft8CollectionInfo.address, 8));
 
   // NFT9
   await FNFTFactory.mint(
@@ -267,7 +267,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     parseFixed('1', 16), // initialPrice
     5, // fee (.5%)
   );
-  const fNFT9Address = await FNFTFactory.fnfts(await FNFTFactory.getfNFTId(nft9CollectionInfo.address, 9));
+  const fNFT9Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft9CollectionInfo.address, 9));
 
   // IFOFactory
   const IFOFactoryInfo = await get('IFOFactory');
@@ -378,7 +378,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 async function mineNBlocks(n:number) {
   for (let index = 0; index < n; index++) {
-    console.log(`Mining progress ${index}/${n}...`);
+    // console.log(`Mining progress ${index}/${n}...`);
     await ethers.provider.send('evm_mine', []);
   }
 }

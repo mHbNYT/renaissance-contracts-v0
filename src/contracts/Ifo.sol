@@ -6,7 +6,6 @@ import "./interfaces/IFNFT.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {console} from "../test/utils/utils.sol";
 
 contract IFO is Initializable {
     using SafeERC20 for IERC20;
