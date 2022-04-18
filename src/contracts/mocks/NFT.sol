@@ -18,3 +18,19 @@ contract MockNFT is ERC721, Ownable {
         _mint(_to, _id);
     }
 }
+
+contract NameableMockNFT is ERC721, Ownable {
+
+    using Counters for Counters.Counter;
+
+    Counters.Counter private _tokenIdCounter;
+
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {
+        _tokenIdCounter.increment();
+    }
+
+    function mint(address _to, uint256 _id) external {
+        _mint(_to, _id);
+    }
+
+}
