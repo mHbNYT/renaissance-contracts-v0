@@ -196,7 +196,7 @@ contract IFO is Initializable {
     //TODO: Add a circute breaker controlled by the DAO
 
     /// @notice lets owner pause contract. Pushes back the IFO end date
-    function togglePause() external onlyCurator returns (bool) {
+    function togglePause() external onlyCurator checkDeadline returns (bool) {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
 
