@@ -312,19 +312,89 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testFail_addWhitelistWhitelistNotAllowed() public {
-        
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
+
+        fNFTIfo.addWhitelist(address(1));
     }
 
     function testAddMultipleWhitelist() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        address[] memory whitelists = new address[](3);
+
+        whitelists[0] = address(1);
+        whitelists[1] = address(2);
+        whitelists[2] = address(3);
+
+        fNFTIfo.addMultipleWhitelists(whitelists);
+
+        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(2)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(3)) ? 1 : 0, true ? 1 : 0);
     }
 
     function testFail_addMultipleWhitelistNotCurator() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        address[] memory whitelists = new address[](3);
+
+        whitelists[0] = address(1);
+        whitelists[1] = address(2);
+        whitelists[2] = address(3);
+
+        vm.startPrank(address(1));
+
+        fNFTIfo.addMultipleWhitelists(whitelists);
+
+        vm.stopPrank();
     }
 
     function testFail_addMultipleWhitelistWhitelistNotAllowed() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        address[] memory whitelists = new address[](3);
+
+        whitelists[0] = address(1);
+        whitelists[1] = address(2);
+        whitelists[2] = address(3);
+
+        fNFTIfo.addMultipleWhitelists(whitelists);
     }
 
     function testRemoveWhitelist() public {
