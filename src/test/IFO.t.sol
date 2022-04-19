@@ -1,3 +1,4 @@
+//solhint-disable func-name-mixedcase
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -556,7 +557,7 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testTogglePause() public {
-        
+
     }
 
     function testFail_togglePauseIfNotStarted() public {
