@@ -268,7 +268,7 @@ contract IFO is Initializable {
     /** @notice If wrong FNFT
     *   @param _address: address of FNFT
     */
-    function updatefNFTAddress(address _address) external onlyGov {
+    function updateFNFTAddress(address _address) external onlyGov {
         FNFT = IERC20(_address);
     }
 
