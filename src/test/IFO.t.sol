@@ -79,12 +79,16 @@ contract IFOTest is DSTest, ERC721Holder {
         payable(address(user4)).transfer(10 ether);
     }
 
+    /// -------------------------------
+    /// -------- INIT FUNCTIONS -------
+    /// -------------------------------
+
     function testPause() public {
         ifoFactory.pause();
         ifoFactory.unpause();
     }
 
-    function testCreateIfo() public {
+    function testCreateIFO() public {
         fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
         ifoFactory.create(
             address(fractionalizedNFT), // the address of the fractionalized token
@@ -98,6 +102,42 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), fractionalizedNFT.totalSupply());
         assertEq(fNFTIfo.duration(), ifoSettings.minimumDuration());        
+    }
+
+    function testFail_createIFOInvalidAddress() public {
+
+    }
+
+    function testFail_createIFONotEnoughSupply() public {
+
+    }
+
+    function testFail_createIFOAmountForSaleTooLow() public {
+
+    }
+
+    function testFail_createIFOAmountForSaleTooHigh() public {
+
+    }
+
+    function testFail_createIFOInvalidCap() public {
+
+    }
+
+    function testFail_createIFOCapTooHigh() public {
+
+    }
+
+    function testFail_createIFOCapTooLow() public {
+
+    }
+
+    function testFail_createIFODurationTooLow() public {
+
+    }
+
+    function testFail_createIFODurationTooHigh() public {
+
     }
 
     function testCannotCreateWhenPaused() public {
@@ -138,11 +178,19 @@ contract IFOTest is DSTest, ERC721Holder {
 
     }
 
+    function testFail_addWhitelistWhitelistNotAllowed() public {
+
+    }
+
     function testAddMultipleWhitelist() public {
 
     }
 
     function testFail_addMultipleWhitelistNotCurator() public {
+
+    }
+
+    function testFail_addMultipleWhitelistWhitelistNotAllowed() public {
 
     }
 
@@ -156,9 +204,17 @@ contract IFOTest is DSTest, ERC721Holder {
 
     function testStart() public {
 
+    }    
+
+    function testFail_startNotCurator() public {
+
     }
 
     function testTogglePause() public {
+
+    }
+
+    function testFail_togglePauseNotCurator() public {
 
     }
 
@@ -166,7 +222,19 @@ contract IFOTest is DSTest, ERC721Holder {
 
     }
 
+    function testFail_endWhilePaused() public {
+
+    }
+
+    function testFail_endNotCurator() public {
+
+    }
+
     function testWithdrawProfit() public {
+
+    }
+
+    function testFail_withdrawProfitNotCurator() public {
 
     }
 
@@ -174,7 +242,41 @@ contract IFOTest is DSTest, ERC721Holder {
 
     }
 
+    function testFail_notUtilityContract() public {
+
+    }
+
+    function testFail_approveNotCurator() public {
+
+    }
+
     /// --------------------------------
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
+
+    function testDeposit() public {
+
+    }
+
+    function testFail_depositAfterSaleEnded() public {
+        
+    }
+
+    function testFail_depositBeforeSaleStarted() public {
+
+    }
+
+    function testFail_depositIfNotWhitelisted() public {
+
+    }
+
+    function testFail_depositOverLimit() public {
+
+    }
+
+    function testGetUserRemainingAllocation() public {
+
+    }
+
+    function 
 }
