@@ -122,9 +122,57 @@ contract IFOTest is DSTest, ERC721Holder {
 
     }
 
+    function testFail_updateFNFTAddressNotGov() public {
+
+    }
+
     /// -----------------------------------
     /// -------- CURATOR FUNCTIONS --------
     /// -----------------------------------
+
+    function testAddWhitelist() public {
+
+    }
+
+    function testFail_addWhitelistNotCurator() public {
+
+    }
+
+    function testAddMultipleWhitelist() public {
+
+    }
+
+    function testFail_addMultipleWhitelistNotCurator() public {
+
+    }
+
+    function testRemoveWhitelist() public {
+
+    }
+
+    function testFail_removeWhitelistNotCurator() public {
+
+    }
+
+    function testStart() public {
+
+    }
+
+    function testTogglePause() public {
+
+    }
+
+    function testEnd() public {
+
+    }
+
+    function testWithdrawProfit() public {
+
+    }
+
+    function testApproveUtilityContract() public {
+
+    }
 
     /// --------------------------------
     /// -------- CORE FUNCTIONS --------
