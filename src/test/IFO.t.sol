@@ -276,15 +276,43 @@ contract IFOTest is DSTest, ERC721Holder {
     /// -----------------------------------
 
     function testAddWhitelist() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        fNFTIfo.addWhitelist(address(1));
+
+        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
     }
 
     function testFail_addWhitelistNotCurator() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        vm.startPrank(address(1));
+
+        fNFTIfo.addWhitelist(address(1));
+
+        vm.stopPrank();
     }
 
     function testFail_addWhitelistWhitelistNotAllowed() public {
-
+        
     }
 
     function testAddMultipleWhitelist() public {
