@@ -473,7 +473,24 @@ contract IFOTest is DSTest, ERC721Holder {
     }    
 
     function testFail_startNotCurator() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+
+        vm.startPrank(address(1));
+
+        fNFTIfo.start();
+
+        vm.stopPrank();
     }
 
     function testTogglePause() public {
