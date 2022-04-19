@@ -511,6 +511,8 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+
         fNFTIfo.start();        
     }
 
@@ -530,9 +532,13 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
         fNFTIfo.end();
+
+        assertEq(fNFTIfo.ended() ? 1 : 0, true ? 1 : 0);        
 
         fNFTIfo.start();
     }
@@ -570,6 +576,8 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
         fNFTIfo.end();
@@ -588,6 +596,8 @@ contract IFOTest is DSTest, ERC721Holder {
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
         fNFTIfo.start();
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
@@ -612,7 +622,11 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+
         fNFTIfo.togglePause();
+
+        assertEq(fNFTIfo.paused() ? 1 : 0, true ? 1 : 0);
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
@@ -629,7 +643,9 @@ contract IFOTest is DSTest, ERC721Holder {
             ifoSettings.minimumDuration(), //sale duration
             true // allow whitelist
         );
-        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));     
+
+        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);   
 
         fNFTIfo.end();
     }
@@ -647,6 +663,8 @@ contract IFOTest is DSTest, ERC721Holder {
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
         fNFTIfo.start();        
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration()-1);
 
@@ -668,9 +686,13 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();        
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
+
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
         fNFTIfo.end();
+
+        assertEq(fNFTIfo.ended() ? 1 : 0, true ? 1 : 0);   
 
         fNFTIfo.end();
     }
