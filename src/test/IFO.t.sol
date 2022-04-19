@@ -17,7 +17,7 @@ import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from ".
 /// @author Nibble Market
 /// @title Tests for the fnfts
 contract IFOTest is DSTest, ERC721Holder {
-    CheatCodes public vm;
+    CheatCodes internal vm;
 
     FNFTFactory public fnftFactory;
     IFOFactory public ifoFactory;
@@ -221,11 +221,54 @@ contract IFOTest is DSTest, ERC721Holder {
     /// -------------------------------
 
     function testUpdateFNFTAddress() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        fNFTIfo.updateFNFTAddress(address(1));
+
+        assertEq(address(fNFTIfo.FNFT()), address(1));        
+    }
+
+    function testFail_updateFNFTAddresZeroAddress() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
+
+        fNFTIfo.updateFNFTAddress(address(0));
     }
 
     function testFail_updateFNFTAddressNotGov() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        vm.startPrank(address(1));
+
+        fNFTIfo.updateFNFTAddress(address(1));
+
+        vm.stopPrank();        
     }
 
     /// -----------------------------------

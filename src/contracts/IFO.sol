@@ -158,7 +158,7 @@ contract IFO is Initializable {
      *  @notice adds a single whitelist to the sale
      *  @param _address: address to whitelist
      */
-    function addWhitelist(address _address) external onlyCurator whitelistingAllowed {
+    function addWhitelist(address _address) external onlyCurator whitelistingAllowed {        
         whitelisted[_address] = true;
     }
 
@@ -269,6 +269,7 @@ contract IFO is Initializable {
     *   @param _address: address of FNFT
     */
     function updateFNFTAddress(address _address) external onlyGov {
+        if (_address == address(0)) revert InvalidAddress();
         FNFT = IERC20(_address);
     }
 
