@@ -987,6 +987,26 @@ contract IFOTest is DSTest, ERC721Holder {
         fNFTIfo.adminWithdrawProfit();
     }
 
+    function testWithdrawFNFT() public {
+
+    }
+
+    function testFail_withdrawFNFTWhileSaleActive() public {
+        
+    }
+
+    function testWithdrawFNFTIfLockedAndRedeemed() public {
+        
+    }
+
+    function testWithdrawFNFTAutoEndsAfterDuration() public {
+        
+    }
+
+    function testFail_withdrawFNFTIfLocked() public {
+        
+    }
+
     function testApproveUtilityContract() public {
 
     }
