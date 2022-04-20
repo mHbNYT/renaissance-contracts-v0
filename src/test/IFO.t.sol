@@ -33,7 +33,6 @@ contract IFOTest is DSTest, ERC721Holder {
     User public user1;
     User public user2;
     User public user3;
-
     UserNoETH public user4;
 
     Curator public curator;
@@ -224,15 +223,15 @@ contract IFOTest is DSTest, ERC721Holder {
 
     function testUpdateFNFTAddress() public {        
         fractionalizedNFT.approve(address(this), fractionalizedNFT.balanceOf(address(this)));
-        fractionalizedNFT.transferFrom(address(this), address(1), fractionalizedNFT.balanceOf(address(this)));
+        fractionalizedNFT.transferFrom(address(this), address(user1), fractionalizedNFT.balanceOf(address(this)));
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
-        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(1)));
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(user1)));
 
         ifoFactory.create(
             address(fractionalizedNFT), // the address of the fractionalized token
-            fractionalizedNFT.balanceOf(address(1)), //amountForSale
+            fractionalizedNFT.balanceOf(address(user1)), //amountForSale
             0.02 ether, //price per token
             fractionalizedNFT.totalSupply(), // max amount someone can buy
             ifoSettings.minimumDuration(), //sale duration
@@ -242,9 +241,9 @@ contract IFOTest is DSTest, ERC721Holder {
 
         vm.stopPrank();
 
-        fNFTIfo.updateFNFTAddress(address(2));
+        fNFTIfo.updateFNFTAddress(address(user2));
 
-        assertEq(address(fNFTIfo.FNFT()), address(2));
+        assertEq(address(fNFTIfo.FNFT()), address(user2));
     }
 
     function testFail_updateFNFTAddresZeroAddress() public {
@@ -264,15 +263,15 @@ contract IFOTest is DSTest, ERC721Holder {
 
     function testFail_updateFNFTAddressNotGov() public {           
         fractionalizedNFT.approve(address(this), fractionalizedNFT.balanceOf(address(this)));
-        fractionalizedNFT.transferFrom(address(this), address(1), fractionalizedNFT.balanceOf(address(this)));
+        fractionalizedNFT.transferFrom(address(this), address(user1), fractionalizedNFT.balanceOf(address(this)));
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
-        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(1)));
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(user1)));
 
         ifoFactory.create(
             address(fractionalizedNFT), // the address of the fractionalized token
-            fractionalizedNFT.balanceOf(address(1)), //amountForSale
+            fractionalizedNFT.balanceOf(address(user1)), //amountForSale
             0.02 ether, //price per token
             fractionalizedNFT.totalSupply(), // max amount someone can buy
             ifoSettings.minimumDuration(), //sale duration
@@ -280,7 +279,7 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
-        fNFTIfo.updateFNFTAddress(address(1));
+        fNFTIfo.updateFNFTAddress(address(user1));
 
         vm.stopPrank();        
     }
@@ -301,9 +300,9 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        fNFTIfo.addWhitelist(address(1));
+        fNFTIfo.addWhitelist(address(user1));
 
-        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user1)) ? 1 : 0, true ? 1 : 0);
     }
 
     function testFail_addWhitelistNotCurator() public {
@@ -318,9 +317,9 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
-        fNFTIfo.addWhitelist(address(1));
+        fNFTIfo.addWhitelist(address(user1));
 
         vm.stopPrank();
     }
@@ -337,7 +336,7 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        fNFTIfo.addWhitelist(address(1));
+        fNFTIfo.addWhitelist(address(user1));
     }
 
     function testAddMultipleWhitelist() public {
@@ -354,15 +353,14 @@ contract IFOTest is DSTest, ERC721Holder {
 
         address[] memory whitelists = new address[](3);
 
-        whitelists[0] = address(1);
-        whitelists[1] = address(2);
-        whitelists[2] = address(3);
-
+        whitelists[0] = address(user1);
+        whitelists[1] = address(user2);
+        whitelists[2] = address(user3);
         fNFTIfo.addMultipleWhitelists(whitelists);
 
-        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
-        assertEq(fNFTIfo.whitelisted(address(2)) ? 1 : 0, true ? 1 : 0);
-        assertEq(fNFTIfo.whitelisted(address(3)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user1)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user2)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user3)) ? 1 : 0, true ? 1 : 0);
     }
 
     function testFail_addMultipleWhitelistNotCurator() public {
@@ -379,11 +377,11 @@ contract IFOTest is DSTest, ERC721Holder {
 
         address[] memory whitelists = new address[](3);
 
-        whitelists[0] = address(1);
-        whitelists[1] = address(2);
-        whitelists[2] = address(3);
+        whitelists[0] = address(user1);
+        whitelists[1] = address(user2);
+        whitelists[2] = address(user3);
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
         fNFTIfo.addMultipleWhitelists(whitelists);
 
@@ -404,9 +402,9 @@ contract IFOTest is DSTest, ERC721Holder {
 
         address[] memory whitelists = new address[](3);
 
-        whitelists[0] = address(1);
-        whitelists[1] = address(2);
-        whitelists[2] = address(3);
+        whitelists[0] = address(user1);
+        whitelists[1] = address(user2);
+        whitelists[2] = address(user3);
 
         fNFTIfo.addMultipleWhitelists(whitelists);
     }
@@ -423,13 +421,13 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        fNFTIfo.addWhitelist(address(1));
+        fNFTIfo.addWhitelist(address(user1));
 
-        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user1)) ? 1 : 0, true ? 1 : 0);
 
-        fNFTIfo.removeWhitelist(address(1));
+        fNFTIfo.removeWhitelist(address(user1));
 
-        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, false ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user1)) ? 1 : 0, false ? 1 : 0);
     }
 
     function testFail_removeWhitelistNotCurator() public {
@@ -444,13 +442,13 @@ contract IFOTest is DSTest, ERC721Holder {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        fNFTIfo.addWhitelist(address(1));
+        fNFTIfo.addWhitelist(address(user1));
 
-        assertEq(fNFTIfo.whitelisted(address(1)) ? 1 : 0, true ? 1 : 0);
+        assertEq(fNFTIfo.whitelisted(address(user1)) ? 1 : 0, true ? 1 : 0);
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
-        fNFTIfo.removeWhitelist(address(1));
+        fNFTIfo.removeWhitelist(address(user1));
 
         vm.stopPrank();
     }
@@ -488,7 +486,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
         fNFTIfo.start();
 
@@ -601,7 +599,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
         fNFTIfo.end();
 
@@ -784,7 +782,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
-        vm.startPrank(address(1));
+        vm.startPrank(address(user1));
 
         fNFTIfo.togglePause();
 
@@ -792,10 +790,74 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testWithdrawProfit() public {
-        
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
+        uint256 originalAccountBalance = address(this).balance;
+        uint256 originalUser2Balance = address(user2).balance;
+
+        ifoSettings.setFeeReceiver(payable(address(user1)));
+        uint256 govFee = ifoSettings.governanceFee();
+        uint256 fee = (govFee * 1 ether) / 1000;
+        uint256 profit = 1 ether - fee;
+
+        fNFTIfo.start();        
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);     
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        vm.startPrank(address(user2));
+        fNFTIfo.deposit{value: 1 ether}();
+        vm.stopPrank();
+
+        assertEq(fNFTIfo.profitRaised(), profit * 2);
+
+        assertEq(address(fNFTIfo).balance, profit * 2);
+
+        assertEq(address(this).balance, originalAccountBalance - 1 ether);
+
+        assertEq(address(user2).balance, originalUser2Balance - 1 ether);
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+
+        fNFTIfo.end();
+
+        fNFTIfo.adminWithdrawProfit();
+
+        assertEq(fNFTIfo.profitRaised(), 0);
+
+        assertEq(address(fNFTIfo).balance, 0);
+
+        assertEq(address(user2).balance, originalUser2Balance - 1 ether);
+
+        assertEq(address(this).balance, originalAccountBalance - 1 ether + profit * 2);
     }
 
     function testFail_withdrawProfitNotCurator() public {
+
+    }
+
+    function testFail_withdrawProfitBeforeDuration() public {
+
+    }
+
+    function testFail_withdrawProfitBeforeEnd() public {
+
+    }
+
+    function testWithdrawProfitTwice() public {
+
+    }
+
+    function testWithdrawProfitPassesWhenDurationZero() public {
 
     }
 
@@ -838,4 +900,6 @@ contract IFOTest is DSTest, ERC721Holder {
     function testGetUserRemainingAllocation() public {
 
     }    
+
+    receive() external payable {}
 }

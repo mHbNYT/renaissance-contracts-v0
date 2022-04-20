@@ -31,6 +31,7 @@ contract IFOSettings is Ownable, IIFOSettings {
         minimumDuration = 86400; // 1 day;
         feeReceiver = payable(msg.sender);
         maximumDuration = 7776000; // 90 days;
+        governanceFee = 20;
     }
 
     function setCreatorIFOLock(bool _lock) external onlyOwner {

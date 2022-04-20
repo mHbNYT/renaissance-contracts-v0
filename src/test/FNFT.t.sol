@@ -27,7 +27,6 @@ contract FNFTTest is DSTest, ERC721Holder {
     User public user1;
     User public user2;
     User public user3;
-
     UserNoETH public user4;
 
     Curator public curator;
