@@ -664,7 +664,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();        
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration()-1);
 
@@ -698,23 +698,101 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testTogglePause() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
+        fNFTIfo.start();        
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+
+        vm.roll(fNFTIfo.startBlock() + 1000);
+
+        assertEq(block.number, fNFTIfo.startBlock() + 1000);
+
+        fNFTIfo.togglePause();
+
+        assertEq(fNFTIfo.paused() ? 1 : 0, true ? 1 : 0);
+
+        assertEq(fNFTIfo.duration(), ifoSettings.minimumDuration());
+
+        vm.roll(fNFTIfo.pauseBlock() + 1000);
+
+        fNFTIfo.togglePause();
+
+        assertEq(fNFTIfo.paused() ? 1 : 0, false ? 1 : 0);
+
+        assertEq(fNFTIfo.duration(), ifoSettings.minimumDuration() + 1000);        
     }
 
-    function testFail_togglePauseIfNotStarted() public {
+    function testFail_togglePauseWhenNotStarted() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
+        fNFTIfo.togglePause();
     }
 
-    function testFail_togglePauseIfEnded() public {
+    function testFail_togglePauseAfterEnded() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
+        fNFTIfo.start();        
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+
+        fNFTIfo.end();
+
+        fNFTIfo.togglePause();
     }
 
     function testFail_togglePauseNotCurator() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
 
+        fNFTIfo.start();        
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+
+        vm.startPrank(address(1));
+
+        fNFTIfo.togglePause();
+
+        vm.stopPrank();
     }
 
     function testWithdrawProfit() public {
-
+        
     }
 
     function testFail_withdrawProfitNotCurator() public {
