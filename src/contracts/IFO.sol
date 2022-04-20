@@ -72,6 +72,7 @@ contract IFO is Initializable {
     error SaleActive();
     error TxFailed();
     error NotWhitelisted();
+    error NoProfit();
     error OverLimit();
     error NoLiquidityProvided();
     error FNFTLocked();
@@ -111,7 +112,9 @@ contract IFO is Initializable {
         ) revert InvalidAmountForSale();
         if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
         // expect ifo duration to be between minimum and maximum durations set by the DAO
-        if (_duration < IIFOSettings(settings).minimumDuration() || _duration > IIFOSettings(settings).maximumDuration()) revert InvalidDuration();
+        if (_duration != 0 && 
+        (_duration < IIFOSettings(settings).minimumDuration() 
+        || _duration > IIFOSettings(settings).maximumDuration())) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
         // if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
@@ -135,8 +138,8 @@ contract IFO is Initializable {
     }
 
     /// @notice checks if whitelist period is over and ends whitelist
-    modifier checkDeadline() {
-        if (block.number > startBlock + duration && duration != 0) {
+    modifier checkDeadline() {        
+        if (block.number > startBlock + duration && duration != 0 && !ended) {
             end();
         }
         _;
@@ -215,8 +218,8 @@ contract IFO is Initializable {
     function end() public onlyCurator checkPaused {
         if (!started) revert SaleUnstarted();
         if (
-            block.number < startBlock + duration || // If not past duration
-            IIFOSettings(settings).minimumDuration() > block.number - startBlock // If tries to end before minimum duration
+            block.number <= startBlock + duration || // If not past duration
+            block.number - startBlock < IIFOSettings(settings).minimumDuration() // If tries to end before minimum duration
         ) revert DeadlineActive();
         if (ended) revert SaleAlreadyEnded();
 
@@ -276,6 +279,7 @@ contract IFO is Initializable {
     /// @notice withdraws ETH from sale only after IFO over
     function adminWithdrawProfit() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
+        if (profitRaised <= 0) revert NoProfit();
         uint256 profit = profitRaised;
         profitRaised = 0;
 

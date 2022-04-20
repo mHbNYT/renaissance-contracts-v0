@@ -532,7 +532,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
@@ -576,7 +576,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
     }
@@ -597,7 +597,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         vm.startPrank(address(user1));
 
@@ -626,7 +626,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.paused() ? 1 : 0, true ? 1 : 0);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
     }
@@ -664,7 +664,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration()-1);
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
         fNFTIfo.end();
 
@@ -686,11 +686,51 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
         assertEq(fNFTIfo.ended() ? 1 : 0, true ? 1 : 0);   
+
+        fNFTIfo.end();
+    }
+
+    function testFail_endBeforeMinimumDurationForInfiniteDuration() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            0, //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
+
+        fNFTIfo.start();        
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
+
+        fNFTIfo.end();
+    }
+
+    function testEndAfterMinimumDurationForInfiniteDuration() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            0, //sale duration
+            true // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
+
+        fNFTIfo.start();        
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);   
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
     }
@@ -759,7 +799,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();        
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
@@ -780,7 +820,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         fNFTIfo.start();        
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         vm.startPrank(address(user1));
 
@@ -826,7 +866,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
         assertEq(address(user2).balance, originalUser2Balance - 1 ether);
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
@@ -842,23 +882,109 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testFail_withdrawProfitNotCurator() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));                
 
+        ifoSettings.setFeeReceiver(payable(address(user1)));        
+
+        fNFTIfo.start();
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);     
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+
+        fNFTIfo.end();
+
+        vm.startPrank(address(user2));
+        fNFTIfo.adminWithdrawProfit();
+        vm.stopPrank();
     }
 
-    function testFail_withdrawProfitBeforeDuration() public {
+    function testWithdrawProfitAutoEndsAfterDuration() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));                
 
+        ifoSettings.setFeeReceiver(payable(address(user1)));        
+
+        fNFTIfo.start();
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);     
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+        
+        fNFTIfo.adminWithdrawProfit();
     }
 
     function testFail_withdrawProfitBeforeEnd() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            0, //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));                
 
+        ifoSettings.setFeeReceiver(payable(address(user1)));        
+
+        fNFTIfo.start();
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);     
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+        
+        fNFTIfo.adminWithdrawProfit();
     }
 
-    function testWithdrawProfitTwice() public {
+    function testFail_withdrawProfitTwice() public {
+        fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            fractionalizedNFT.balanceOf(address(this)), //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));                
 
-    }
+        ifoSettings.setFeeReceiver(payable(address(user1)));        
 
-    function testWithdrawProfitPassesWhenDurationZero() public {
+        fNFTIfo.start();
 
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);     
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+        
+        fNFTIfo.adminWithdrawProfit();
+
+        fNFTIfo.adminWithdrawProfit();
     }
 
     function testApproveUtilityContract() public {
