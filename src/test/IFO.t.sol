@@ -988,7 +988,41 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testWithdrawFNFT() public {
+        uint originalBalance = fractionalizedNFT.balanceOf(address(this));
+        fractionalizedNFT.approve(address(ifoFactory), originalBalance);                
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            originalBalance, //amountForSale
+            0.02 ether, //price per token
+            fractionalizedNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
+        fNFTIfo.start();
+
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);    
+
+        assertEq(fractionalizedNFT.balanceOf(address(this)), 0); 
+
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalBalance);
+
+        vm.startPrank(address(user1));
+        fNFTIfo.deposit{value: 1 ether}();
+        vm.stopPrank();
+
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalBalance - 1 ether / 0.02 ether);
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+
+        fNFTIfo.end();
+
+        fNFTIfo.adminWithdrawFNFT();
+
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), 0);      
+
+        assertEq(fractionalizedNFT.balanceOf(address(this)), originalBalance - 1 ether / 0.02 ether);
     }
 
     function testFail_withdrawFNFTWhileSaleActive() public {
