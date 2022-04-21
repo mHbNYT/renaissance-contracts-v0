@@ -128,8 +128,8 @@ contract IFO is Initializable {
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         if (IIFOSettings(settings).creatorUtilityContract() != address(0)) {
-            FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), 1e18);
-        }        
+            FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
+        }
     }
 
     modifier onlyCurator() {
@@ -303,6 +303,12 @@ contract IFO is Initializable {
         FNFT.safeTransfer(address(msg.sender), fNFTBalance);
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
+    }
+
+    /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
+    function approve() public onlyCurator {
+        if (IIFOSettings(settings).creatorUtilityContract() == address(0)) revert InvalidAddress();
+        FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
     }
 
     //Helper functions
