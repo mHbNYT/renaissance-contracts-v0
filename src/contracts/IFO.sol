@@ -125,6 +125,11 @@ contract IFO is Initializable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;        
+
+        /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
+        if (IIFOSettings(settings).creatorUtilityContract() != address(0)) {
+            FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), 1e18);
+        }        
     }
 
     modifier onlyCurator() {
@@ -291,20 +296,13 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.redeemed))
+        if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended))
             revert FNFTLocked();
 
         uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
         FNFT.safeTransfer(address(msg.sender), fNFTBalance);
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
-    }
-
-    /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
-    function approve() public onlyCurator {
-        if (!ended) revert SaleActive();        
-
-        FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), 1e18);
     }
 
     //Helper functions
