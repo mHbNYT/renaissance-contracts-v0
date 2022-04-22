@@ -61,7 +61,7 @@ contract IFO is Initializable {
     error InvalidPrice();
     error InvalidCap();
     error InvalidDuration();
-    error InvalidReservePrice(uint256 proposedPrice);
+    // error InvalidReservePrice(uint256 proposedPrice);
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();

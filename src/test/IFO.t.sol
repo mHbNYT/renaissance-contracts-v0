@@ -1257,11 +1257,23 @@ contract IFOTest is DSTest, ERC721Holder {
     /// --------------------------------
 
     function testDeposit() public {
-
+        
     }
 
     function testFail_depositAfterSaleEnded() public {
         
+    }
+
+    function testFail_depositWhilePaused() public {
+        
+    }
+
+    function testDepositAfterSaleResumesAfterDeadline() public {
+        
+    }
+
+    function testDepositSaleEndAutoAfterDeadline() public {
+
     }
 
     function testFail_depositBeforeSaleStarted() public {
@@ -1278,7 +1290,7 @@ contract IFOTest is DSTest, ERC721Holder {
 
     function testGetUserRemainingAllocation() public {
 
-    }    
+    }
 
     receive() external payable {}
 }
