@@ -1257,7 +1257,82 @@ contract IFOTest is DSTest, ERC721Holder {
     /// --------------------------------
 
     function testDeposit() public {
-        
+        uint256 originalAccountFNFTBalance = fractionalizedNFT.balanceOf(address(this));
+        uint256 price = 0.02 ether;
+        fractionalizedNFT.approve(address(ifoFactory), originalAccountFNFTBalance);
+        ifoFactory.create(
+            address(fractionalizedNFT), // the address of the fractionalized token
+            originalAccountFNFTBalance, //amountForSale
+            price, //price per token
+            3 ether / price, // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));        
+        uint256 originalAccountBalance = address(this).balance;
+        uint256 originalUser2Balance = address(user2).balance;
+        uint256 originalUser1Balance = address(user1).balance;
+
+        ifoSettings.setFeeReceiver(payable(address(user1)));
+        uint256 govFee = ifoSettings.governanceFee();
+        uint256 fee = (govFee * 1 ether) / 1000;
+        uint256 profit = 1 ether - fee;
+
+        fNFTIfo.start();        
+
+        //started
+        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0, "started");     
+
+        //start remaining allocaiton 3
+        assertEq(fNFTIfo.getUserRemainingAllocation(address(this)), 3 ether / price, "this remaining allocaiton 3");
+        assertEq(fNFTIfo.getUserRemainingAllocation(address(user2)), 3 ether / price, "user2 remaining allocaiton 3");
+
+        //fnft balance 0 before deposit
+        assertEq(fractionalizedNFT.balanceOf(address(this)), 0, "this fnft balance before deposit"); 
+        assertEq(fractionalizedNFT.balanceOf(address(user2)), 0, "user2 fnft balance before deposit"); 
+
+        //fnft balance full in ifo contract
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalAccountFNFTBalance, "ifo fnft balance before deposit"); 
+
+        fNFTIfo.deposit{value: 1 ether}();
+
+        //fnft balance of ifo contract after this address deposit
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalAccountFNFTBalance - 1 ether / price, "ifo fnft balance after this deposit"); 
+        //profitRaised balance of ifo contract after this address deposit
+        assertEq(fNFTIfo.profitRaised(), profit, "profitRaised balance after this deposit"); 
+        //totalaRaised balance of ifo contract after this address deposit
+        assertEq(fNFTIfo.totalRaised(), 1 ether, "totalRaised balance after this deposit"); 
+        //this address remaining allocation (3 - 1)
+        assertEq(fNFTIfo.getUserRemainingAllocation(address(this)), 2 ether / price, "this remaining allocation after deposit"); 
+        //this address got fnft
+        assertEq(fractionalizedNFT.balanceOf(address(this)), 1 ether / price, "this address fnft balance after deposit");
+        //this balance after deposit
+        assertEq(address(this).balance, originalAccountBalance - 1 ether);
+        //ifo balance after deposit
+        assertEq(address(fNFTIfo).balance, profit);
+        //user1 balance after deposit
+        assertEq(address(user1).balance, originalUser1Balance + fee);
+
+        vm.startPrank(address(user2));
+        fNFTIfo.deposit{value: 2 ether}();
+        vm.stopPrank();
+
+        //fnft balance of ifo contract after user2 address deposit (1 + 2)
+        assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalAccountFNFTBalance - 3 ether / price, "ifo fnft balance after user2 deposit"); 
+        //profitRaised balance of ifo contract after user2 address deposit
+        assertEq(fNFTIfo.profitRaised(), profit * 3, "profitRaised balance after user2 deposit"); 
+        //totalaRaised balance of ifo contract after user2 address deposit
+        assertEq(fNFTIfo.totalRaised(), 3 ether, "totalRaised balance after user2 deposit"); 
+        //user2 address remaining allocation (3 - 2)
+        assertEq(fNFTIfo.getUserRemainingAllocation(address(user2)), 1 ether / price, "user2 remaining allocation after deposit"); 
+        //user2 address got fnft
+        assertEq(fractionalizedNFT.balanceOf(address(user2)), 2 ether / price, "user2 address fnft balance after deposit");
+        //this balance after deposit
+        assertEq(address(user2).balance, originalUser2Balance - 2 ether);
+        //ifo balance after deposit
+        assertEq(address(fNFTIfo).balance, profit * 3);
+        //user1 balance after deposit
+        assertEq(address(user1).balance, originalUser1Balance + fee * 3);
     }
 
     function testFail_depositAfterSaleEnded() public {
@@ -1285,6 +1360,10 @@ contract IFOTest is DSTest, ERC721Holder {
     }
 
     function testFail_depositOverLimit() public {
+
+    }
+
+    function testFail_depositMoreThanCap() public {
 
     }
 
