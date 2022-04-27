@@ -1,13 +1,12 @@
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./InitializedProxy.sol";
-import "./Ifo.sol";
+import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
-import {console} from "../test/utils/utils.sol";
 
 contract IFOFactory is Ownable, Pausable {
     using SafeERC20 for IERC20;

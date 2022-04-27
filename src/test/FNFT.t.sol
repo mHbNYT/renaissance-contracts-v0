@@ -1,5 +1,6 @@
+//solhint-disable func-name-mixedcase
 //SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
@@ -26,7 +27,6 @@ contract FNFTTest is DSTest, ERC721Holder {
     User public user1;
     User public user2;
     User public user3;
-
     UserNoETH public user4;
 
     Curator public curator;

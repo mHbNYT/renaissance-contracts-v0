@@ -12,6 +12,15 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
+        version: "0.8.13",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 2_000_000,
+          },
+        },
+      },
+      {
         version: "0.8.11",
         settings: {
           optimizer: {
@@ -22,13 +31,13 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-  defaultNetwork: "localhost",
   networks: {
     hardhat: {
       chainId: +process.env.AURORA_LOCAL_CHAINID!,
       accounts: {
         mnemonic: process.env.AURORA_LOCAL_PRIVATE_KEY,
       },
+      saveDeployments: false,
     },
     aurora_testnet: {
       url: process.env.AURORA_TEST_URI,
@@ -36,7 +45,8 @@ const config: HardhatUserConfig = {
       accounts: [`${process.env.AURORA_TEST_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
-      gas: 8000000  
+      gas: 8000000,
+      saveDeployments: false,
     },
     aurora_mainnet: {
       url: process.env.AURORA_MAIN_URI,
@@ -44,13 +54,25 @@ const config: HardhatUserConfig = {
       accounts: [`${process.env.AURORA_MAIN_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
-      gas: 8000000
+      gas: 8000000,
+      saveDeployments: true,
     }
   },
   paths: {
     sources: "./src/contracts",
     artifacts: "./build/artifacts",
     cache: "./build/cache",
+  },
+  namedAccounts: {
+    deployer: 0,
+    WETH: {
+      aurora_mainnet: process.env.AURORA_MAIN_WETH || null
+    },
+    DAO: {
+      hardhat: 2,
+      aurora_testnet: 2,
+      aurora_mainnet: process.env.AURORA_MAIN_DAO || null,
+    }
   },
 };
 

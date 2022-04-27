@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "forge test -vvvv",
-    "build": "forge build"
+    "build": "forge build",
+    "dev": "npx hardhat node --tags local",
+    "dev:seed": "npx hardhat node --tags seed",
+    "deploy": "npx hardhat deploy --tags main --network aurora_mainnet"
   },
   "author": "",
   "license": "ISC",
