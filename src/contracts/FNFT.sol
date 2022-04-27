@@ -457,11 +457,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
         if (auctionState != State.inactive) revert AuctionLive();
-<<<<<<< HEAD
-        if (msg.value < _getAuctionPrice()) revert BidTooLow();        
-=======
-        if (msg.value < _getAuctionPrice()) revert BidTooLow();
->>>>>>> 3bca0cb (Add error objects and add price oracle update based tests)
+        uint256 _auctionPrice = _getAuctionPrice();
+        if (_auctionPrice == 0 || msg.value < _auctionPrice) revert BidTooLow();
 
         auctionEnd = block.timestamp + auctionLength;
         auctionState = State.live;

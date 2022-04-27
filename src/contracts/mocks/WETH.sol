@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 //SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.13;
-=======
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
->>>>>>> daf3893 (Adds test for price oracle interaction with fNFT)
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 

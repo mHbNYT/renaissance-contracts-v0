@@ -24,11 +24,7 @@ contract FNFTFactory is Ownable, Pausable {
     event FNFTCreated(
         address indexed token, 
         address FNFT, 
-<<<<<<< HEAD
-        uint256 id, 
-=======
         address creator, 
->>>>>>> 6d26e18846b1f053877f43c7a561b3f3e6fbaf48
         
         uint256 price,         
         string name, 
@@ -72,11 +68,7 @@ contract FNFTFactory is Ownable, Pausable {
 
         bytes32 fnftId = getFNFTId(_nft, _tokenId);
         
-<<<<<<< HEAD
-        emit FNFTCreated(_nft, fnft, _tokenId, _listPrice, _name, _symbol);
-=======
         emit FNFTCreated(_nft, fnft, msg.sender, _listPrice, _name, _symbol);
->>>>>>> 6d26e18846b1f053877f43c7a561b3f3e6fbaf48
 
         fnfts[fnftId] = fnft;
 

@@ -9,6 +9,7 @@ import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
+import {IWETH} from "../contracts/interfaces/IWETH.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWithFNFTAndWETH} from "./utils/utils.sol";
@@ -300,7 +301,7 @@ contract FNFTTest is DSTest, ERC721Holder {
         assertEq(token.balanceOf(address(this)), 1);
     }
 
-    function testCannotGetEth() public {
+    function testGetWeth() public {
         fNFT.transfer(address(user1), 25 * 1e18);
         user1.call_updatePrice(1 ether);
         fNFT.transfer(address(user2), 25 * 1e18);
@@ -311,15 +312,10 @@ contract FNFTTest is DSTest, ERC721Holder {
         user4.call_start(1.05 ether);
         user4.setCanReceive(false);
         assertTrue(fNFT.auctionState() == FNFT.State.live);
-        vm.expectRevert(bytes(""));
         user2.call_bid(1.5 ether);
-    }
 
-    function testFail_notEnoughVoting() public {
-        // now only 24% of tokens are voting so we fail
-        fNFT.transfer(address(user1), 76e18);
-
-        user1.call_start(1.05 ether);
+        assertTrue(address(user4).balance != 1.05 ether);
+        assertTrue(IWETH(address(weth)).balanceOf(address(user4)) == 1.05 ether);
     }
 
     function testListPriceZero() public {
