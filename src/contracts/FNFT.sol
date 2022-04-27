@@ -446,9 +446,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
         if (auctionState != State.inactive) revert AuctionLive();
-        if (msg.value < _getAuctionPrice()) revert BidTooLow();
-        // TODO: is this line needed?
-        if (votingTokens * 1000 < IFNFTSettings(settings).minVotePercentage() * totalSupply()) revert NotEnoughVoters();
+        if (msg.value < _getAuctionPrice()) revert BidTooLow();        
 
         auctionEnd = block.timestamp + auctionLength;
         auctionState = State.live;
