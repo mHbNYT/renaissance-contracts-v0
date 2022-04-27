@@ -25,8 +25,20 @@ contract PriceOracle is Ownable, IPriceOracle {
     address public immutable WETH;
     address public immutable FACTORY;
 
+    /**
+        EVENTS 
+     */
     event UpdatePeriod(uint256 _old, uint256 _new);
     event UpdateMinimumPairInfoUpdate(uint256 _old, uint256 _new);
+    event UpdatePairFactory(address _old, address _new);
+
+    /**
+        ERROR
+     */
+    error PairInfoDoesNotExist();
+    error InvalidToken();
+    error NotEnoughUpdates();
+    error PairInfoAlreadyExists();
 
     constructor(address _factory, address _weth) {
         WETH = _weth;
@@ -37,14 +49,14 @@ contract PriceOracle is Ownable, IPriceOracle {
 
     // Set minimum period to wait for the next pair info update.
     function setPeriod(uint256 _newPeriod) external onlyOwner {
-        emit UpdatePeriod(period, _newPeriod);
         period = _newPeriod;
+        emit UpdatePeriod(period, _newPeriod);
     } 
 
     // Set minimum pair info info update required to get fNFT-WETH TWAP price.
     function setMinimumPairInfoUpdate(uint256 _newMinimumPairInfoUpdate) external onlyOwner {
-        emit UpdateMinimumPairInfoUpdate(minimumPairInfoUpdate, _newMinimumPairInfoUpdate);
         minimumPairInfoUpdate = _newMinimumPairInfoUpdate;
+        emit UpdateMinimumPairInfoUpdate(minimumPairInfoUpdate, _newMinimumPairInfoUpdate);
     }
 
     // Get pair address from factory. Returns address(0) if not found.
@@ -80,13 +92,9 @@ contract PriceOracle is Ownable, IPriceOracle {
         uint256 _amountIn
     ) external view returns (uint256 amountOut) {
         PairInfo memory pairInfo = _getTwap[_pair];
-        require(pairInfo.exists == true, "consult: pair info does not exist.");
-        if (_token == pairInfo.token0) {
-            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
-        } else {
-            require(_token == pairInfo.token1, "consult: invalid token.");
-            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
-        }
+        if (pairInfo.exists == false) revert PairInfoDoesNotExist();
+
+        amountOut = _calculatePrice(_token, _amountIn, pairInfo);
     }
 
     // Get fNFT TWAP Price in ETH/WETH.
@@ -94,14 +102,19 @@ contract PriceOracle is Ownable, IPriceOracle {
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut) {
         address pair = _getPairAddress(_fNFT, WETH);
         PairInfo memory pairInfo = _getTwap[pair];
-        require(pairInfo.exists == true, "fNFT TWAP: pair info does not exist.");
-        require(pairInfo.totalUpdates > minimumPairInfoUpdate, "fNFT TWAP: not enough oracle updates on the pair.");
+        if (pairInfo.exists == false) revert PairInfoDoesNotExist();
+        if (pairInfo.totalUpdates < minimumPairInfoUpdate) revert NotEnoughUpdates();
 
-        if (_fNFT == pairInfo.token0) {
-            amountOut = pairInfo.price0Average.mul(_amountIn).decode144();
+        amountOut = _calculatePrice(_fNFT, _amountIn, pairInfo);
+    }
+
+    // Calculate token twap price based on pair info and the amount in.
+    function _calculatePrice(address _token, uint256 _amountIn, PairInfo memory _pairInfo) internal pure returns (uint256 amountOut) {
+        if (_token == _pairInfo.token0) {
+            amountOut = _pairInfo.price0Average.mul(_amountIn).decode144();
         } else {
-            require(_fNFT == pairInfo.token1, "fNFT TWAP: invalid token.");
-            amountOut = pairInfo.price1Average.mul(_amountIn).decode144();
+            if (_token != _pairInfo.token1) revert InvalidToken();
+            amountOut = _pairInfo.price1Average.mul(_amountIn).decode144();
         }
     }
 
@@ -148,7 +161,7 @@ contract PriceOracle is Ownable, IPriceOracle {
         // Get predetermined pair address.
         address pairAddress = _getPairAddress(_token0, _token1);
         PairInfo storage pairInfo = _getTwap[pairAddress];
-        require(pairInfo.exists == false, "add pair info: pair already exists.");
+        if (pairInfo.exists == true) revert PairInfoAlreadyExists();
 
         // Get pair information for the given pair address.
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);

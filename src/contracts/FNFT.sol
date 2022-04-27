@@ -397,9 +397,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private {
         uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
-        require(newUserReserve >= reservePriceMin, "update:reserve price too low");
+        if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
-        require(newUserReserve <= reservePriceMax, "update:reserve price too high");
+        if (newUserReserve > reservePriceMax) revert PriceTooHigh();
     }
 
     /// @notice an internal function used to update sender and receivers price on token transfer
@@ -457,7 +457,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
         if (auctionState != State.inactive) revert AuctionLive();
+<<<<<<< HEAD
         if (msg.value < _getAuctionPrice()) revert BidTooLow();        
+=======
+        if (msg.value < _getAuctionPrice()) revert BidTooLow();
+>>>>>>> 3bca0cb (Add error objects and add price oracle update based tests)
 
         auctionEnd = block.timestamp + auctionLength;
         auctionState = State.live;

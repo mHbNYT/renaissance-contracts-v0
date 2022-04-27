@@ -237,7 +237,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder {
         assertEq(weth.balanceOf(address(fNFT)), fNFT.buyItNowPrice());
     }
 
-    function testCannotUpdateUserPrice_whenNoVotingTokensAndPriceTooHigh() public {
+    function testFail_updateUserPrice_whenNoVotingTokensAndPriceTooHigh() public {
         /**
         SETUP
          */
@@ -250,12 +250,11 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder {
         // Mock the next call as the user and update the user price which is set higher than the maxium reserve price relative to intial reserve price,
         // since the total voting token is set to 0.
         uint256 userPrice = (fNFT.initialReserve() * settings.maxReserveFactor() + 1 ether) / 1000;
-        vm.expectRevert(bytes("update:reserve price too high"));
         vm.startPrank(address(user1));
         fNFT.updateUserPrice(userPrice);
     }
 
-    function testCannotUpdateUserPrice_whenNoVotingTokensAndPriceTooLow() public {
+    function testFail_updateUserPrice_whenNoVotingTokensAndPriceTooLow() public {
         /**
         SETUP
          */
@@ -268,7 +267,6 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder {
         // Mock the next call as the user and update the user price which is set lower than the minimum reserve price relative to intial reserve price,
         // since the total voting token is set to 0.
         uint256 userPrice = (fNFT.initialReserve() * settings.minReserveFactor() - 1 ether) / 1000;
-        vm.expectRevert(bytes("update:reserve price too low"));
         vm.startPrank(address(user1));
         fNFT.updateUserPrice(userPrice);
     }

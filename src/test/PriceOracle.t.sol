@@ -200,8 +200,58 @@ contract PriceOracleTest is DSTest {
         assertEq(ethPrice, fNFTAmount * weth.balanceOf(pairAddress)/IERC20Upgradeable(fNFT).balanceOf(pairAddress));
     }
 
-    // Integration test with actual trades.
+    /**
+    Test failure in retrieving token(fNFT) price in ETH when not enough updates to pair's twap.
+     */
+    function testFail_fNFTPriceETH_notEnoughUpdates() public {
+        // ACTION
+        // Add pair info to price oracle.
+        address pairAddress = address(pairWithWeth.uPair());
+        address fNFT = address(pairWithWeth.token());
+        address wethToken = address(weth);
+        priceOracle.updatePairInfo(fNFT, wethToken);
+        IUniswapV2Pair(pairAddress).sync();
+        (, , uint256 blockTimeStampLast) = IUniswapV2Pair(pairAddress).getReserves();
 
-//     function testFail_consult_pairDoesNotExist() public {}
-//     function testFail_consult_invalidToken() public {}
+        // Move block.timestamp forward and sync uniswap pair and update price oracle.
+        // Update price oracle pair less than required pair info update.
+        uint jump = priceOracle.period();
+        for (uint i = 0; i <= priceOracle.minimumPairInfoUpdate() - 3; i++) {
+            blockTimeStampLast += jump;
+            vm.warp(blockTimeStampLast);
+            IUniswapV2Pair(pairAddress).sync();
+            priceOracle.updatePairInfo(fNFT, wethToken);
+        }
+
+        // Get Price of FNFT in ETH.
+        priceOracle.getfNFTPriceETH(fNFT, 50 ether);
+    }
+    
+    /**
+    Test failure in retrieving token(fNFT) price in ETH when twap does not exist.
+     */
+    function testFail_fNFTPriceETH_pairInfoDoesNotExist() public {
+        // ACTION
+        // Add pair info to price oracle.
+        address pairAddress = address(pairWithWeth.uPair());
+        address fNFT = address(pairWithWeth.token());
+        address wethToken = address(weth);
+        address fakeToken = address(new MockERC20Upgradeable());
+        priceOracle.updatePairInfo(fNFT, wethToken);
+        IUniswapV2Pair(pairAddress).sync();
+        (, , uint256 blockTimeStampLast) = IUniswapV2Pair(pairAddress).getReserves();
+
+        // Move block.timestamp forward and sync uniswap pair and update price oracle.
+        // Update price oracle pair less than required pair info update.
+        uint jump = priceOracle.period();
+        for (uint i = 0; i <= priceOracle.minimumPairInfoUpdate(); i++) {
+            blockTimeStampLast += jump;
+            vm.warp(blockTimeStampLast);
+            IUniswapV2Pair(pairAddress).sync();
+            priceOracle.updatePairInfo(fNFT, wethToken);
+        }
+
+        // Get Price of fakeToken in ETH.
+        priceOracle.getfNFTPriceETH(fakeToken, 50 ether);
+    }
 }
