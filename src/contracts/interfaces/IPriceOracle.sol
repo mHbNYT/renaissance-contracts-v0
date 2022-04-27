@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.11;
+pragma solidity ^0.8.0;
 import "../libraries/UQ112x112.sol";
 import "../libraries/math/FixedPoint.sol";
 
