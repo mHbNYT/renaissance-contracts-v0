@@ -365,6 +365,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         emit PriceUpdate(msg.sender, newUserReserve);
     }
 
+    function getQuorum() external view returns (uint256) {
+        return _getQuorum();
+    }
+
+    function _getQuorum() internal view returns (uint256) {
+        return votingTokens * 1000 / totalSupply();
+    }
+
     function _getAuctionPrice() internal returns (uint256) {
         IPriceOracle priceOracle = IPriceOracle(IFNFTSettings(settings).priceOracle());
         IUniswapV2Pair pair = IUniswapV2Pair(
@@ -378,7 +386,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         }
 
         bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
-        bool aboveQuorum = votingTokens * 1000 > IFNFTSettings(settings).minVotePercentage() * totalSupply();
+        bool aboveQuorum = _getQuorum() > IFNFTSettings(settings).minVotePercentage();
         uint256 _reservePrice = reservePrice();
 
         if (!aboveLiquidityThreshold && aboveQuorum){
