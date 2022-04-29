@@ -118,6 +118,15 @@ contract FNFTTest is DSTest, ERC721Holder {
     /// -------- GOV FUNCTIONS --------
     /// -------------------------------
 
+    function testToggleVerified() public {
+        assertTrue(fNFT.verified() == false);
+        fNFT.toggleVerified();
+        assertTrue(fNFT.verified() == true);
+        fNFT.toggleVerified();
+        assertTrue(fNFT.verified() == false);
+    }
+
+
     function testKickCurator() public {
         fNFT.updateCurator(address(curator));
         assertTrue(fNFT.curator() == address(curator));
