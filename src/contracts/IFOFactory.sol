@@ -20,8 +20,6 @@ contract IFOFactory is Ownable, Pausable {
     /// @notice the TokenVault logic contract
     address public immutable logic;
 
-    bytes4 public constant IFO_SALT = 0xefefefef;
-
     event IFOCreated(
         address indexed IFO,
         address indexed FNFT,

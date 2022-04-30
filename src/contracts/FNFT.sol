@@ -60,8 +60,6 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the address who initially deposited the NFT
     address public curator;
 
-    ///
-
     /// @notice the AUM fee paid to the curator yearly. 3 decimals. ie. 100 = 10%
     uint256 public fee;
 

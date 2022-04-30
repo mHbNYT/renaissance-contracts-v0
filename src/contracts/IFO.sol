@@ -296,9 +296,9 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended)) {
+        if (_fnftLocked() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended)) {
             revert FNFTLocked();
-        }            
+        }
 
         uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
         FNFT.safeTransfer(address(msg.sender), fNFTBalance);
@@ -321,5 +321,13 @@ contract IFO is Initializable {
     function _safeTransferETH(address _to, uint256 _value) private {
         (bool success, ) = _to.call{value: _value}(new bytes(0));
         if (!success) revert TxFailed();
+    }
+
+    function fnftLocked() external view returns(bool) {
+        return _fnftLocked();
+    }
+
+    function _fnftLocked() internal view returns(bool) {
+        return IIFOSettings(settings).creatorIFOLock();
     }
 }
