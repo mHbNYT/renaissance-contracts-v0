@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
+import {IFOSettings} from "../contracts/IFOSettings.sol";
+import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
@@ -37,9 +39,11 @@ contract FNFTTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);
+        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);        
 
-        settings = new FNFTSettings(address(weth), address(priceOracle));
+        address ifoFactory = address(new IFOFactory(address(new IFOSettings())));
+
+        settings = new FNFTSettings(address(weth), address(priceOracle), ifoFactory);
 
         settings.setGovernanceFee(10);
 

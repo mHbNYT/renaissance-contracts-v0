@@ -6,6 +6,8 @@ import {IWETH} from "./IWETH.sol";
 interface IFNFTSettings {
     function priceOracle() external view returns (address);
 
+    function ifoFactory() external view returns (address);
+
     function WETH() external view returns (address);
 
     function maxAuctionLength() external view returns (uint256);

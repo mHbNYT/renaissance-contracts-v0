@@ -20,7 +20,7 @@ contract FNFTSettingsTest is DSTest {
     function setUp() public {
         cheatcodes = CheatCodes(HEVM_ADDRESS);
 
-        settings = new FNFTSettings(address(0), address(0));
+        settings = new FNFTSettings(address(0), address(0), address(0));
 
         token = new MockNFT();
         token2 = new MockNFT();

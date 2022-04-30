@@ -5,6 +5,8 @@ import "../../../lib/ds-test/src/test.sol";
 import {CheatCodes} from "./cheatcodes.sol";
 import {WETH} from "../../contracts/mocks/WETH.sol";
 import {PriceOracle} from "../../contracts/PriceOracle.sol";
+import {IFOSettings} from "../../contracts/IFOSettings.sol";
+import {IFOFactory} from "../../contracts/IFOFactory.sol";
 import {FNFTSettings} from "../../contracts/FNFTSettings.sol";
 import {FNFTFactory} from "../../contracts/FNFTFactory.sol";
 import {IUniswapV2Factory} from "../../contracts/interfaces/IUniswapV2Factory.sol";
@@ -27,7 +29,8 @@ library SetupEnvironment {
     }
 
     function setupFNFTSettings(address _weth, address _priceOracle) public returns (FNFTSettings fNFTSettings) {
-        fNFTSettings = new FNFTSettings(address(_weth), address(_priceOracle));
+        address ifoFactory = address(new IFOFactory(address(new IFOSettings())));
+        fNFTSettings = new FNFTSettings(address(_weth), address(_priceOracle), ifoFactory);
         fNFTSettings.setGovernanceFee(10);
     }
 

@@ -16,9 +16,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     WETH = mockWETH.address;
   }
 
+  const IFOFactory = await get('IFOFactory')
+
   await deploy('FNFTSettings', {
     from: deployer,
-    args: [WETH, zeroAddress], // set price oracle address after deployment
+    args: [WETH, zeroAddress, IFOFactory.address], // set price oracle address after deployment
     log: true,
   });
 

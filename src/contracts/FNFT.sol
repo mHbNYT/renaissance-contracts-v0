@@ -367,7 +367,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         return _getQuorum();
     }
 
-    function _getQuorum() internal view returns (uint256) {
+    function _getQuorum() internal view returns (uint256) {        
         return votingTokens * 1000 / totalSupply();
     }
 

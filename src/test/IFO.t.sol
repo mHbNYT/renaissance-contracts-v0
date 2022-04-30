@@ -41,13 +41,13 @@ contract IFOTest is DSTest, ERC721Holder {
     function setUp() public {
         (vm, weth, , priceOracle, , , ) = SetupEnvironment.setup(10 ether, 10 ether);
 
-        fNFTSettings = new FNFTSettings(address(weth), address(priceOracle));
+        ifoSettings = new IFOSettings();
+        ifoFactory = new IFOFactory(address(ifoSettings));
+
+        fNFTSettings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
         fNFTSettings.setGovernanceFee(10);
 
-        ifoSettings = new IFOSettings();
-
-        fnftFactory = new FNFTFactory(address(fNFTSettings));
-        ifoFactory = new IFOFactory(address(ifoSettings));
+        fnftFactory = new FNFTFactory(address(fNFTSettings));        
 
         nft = new MockNFT();
 
