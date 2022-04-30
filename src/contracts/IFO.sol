@@ -30,6 +30,7 @@ contract IFO is Initializable {
     uint256 public totalRaised; // total ETH raised by sale
     uint256 public profitRaised;
     uint256 public totalSold; // total fNFT sold by sale
+    uint256 public lockedSupply;
 
     uint256 public duration; // ifo duration
     uint256 public startBlock; // block started
@@ -125,6 +126,7 @@ contract IFO is Initializable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;        
+        lockedSupply = 0;
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         if (IIFOSettings(settings).creatorUtilityContract() != address(0)) {
@@ -229,6 +231,7 @@ contract IFO is Initializable {
         if (ended) revert SaleAlreadyEnded();
 
         ended = true;
+        lockedSupply = FNFT.balanceOf(address(this));
         emit End(block.number);
     }
     
@@ -300,8 +303,9 @@ contract IFO is Initializable {
             revert FNFTLocked();
         }
 
-        uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
-        FNFT.safeTransfer(address(msg.sender), fNFTBalance);
+        uint256 fNFTBalance = FNFT.balanceOf(address(this));
+        lockedSupply -= fNFTBalance;
+        FNFT.safeTransfer(address(msg.sender), fNFTBalance);        
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }

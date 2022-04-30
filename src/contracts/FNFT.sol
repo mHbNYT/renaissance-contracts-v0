@@ -3,6 +3,8 @@ pragma solidity 0.8.13;
 
 import "./FNFTSettings.sol";
 import "./interfaces/IWETH.sol";
+import "./interfaces/IIFOFactory.sol";
+import "./interfaces/IIFO.sol";
 import "./libraries/UniswapV2Library.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -367,8 +369,13 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         return _getQuorum();
     }
 
-    function _getQuorum() internal view returns (uint256) {        
-        return votingTokens * 1000 / totalSupply();
+    function _getQuorum() internal view returns (uint256) {
+        IIFO ifo = IIFO(IIFOFactory(IFNFTSettings(settings).ifoFactory()).getIFO(address(this)));
+        if (address(ifo) != address(0) && ifo.ended() && ifo.fnftLocked()) {
+            return votingTokens * 1000 / (totalSupply() - ifo.lockedSupply());
+        } else {
+            return votingTokens * 1000 / totalSupply();
+        }        
     }
 
     function _getAuctionPrice() internal returns (uint256) {
