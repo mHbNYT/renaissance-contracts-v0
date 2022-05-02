@@ -14,7 +14,6 @@ contract IFO is Initializable {
 
     enum FNFTState {
         inactive,
-        presale,
         live,
         ended,
         redeemed
