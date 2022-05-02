@@ -465,7 +465,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 
   // Scenario 6 ends here. fNft has votes but no quorum
-  await fNft6.connect(signers[0]).getAuctionPrice();
+  // callStatic is ok because cause this is basically a view w/o TWAP
   const fNft6Price: BigNumber = await fNft6.callStatic.getAuctionPrice();
 
   // cast one vote. wont reach quorum.
