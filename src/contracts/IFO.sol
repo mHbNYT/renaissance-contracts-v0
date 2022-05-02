@@ -58,7 +58,7 @@ contract IFO is Initializable {
     error InvalidPrice();
     error InvalidCap();
     error InvalidDuration();
-    // error InvalidReservePrice(uint256 proposedPrice);
+    error InvalidReservePrice();
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();
@@ -101,20 +101,17 @@ contract IFO is Initializable {
         uint256 curatorSupply = fnft.balanceOf(_curator);
         uint256 totalSupply = fnft.totalSupply();
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (curatorSupply < totalSupply) revert NotEnoughSupply();
+        if (curatorSupply < totalSupply) revert NotEnoughSupply();        
         // make sure amount for sale is not bigger than the supply if FNFT
-        if (
-            _amountForSale == 0 || _amountForSale > curatorSupply
-            // _amountForSale % _cap != 0
-        ) revert InvalidAmountForSale();
-        if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
+        if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
+        if (_cap == 0 || _cap > totalSupply) revert InvalidCap();        
         // expect ifo duration to be between minimum and maximum durations set by the DAO
         if (_duration != 0 && 
         (_duration < IIFOSettings(settings).minimumDuration() 
         || _duration > IIFOSettings(settings).maximumDuration())) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
-        // if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
+        if (_price * totalSupply / (10 ** FNFT.decimals()) > fnft.initialReserve()) revert InvalidReservePrice();
         
         curator = _curator;
         amountForSale = _amountForSale;

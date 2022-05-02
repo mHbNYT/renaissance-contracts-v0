@@ -287,7 +287,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// -------- CORE FUNCTIONS --------
     /// --------------------------------
 
-    function getAuctionPrice() external returns (uint256) {
+    function getAuctionPrice() external view returns (uint256) {
         return _getAuctionPrice();
     }
 
@@ -310,11 +310,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         emit Won(msg.sender, price);
     }
 
-    function buyItNowPrice() external returns (uint256) {
+    function buyItNowPrice() external view returns (uint256) {
         return _buyItNowPrice();
     }
 
-    function _buyItNowPrice() internal returns (uint256) {
+    function _buyItNowPrice() internal view returns (uint256) {
         return (_getAuctionPrice() * IFNFTSettings(settings).instantBuyMultiplier()) / 10;
     }
     
@@ -378,7 +378,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         }        
     }
 
-    function _getAuctionPrice() internal returns (uint256) {
+    function _getAuctionPrice() internal view returns (uint256) {
         IPriceOracle priceOracle = IPriceOracle(IFNFTSettings(settings).priceOracle());
         IUniswapV2Pair pair = IUniswapV2Pair(
             priceOracle.getPairAddress(address(this), IFNFTSettings(settings).WETH())
@@ -411,7 +411,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         }
     }
 
-    function _getTWAP() internal returns (uint256) {
+    function _getTWAP() internal view returns (uint256) {
         try IPriceOracle(IFNFTSettings(settings).priceOracle()).getfNFTPriceETH(address(this), totalSupply()) returns (uint256 twapPrice) {
             return twapPrice;
         } catch {
@@ -420,7 +420,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     }
 
     /// @notice makes sure that the new price does not impact the reserve drastically
-    function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private {
+    function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private view {
         uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
         if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
