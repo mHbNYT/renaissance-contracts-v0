@@ -460,16 +460,8 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         assertEq(fNFT.getQuorum(), 1000);
 
-        console.log(fNFT.totalSupply());
-        console.log(fNFT.votingTokens());
-        console.log(fNFT.balanceOf(address(user1)));
-        console.log(fNFT.getQuorum());
-
         ifoSettings.setCreatorIFOLock(false);
 
-        console.log(fNFT.totalSupply());
-        console.log(fNFT.votingTokens());
-        console.log(fNFT.getQuorum());
         assertEq(fNFT.getQuorum(), 400);
     }
 

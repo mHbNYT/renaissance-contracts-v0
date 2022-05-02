@@ -242,7 +242,7 @@ contract IFO is Initializable {
 
         UserInfo storage user = userInfo[msg.sender];
 
-        uint256 payout = msg.value * FNFT.decimals() / price; // fNFT to mint for msg.value
+        uint256 payout = msg.value * (10 ** FNFT.decimals()) / price; // fNFT to mint for msg.value
 
         if (user.amount + payout > cap) revert OverLimit();
 
