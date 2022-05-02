@@ -77,6 +77,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice initial price of NFT set by curator on creation
     uint256 public initialReserve;
 
+    /// @notice whether or not this FNFT has been verified by DAO
+    bool public verified;
+
     /// @notice a mapping of users to their desired token price
     mapping(address => uint256) public userReservePrice;
 
@@ -107,6 +110,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     event UpdateCuratorFee(uint256 fee);
 
     event FeeClaimed(uint256 fee);
+
+    event Verified(bool verified);
 
     error NotGov();
     error NotCurator();
@@ -152,6 +157,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         auctionState = State.inactive;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
+        verified = false;
 
         _mint(_curator, _supply);
     }
@@ -199,6 +205,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         userReservePrice[_user] = 0;
 
         emit PriceUpdate(_user, 0);
+    }
+
+    function toggleVerified() external onlyGov {
+        bool _verified = !verified;
+        verified = _verified;
+        emit Verified(_verified);
     }
 
     /// -----------------------------------
