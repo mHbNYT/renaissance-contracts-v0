@@ -8,8 +8,6 @@ import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-interface-generator";
 
-require('dotenv').config()
-
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
