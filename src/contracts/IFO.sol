@@ -3,13 +3,10 @@ pragma solidity 0.8.13;
 
 import "./IFOSettings.sol";
 import "./interfaces/IFNFT.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract IFO is Initializable {
-    using SafeERC20 for IERC20;
-
     struct UserInfo {
         uint256 amount; // Amount ETH deposited by user
         uint256 debt; // total fNFT claimed thus fNFT debt
@@ -130,7 +127,7 @@ contract IFO is Initializable {
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         if (IIFOSettings(settings).creatorUtilityContract() != address(0)) {
-            FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
+            FNFT.approve(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
         }
     }
 
@@ -245,12 +242,12 @@ contract IFO is Initializable {
 
         UserInfo storage user = userInfo[msg.sender];
 
-        uint256 payout = msg.value / price; // fNFT to mint for msg.value
+        uint256 payout = msg.value * FNFT.decimals() / price; // fNFT to mint for msg.value
 
         if (user.amount + payout > cap) revert OverLimit();
 
 
-        totalSold = totalSold + payout;
+        totalSold += payout;
         
         address govAddress = IIFOSettings(settings).feeReceiver();
         uint256 govFee = IIFOSettings(settings).governanceFee();
@@ -262,7 +259,7 @@ contract IFO is Initializable {
         totalRaised += msg.value;
         profitRaised += profit;
 
-        FNFT.safeTransfer(msg.sender, payout);
+        FNFT.transfer(msg.sender, payout);
         _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
@@ -305,7 +302,7 @@ contract IFO is Initializable {
 
         uint256 fNFTBalance = FNFT.balanceOf(address(this));
         lockedSupply -= fNFTBalance;
-        FNFT.safeTransfer(address(msg.sender), fNFTBalance);        
+        FNFT.transfer(msg.sender, fNFTBalance);        
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
@@ -313,7 +310,7 @@ contract IFO is Initializable {
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
     function approve() public onlyCurator {
         if (IIFOSettings(settings).creatorUtilityContract() == address(0)) revert InvalidAddress();
-        FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
+        FNFT.approve(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
     }
 
     //Helper functions

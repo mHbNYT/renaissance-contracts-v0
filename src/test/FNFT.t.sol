@@ -415,16 +415,62 @@ contract FNFTTest is DSTest, ERC721Holder {
         fNFT.transfer(address(user2), 25 ether);
         user2.call_updatePrice(1 ether);                
         fNFT.transfer(address(user4), 50 ether);
-
-        console.log(fNFT.getQuorum());
-        console.log(fNFT.votingTokens());
-        console.log(fNFT.totalSupply());
+        
         assertEq(fNFT.getQuorum(), 500);
         
         user4.call_updatePrice(1 ether);
 
-        console.log(fNFT.getQuorum());
         assertEq(fNFT.getQuorum(), 1000);
+    }
+
+    function testGetQuorumOnIFOLock() public {
+        fNFT.approve(address(ifoFactory), fNFT.balanceOf(address(this)));
+        ifoFactory.create(
+            address(fNFT), // the address of the fractionalized token
+            fNFT.balanceOf(address(this)), //amountForSale
+            0.1 ether, //price per token
+            fNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fNFT)));
+        ifoSettings.setCreatorIFOLock(true);
+
+        fNFTIfo.start();
+
+        vm.startPrank(address(user1));
+        fNFTIfo.deposit{value: 1 ether}(); // 10 eth
+        vm.stopPrank();
+
+        vm.startPrank(address(user2));
+        fNFTIfo.deposit{value: 3 ether}(); // 30 eth
+        vm.stopPrank();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+
+        fNFTIfo.end();
+
+        //60 eth should be locked up in IFO now. 40 eth should be the circulating supply        
+
+        user1.call_updatePrice(1 ether);
+
+        assertEq(fNFT.getQuorum(), 250);
+
+        user2.call_updatePrice(1 ether);
+
+        assertEq(fNFT.getQuorum(), 1000);
+
+        console.log(fNFT.totalSupply());
+        console.log(fNFT.votingTokens());
+        console.log(fNFT.balanceOf(address(user1)));
+        console.log(fNFT.getQuorum());
+
+        ifoSettings.setCreatorIFOLock(false);
+
+        console.log(fNFT.totalSupply());
+        console.log(fNFT.votingTokens());
+        console.log(fNFT.getQuorum());
+        assertEq(fNFT.getQuorum(), 400);
     }
 
     receive() external payable {}
