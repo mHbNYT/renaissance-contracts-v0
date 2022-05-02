@@ -8,6 +8,8 @@ import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-interface-generator";
 
+require('dotenv').config()
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -38,6 +40,9 @@ const config: HardhatUserConfig = {
         mnemonic: process.env.AURORA_LOCAL_PRIVATE_KEY,
       },
       saveDeployments: false,
+      forking: {
+        url: "https://cloudflare-eth.com"
+      }
     },
     aurora_testnet: {
       url: process.env.AURORA_TEST_URI,
