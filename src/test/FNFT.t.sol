@@ -6,6 +6,7 @@ import "ds-test/test.sol";
 
 import {IFOSettings} from "../contracts/IFOSettings.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
+import {IFO} from "../contracts/IFO.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
@@ -22,6 +23,8 @@ contract FNFTTest is DSTest, ERC721Holder {
     CheatCodes public vm;
 
     WETH public weth;
+    IFOSettings public ifoSettings;
+    IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     IUniswapV2Factory public pairFactory;
     FNFTFactory public factory;
@@ -41,9 +44,10 @@ contract FNFTTest is DSTest, ERC721Holder {
     function setUp() public {
         (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);        
 
-        address ifoFactory = address(new IFOFactory(address(new IFOSettings())));
+        ifoSettings = new IFOSettings();
+        ifoFactory = new IFOFactory(address(ifoSettings));
 
-        settings = new FNFTSettings(address(weth), address(priceOracle), ifoFactory);
+        settings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
 
         settings.setGovernanceFee(10);
 
@@ -403,6 +407,24 @@ contract FNFTTest is DSTest, ERC721Holder {
         assertEq(user3Bal + 1 ether, wethBal);
 
         assertTrue(fNFT.auctionState() == FNFT.State.ended);
+    }
+
+    function testGetQuorum() public {
+        fNFT.transfer(address(user1), 25 ether);
+        user1.call_updatePrice(1 ether);
+        fNFT.transfer(address(user2), 25 ether);
+        user2.call_updatePrice(1 ether);                
+        fNFT.transfer(address(user4), 50 ether);
+
+        console.log(fNFT.getQuorum());
+        console.log(fNFT.votingTokens());
+        console.log(fNFT.totalSupply());
+        assertEq(fNFT.getQuorum(), 500);
+        
+        user4.call_updatePrice(1 ether);
+
+        console.log(fNFT.getQuorum());
+        assertEq(fNFT.getQuorum(), 1000);
     }
 
     receive() external payable {}
