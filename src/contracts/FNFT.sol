@@ -375,7 +375,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
             return votingTokens * 1000 / (totalSupply() - ifo.lockedSupply());
         } else {
             return votingTokens * 1000 / totalSupply();
-        }        
+        }
     }
 
     function _getAuctionPrice() internal view returns (uint256) {
@@ -481,7 +481,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         address,
         uint256
     ) internal virtual override {
-        IPriceOracle(IFNFTSettings(settings).priceOracle()).updatefNFTPairInfo(address(this));
+        address priceOracle = IFNFTSettings(settings).priceOracle();
+        if (address(priceOracle) != address(0)) {
+            IPriceOracle(priceOracle).updatefNFTPairInfo(address(this));
+        }
     }
 
     /// @notice kick off an auction. Must send reservePrice in ETH
