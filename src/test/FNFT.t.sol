@@ -189,11 +189,41 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testFail_ChangeReserveBelowMinReserveFactor() public {                
+        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
 
+        //initial reserve is 1,
+        //minReserveFactor is 20%
+
+        fNFT.transfer(address(user1), 50 ether);
+
+        user1.call_updatePrice(0.2 ether);
+
+        assertEq(fNFT.reservePrice(), 0.6 ether);
+
+        fNFT.transfer(address(user2), 50 ether); 
+        // reservePrice is now 0.2 eth because transfering canceled the vote of 1 eth
+
+        // 0.04 is the minimum since 20% of 0.2 is 0.04. Fail
+        user1.call_updatePrice(0.039 ether);
     }
 
-    function testFail_ChangeReserveAboveMaxReserveFactor() public {
-        
+    function testFail_ChangeReserveAboveMaxReserveFactor() public {        
+        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+
+        //initial reserve is 1,
+        //maxReserveFactor is 500%
+
+        fNFT.transfer(address(user1), 50 ether);        
+
+        user1.call_updatePrice(5 ether);
+
+        assertEq(fNFT.reservePrice(), 3 ether);
+
+        fNFT.transfer(address(user2), 50 ether); 
+        // reservePrice is now 5 eth because transfering canceled the vote of 1 eth
+
+        // 25 is the minimum since 500% of 5 is 25. Fail
+        user2.call_updatePrice(26 ether);
     }
 
     /// -----------------------------------
