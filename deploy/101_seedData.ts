@@ -1,20 +1,20 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import {ethers} from 'hardhat';
-import { parseFixed } from '@ethersproject/bignumber';
+import { BigNumber, parseFixed } from '@ethersproject/bignumber';
 
 /**
  * 
  * SCENARIOS
- * 1. NFT1 => FNFT that is just created
- * 2. NFT2 => FNFT that is undergoing IFO but not started
- * 3. NFT3 => FNFT that is undergoing IFO and has started with a few sales here and there
- * 4. NFT4 => FNFT that is undergoing IFO and is paused with a few sales here and there
- * 5. NFT5 => FNFT that has finished IFO with a few sales here and there
- * 6. NFT6 => FNFT that does not have TWAP but does have averageReserve voted that doesn’t meet quorum
- * 7. NFT7 => FNFT that does not have TWAP but has averageReserve that meets quorum
- * 8. NFT8 => FNFT that does have TWAP and averageReserve that doesn’t meet quorum
- * 9. NFT9 => FNFT that does have TWAP above averageReserve price and averageReserve that meets quorum 
+ * 1. NFT1 => FNFT1 that is just created
+ * 2. NFT2 => FNFT2 that is undergoing IFO but not started
+ * 3. NFT3 => FNFT3 that is undergoing IFO and has started with a few sales here and there
+ * 4. NFT4 => FNFT4 that is undergoing IFO and is paused with a few sales here and there
+ * 5. NFT5 => FNFT5 that has finished IFO with a few sales here and there
+ * 6. NFT6 => FNFT6 that does not have TWAP but does have averageReserve voted that doesn’t meet quorum
+ * 7. NFT7 => FNFT7 that does not have TWAP but has averageReserve that meets quorum
+ * 8. NFT8 => FNFT8 that does have TWAP and averageReserve that doesn’t meet quorum
+ * 9. NFT9 => FNFT9 that does have TWAP above averageReserve price and averageReserve that meets quorum 
  * 
  */
 
@@ -227,8 +227,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "fNFT6",  // symbol
     nft6CollectionInfo.address, // collection address
     6, // tokenId
-    1_000, // supply
-    parseFixed('2', 18), // initialPrice === 2e18
+    10, // supply // low supply to make quorum easy
+    parseFixed('1', 18), // initialPrice === 1e18
     100, // fee (10%)
   );
   const fNFT6Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft6CollectionInfo.address, 6));
@@ -239,8 +239,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "fNFT7",  // symbol
     nft7CollectionInfo.address, // collection address
     7, // tokenId
-    1_000_000, // supply
-    parseFixed('2', 18), // initialPrice == 2e18
+    10, // supply  // low supply to make quorum easy
+    parseFixed('1', 18), // initialPrice == 1e18
     30, // fee (3%)
   );
   const fNFT7Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft7CollectionInfo.address, 7));
@@ -282,18 +282,27 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const fNft3 = await ethers.getContractAt('FNFT', fNFT3Address);
   const fNft4 = await ethers.getContractAt('FNFT', fNFT4Address);
   const fNft5 = await ethers.getContractAt('FNFT', fNFT5Address);
+  const fNft6 = await ethers.getContractAt('FNFT', fNFT6Address);
+  const fNft7 = await ethers.getContractAt('FNFT', fNFT7Address);
+  const fNft8 = await ethers.getContractAt('FNFT', fNFT8Address);
+  const fNft9 = await ethers.getContractAt('FNFT', fNFT9Address);
+
   
   await fNft2.approve(IFOFactoryInfo.address, await fNft2.balanceOf(deployer));
   await fNft3.approve(IFOFactoryInfo.address, await fNft3.balanceOf(deployer));
   await fNft4.approve(IFOFactoryInfo.address, await fNft4.balanceOf(deployer));
   await fNft5.approve(IFOFactoryInfo.address, await fNft5.balanceOf(deployer));
+  await fNft6.approve(IFOFactoryInfo.address, await fNft6.balanceOf(deployer));
+  await fNft7.approve(IFOFactoryInfo.address, await fNft7.balanceOf(deployer));
+  await fNft8.approve(IFOFactoryInfo.address, await fNft8.balanceOf(deployer));
+  await fNft9.approve(IFOFactoryInfo.address, await fNft9.balanceOf(deployer));
 
 
 
   // NFT2 IFO - NFT2 scenario is done here.
   await IFOFactory.create(
     fNFT2Address, // fNft
-    10, // amount for sale
+    await fNft2.totalSupply(), // amount for sale
     parseFixed('1', 16), // price
     await fNft2.totalSupply(), // cap
     1_000_000, //duration
@@ -303,7 +312,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // NFT3 IFO
   await IFOFactory.create(
     fNFT3Address, // fNft
-    500, // amount for sale
+    await fNft3.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
     await fNft3.totalSupply(), // cap
     1_000_000, //dduration
@@ -314,7 +323,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // NFT4 IFO
   await IFOFactory.create(
     fNFT4Address, // fNft
-    1_000, // amount for sale
+    await fNft4.totalSupply(), // amount for sale
     parseFixed('1', 16), // price
     await fNft4.totalSupply(), // cap
     1_000_000, //duration
@@ -325,7 +334,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // NFT5 IFO
   await IFOFactory.create(
     fNFT5Address, // fNft
-    100, // amount for sale
+    await fNft5.totalSupply(), // amount for sale
     parseFixed('1', 15), // price
     await fNft5.totalSupply(), // cap
     86400, // short duration for purposes of testing
@@ -333,15 +342,69 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
   const IFO5Address = await IFOFactory.getIFO(fNFT5Address);
 
+  // NFT6 IFO
+  await IFOFactory.create(
+    fNFT6Address, // fNft
+    await fNft6.totalSupply(), // amount for sale
+    parseFixed('1', 18), // price
+    await fNft6.totalSupply(), // cap
+    1_000_000, //duration
+    false // allow whitelisting
+  );
+  const IFO6Address = await IFOFactory.getIFO(fNFT6Address)
+
+  // NFT7 IFO
+  await IFOFactory.create(
+    fNFT7Address, // fNft
+    await fNft7.totalSupply(), // amount for sale
+    parseFixed('1', 18), // price
+    await fNft7.totalSupply(), // cap
+    1_000_000, //dduration
+    false // allow whitelisting
+  );
+  const IFO7Address = await IFOFactory.getIFO(fNFT7Address)
+
+  // NFT8 IFO
+  await IFOFactory.create(
+    fNFT8Address, // fNft
+    await fNft8.totalSupply(), // amount for sale
+    parseFixed('1', 16), // price
+    await fNft8.totalSupply(), // cap
+    1_000_000, //duration
+    false // allow whitelisting
+  );
+  const IFO8Address = await IFOFactory.getIFO(fNFT8Address);
+
+  // NFT9 IFO
+  await IFOFactory.create(
+    fNFT9Address, // fNft
+    await fNft9.totalSupply(), // amount for sale
+    parseFixed('1', 15), // price
+    await fNft9.totalSupply(), // cap
+    86400, // short duration for purposes of testing
+    false // allow whitelisting
+  );
+  const IFO9Address = await IFOFactory.getIFO(fNFT9Address);
+
 
   // start IFOs
   const IFO3 = await ethers.getContractAt('IFO', IFO3Address);
   const IFO4 = await ethers.getContractAt('IFO', IFO4Address);
   const IFO5 = await ethers.getContractAt('IFO', IFO5Address);
+  const IFO6 = await ethers.getContractAt('IFO', IFO6Address);
+  const IFO7 = await ethers.getContractAt('IFO', IFO7Address);
+  const IFO8 = await ethers.getContractAt('IFO', IFO8Address);
+  const IFO9 = await ethers.getContractAt('IFO', IFO9Address);
+
 
   await IFO3.start();
   await IFO4.start();
   await IFO5.start();
+  await IFO6.start();
+  await IFO7.start();
+  await IFO8.start();
+  await IFO9.start();
+
 
   const signers = await ethers.getSigners();
 
@@ -353,7 +416,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await IFO3.connect(signer).deposit({value});
   });
 
-  signers.slice(10, 20).forEach(async (signer) => {
+  signers.slice(9, 19).forEach(async (signer) => {
     const value = await IFO4.price();
     await IFO4.connect(signer).deposit({value});
   });
@@ -363,8 +426,35 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await IFO5.connect(signer).deposit({value});
   });
 
+  signers.slice(9, 19).forEach(async (signer) => {
+    const value = await IFO5.price();
+    await IFO5.connect(signer).deposit({value});
+  });
+
+  signers.slice(0, 9).forEach(async (signer) => {
+    const value = await IFO6.price();
+    await IFO6.connect(signer).deposit({value});
+  });
+
+  signers.slice(9, 19).forEach(async (signer) => {
+    const value = await IFO7.price();
+    await IFO7.connect(signer).deposit({value});
+  });
+
+  signers.slice(0, 9).forEach(async (signer) => {
+    const value = await IFO8.price();
+    await IFO8.connect(signer).deposit({value});
+  });
+
+  signers.slice(0, 9).forEach(async (signer) => {
+    const value = await IFO9.price();
+    await IFO9.connect(signer).deposit({value});
+  });
+
   // mine here to allow sales time to finish and also to allow IFO5 duration to complete
-  await mineNBlocks(86400);
+  console.log('starting to mine...');
+  await mineNBlocks(86400); // this takes a few min unfortunately
+  console.log('completed mining');
 
   // Pause IFO, NFT4 sceanrio ends here
   await IFO4.togglePause();
@@ -373,7 +463,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // END IFO, NFT5 sceanrio ends here
   await IFO5.end();
 
-  // TODO sceanrio 6,7,8,9
+
+  // Scenario 6 ends here. fNft has votes but no quorum
+  // callStatic is ok because cause this is basically a view w/o TWAP
+  const fNft6Price: BigNumber = await fNft6.callStatic.getAuctionPrice();
+
+  // cast one vote. wont reach quorum.
+  await fNft6.connect(signers[0]).updateUserPrice(fNft6Price.add(parseFixed('1', 18)));
+
+
+  // Scenario 7 ends here. fNft has votes and reaches quorum.
+  const fNft7Price: BigNumber = await fNft7.callStatic.getAuctionPrice();
+  signers.slice(9, 19).forEach(async (signer) => {
+    await fNft7.connect(signer).updateUserPrice(fNft7Price.add(parseFixed('1', 18)));
+  }); // all holders vote in favor of new price. vote reaches quorum.
+
+  //TODO scenarios 8,9 not done yet.
 };
 
 async function mineNBlocks(n:number) {

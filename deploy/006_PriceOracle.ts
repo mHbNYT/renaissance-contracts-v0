@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {testnets} from '../utils/constants';
+import {testnets, ETH_UNISWAP_V2_FACTORY} from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts} = hre;
@@ -11,16 +11,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // get WETH address
   let { WETH } = await getNamedAccounts();
+  let FACTORY;
   if (testnets.includes(chainId)) {
     const mockWETH = await get('WETH');
     WETH = mockWETH.address;
+    FACTORY = ETH_UNISWAP_V2_FACTORY;
+  } else {
+    // TODO add uniswap v2 factory addresses for production deployment
+    throw new Error('No factory address defined');
   }
-
-  const FNFTFactory = await get('FNFTFactory');
 
   await deploy('PriceOracle', {
     from: deployer,
-    args: [WETH, FNFTFactory.address],
+    args: [FACTORY, WETH],
     log: true,
   });
 
