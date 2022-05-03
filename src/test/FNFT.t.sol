@@ -60,7 +60,15 @@ contract FNFTTest is DSTest, ERC721Holder {
         token.setApprovalForAll(address(factory), true);
 
         // FNFT minted on this test contract address.
-        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 1, 100 ether, 1 ether, 50));
+        fNFT = FNFT(factory.mint(
+            "testName", 
+            "TEST", 
+            address(token), 
+            1, 
+            100 ether, // supply
+            1 ether, // initialReserve
+            50 // fee (5%)
+        ));
 
         // create a curator account
         curator = new Curator(address(factory));
@@ -134,7 +142,6 @@ contract FNFTTest is DSTest, ERC721Holder {
         assertTrue(fNFT.verified() == false);
     }
 
-
     function testKickCurator() public {
         fNFT.updateCurator(address(curator));
         assertTrue(fNFT.curator() == address(curator));
@@ -179,6 +186,14 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         // user1 is not gov so cannot do anything
         user1.call_remove(address(this));
+    }
+
+    function testFail_ChangeReserveBelowMinReserveFactor() public {                
+
+    }
+
+    function testFail_ChangeReserveAboveMaxReserveFactor() public {
+        
     }
 
     /// -----------------------------------
@@ -231,6 +246,44 @@ contract FNFTTest is DSTest, ERC721Holder {
 
     function testInitialReserve() public {
         assertEq(fNFT.reservePrice(), 1 ether);
+        assertEq(fNFT.initialReserve(), 1 ether);
+    }
+
+    function testAuctionPrice() public {
+        settings.setPriceOracle(address(0));        
+        console.log("Quorum requirement: ", settings.minVotePercentage()); // 25%
+        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
+        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+
+        assertEq(fNFT.getQuorum(), 1000, "Quorum 1");
+        assertEq(fNFT.reservePrice(), 1 ether, "Reserve price 1");
+        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 1");
+        assertEq(fNFT.getAuctionPrice(), 1 ether, "Auction price 1");
+
+        fNFT.transfer(address(user1), 25 ether);
+        fNFT.transfer(address(user2), 50 ether);
+
+        // below quorum since 250 is not greater than minVotePercentage of 250
+        assertEq(fNFT.getQuorum(), 250, "Quorum 2");
+        assertEq(fNFT.reservePrice(), 1 ether, "Reserve price 2");
+        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 2");
+        assertEq(fNFT.getAuctionPrice(), 1 ether, "Auction price 2");            
+
+        user1.call_updatePrice(3 ether);
+        // now auction price is 2 eth since this address and user1 have same amounts.
+        // (1 + 3) / 2 = 2
+        assertEq(fNFT.getQuorum(), 500, "Quorum 3");
+        assertEq(fNFT.reservePrice(), 2 ether, "Reserve price 3");
+        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 3");
+        assertEq(fNFT.getAuctionPrice(), 2 ether, "Auction price 3");
+
+        user2.call_updatePrice(1 ether);
+        // now auction price is 1.5 eth since user2 holds 50%, and previous was 2 eth
+        // (2 + 1) / 2 = 1.5
+        assertEq(fNFT.getQuorum(), 1000, "Quorum 4");
+        assertEq(fNFT.reservePrice(), 1.5 ether, "Reserve price 4");
+        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 4");
+        assertEq(fNFT.getAuctionPrice(), 1.5 ether, "Auction price 4");
     }
 
     function testReservePriceTransfer() public {
@@ -428,22 +481,23 @@ contract FNFTTest is DSTest, ERC721Holder {
         ifoFactory.create(
             address(fNFT), // the address of the fractionalized token
             fNFT.balanceOf(address(this)), //amountForSale
-            0.1 ether, //price per token
+            0.01 ether, //price per token
             fNFT.totalSupply(), // max amount someone can buy
             ifoSettings.minimumDuration(), //sale duration
             false // allow whitelist
         );
+        
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fNFT)));
         ifoSettings.setCreatorIFOLock(true);
 
         fNFTIfo.start();
 
         vm.startPrank(address(user1));
-        fNFTIfo.deposit{value: 1 ether}(); // 10 eth
+        fNFTIfo.deposit{value: 0.1 ether}(); // 10 eth
         vm.stopPrank();
 
         vm.startPrank(address(user2));
-        fNFTIfo.deposit{value: 3 ether}(); // 30 eth
+        fNFTIfo.deposit{value: 0.3 ether}(); // 30 eth
         vm.stopPrank();
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);

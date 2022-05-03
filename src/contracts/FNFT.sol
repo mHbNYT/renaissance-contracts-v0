@@ -335,6 +335,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         }
         // they are the only one voting
         else if (weight == votingTokens && previousUserReserve != 0) {
+            _validateUserPrice(previousUserReserve, newUserReserve);
+
             reserveTotal = weight * newUserReserve;
         }
         // previously they were not voting
@@ -412,7 +414,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 return initialReserve;
             }
         } else {
-            return aboveQuorum ? _reservePrice : initialReserve            
+            return aboveQuorum ? _reservePrice : initialReserve;        
         }
     }
 
