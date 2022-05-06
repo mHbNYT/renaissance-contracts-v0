@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 
 import "./IBeacon.sol";
 import "./Proxy.sol";
-import "../utils/Address.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
 /**
  * @dev This contract implements a proxy that gets the implementation address for each call from a {UpgradeableBeacon}.

@@ -7,11 +7,12 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-import "./InitializedProxy.sol";
 import "./FNFTSettings.sol";
 import "./FNFT.sol";
+import "./proxy/Beacon.sol";
+import "./proxy/BeaconProxy.sol";
 
-contract FNFTFactory is Ownable, Pausable {
+contract FNFTFactory is Ownable, Pausable, Beacon {
     /// @notice a mapping of fNFT ids (see getFnftId) to the address of the fNFT contract
     mapping(bytes32 => address) public fnfts;
 
@@ -31,7 +32,7 @@ contract FNFTFactory is Ownable, Pausable {
         string symbol
     );
 
-    constructor(address _fnftSettings) {
+    constructor(address _fnftSettings, address _fnftImplementation) public Beacon(_fnftImplementation) {
         settings = _fnftSettings;
         logic = address(new FNFT(_fnftSettings));
     }
@@ -64,7 +65,7 @@ contract FNFTFactory is Ownable, Pausable {
             _symbol
         );
 
-        address fnft = address(new InitializedProxy(logic, _initializationCalldata));
+        address fnft = address(new BeaconProxy(logic, _initializationCalldata));
 
         bytes32 fnftId = getFNFTId(_nft, _tokenId);
         

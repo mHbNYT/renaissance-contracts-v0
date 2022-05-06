@@ -3,12 +3,13 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./InitializedProxy.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
 import "./interfaces/IERC20.sol";
+import "./proxy/Beacon.sol";
+import "./proxy/BeaconProxy.sol";
 
-contract IFOFactory is Ownable, Pausable {
+contract IFOFactory is Ownable, Pausable, Beacon {
     /// @notice the mapping of fNFT to IFO address
     mapping(address => address) public getIFO;
 
@@ -30,7 +31,7 @@ contract IFOFactory is Ownable, Pausable {
 
     error IFOExists(address nft);
 
-    constructor(address _ifoSettings) {
+    constructor(address _ifoSettings, address _ifoImplementation) public Beacon(_ifoImplementation) {
         settings = _ifoSettings;
         logic = address(new IFO(_ifoSettings));
     }
@@ -60,7 +61,7 @@ contract IFOFactory is Ownable, Pausable {
             _allowWhitelisting
         );
 
-        address _IFO = address(new InitializedProxy(logic, _initializationCalldata));
+        address _IFO = address(new BeaconProxy(logic, _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
         IERC20(_FNFT).transferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
