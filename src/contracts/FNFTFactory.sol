@@ -19,9 +19,6 @@ contract FNFTFactory is Ownable, Pausable, Beacon {
     /// @notice a settings contract controlled by governance
     address public immutable settings;
 
-    /// @notice the TokenVault logic contract
-    address public immutable logic;
-
     event FNFTCreated(
         address indexed token, 
         address FNFT, 
@@ -32,9 +29,9 @@ contract FNFTFactory is Ownable, Pausable, Beacon {
         string symbol
     );
 
-    constructor(address _fnftSettings, address _fnftImplementation) public Beacon(_fnftImplementation) {
-        settings = _fnftSettings;
-        logic = address(new FNFT(_fnftSettings));
+    constructor(address _fnftSettings) {
+        settings = _fnftSettings;        
+        upgradeChildTo(address(new FNFT(_fnftSettings)));
     }
 
     /// @notice the function to mint a fNFT
@@ -65,7 +62,7 @@ contract FNFTFactory is Ownable, Pausable, Beacon {
             _symbol
         );
 
-        address fnft = address(new BeaconProxy(logic, _initializationCalldata));
+        address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
 
         bytes32 fnftId = getFNFTId(_nft, _tokenId);
         

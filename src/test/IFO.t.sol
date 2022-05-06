@@ -15,7 +15,7 @@ import {IFO} from "../contracts/IFO.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
-import {InitializedProxy} from "../contracts/InitializedProxy.sol";
+import {BeaconProxy} from "../contracts/proxy/BeaconProxy.sol";
 
 /// @author Nibble Market
 /// @title Tests for the fnfts
@@ -582,7 +582,7 @@ contract IFOTest is DSTest, ERC721Holder {
             true // allow whitelist
         );
 
-        IFO fNFTIfo = new IFO(address(new InitializedProxy(address(new IFO(address(ifoSettings))), _initializationCalldata)));
+        IFO fNFTIfo = new IFO(address(new BeaconProxy(address(new IFO(address(ifoSettings))), _initializationCalldata)));
 
         fNFTIfo.start();
     }

@@ -21,14 +21,6 @@ contract Beacon is Ownable, IBeacon {
     event Upgraded(address indexed childImplementation);
 
     /**
-     * @dev Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the
-     * beacon.
-     */
-    constructor(address initialChildImplementation) public {
-        _setChildImplementation(initialChildImplementation);
-    }
-
-    /**
      * @dev Returns the current child implementation address.
      */
     function childImplementation() public view virtual override returns (address) {

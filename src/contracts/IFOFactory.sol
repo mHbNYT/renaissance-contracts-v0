@@ -16,9 +16,6 @@ contract IFOFactory is Ownable, Pausable, Beacon {
     /// @notice a settings contract controlled by governance
     address public immutable settings;
 
-    /// @notice the TokenVault logic contract
-    address public immutable logic;
-
     event IFOCreated(
         address indexed IFO,
         address indexed FNFT,
@@ -31,9 +28,9 @@ contract IFOFactory is Ownable, Pausable, Beacon {
 
     error IFOExists(address nft);
 
-    constructor(address _ifoSettings, address _ifoImplementation) public Beacon(_ifoImplementation) {
-        settings = _ifoSettings;
-        logic = address(new IFO(_ifoSettings));
+    constructor(address _ifoSettings) {
+        settings = _ifoSettings;        
+        upgradeChildTo(address(new IFO(_ifoSettings)));
     }
 
     /// @notice the function to create a ifo
@@ -61,7 +58,7 @@ contract IFOFactory is Ownable, Pausable, Beacon {
             _allowWhitelisting
         );
 
-        address _IFO = address(new BeaconProxy(logic, _initializationCalldata));
+        address _IFO = address(new BeaconProxy(address(this), _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
         IERC20(_FNFT).transferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
