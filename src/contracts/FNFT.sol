@@ -335,6 +335,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         }
         // they are the only one voting
         else if (weight == votingTokens && previousUserReserve != 0) {
+            _validateUserPrice(previousUserReserve, newUserReserve);
+
             reserveTotal = weight * newUserReserve;
         }
         // previously they were not voting
@@ -375,39 +377,44 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
             return votingTokens * 1000 / (totalSupply() - ifo.lockedSupply());
         } else {
             return votingTokens * 1000 / totalSupply();
-        }        
+        }
     }
 
     function _getAuctionPrice() internal view returns (uint256) {
-        IPriceOracle priceOracle = IPriceOracle(IFNFTSettings(settings).priceOracle());
-        IUniswapV2Pair pair = IUniswapV2Pair(
-            priceOracle.getPairAddress(address(this), IFNFTSettings(settings).WETH())
-        );
-        uint256 reserve1;
-        uint256 twapPrice;
-        if (priceOracle.getPairInfo(address(pair)).exists) {
-            (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), IFNFTSettings(settings).WETH());
-            twapPrice = _getTWAP();
-        }
-
-        bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
+        address priceOracle = IFNFTSettings(settings).priceOracle();
         bool aboveQuorum = _getQuorum() > IFNFTSettings(settings).minVotePercentage();
         uint256 _reservePrice = reservePrice();
 
-        if (!aboveLiquidityThreshold && aboveQuorum){
-            //average reserve
-            return _reservePrice;
-        } else if (aboveLiquidityThreshold && !aboveQuorum) {
-            //twap price if twap > initial reserve
-            //reserve price if twap < initial reserve 
-            return twapPrice > initialReserve ? twapPrice : initialReserve;
-        } else if (aboveLiquidityThreshold && aboveQuorum) {
-            //twap price if twap > reserve
-            //reserve price if twap < reserve
-            return twapPrice > _reservePrice ? twapPrice : _reservePrice;
+        if (address(priceOracle) != address(0)) {
+            IUniswapV2Pair pair = IUniswapV2Pair(
+                IPriceOracle(priceOracle).getPairAddress(address(this), IFNFTSettings(settings).WETH())
+            );
+            uint256 reserve1;
+            uint256 twapPrice;
+            if (IPriceOracle(priceOracle).getPairInfo(address(pair)).exists) {
+                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), IFNFTSettings(settings).WETH());
+                twapPrice = _getTWAP();
+            }
+
+            bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();            
+
+            if (!aboveLiquidityThreshold && aboveQuorum){
+                //average reserve
+                return _reservePrice;
+            } else if (aboveLiquidityThreshold && !aboveQuorum) {
+                //twap price if twap > initial reserve
+                //reserve price if twap < initial reserve 
+                return twapPrice > initialReserve ? twapPrice : initialReserve;
+            } else if (aboveLiquidityThreshold && aboveQuorum) {
+                //twap price if twap > reserve
+                //reserve price if twap < reserve
+                return twapPrice > _reservePrice ? twapPrice : _reservePrice;
+            } else {
+                //initial reserve
+                return initialReserve;
+            }
         } else {
-            //initial reserve
-            return initialReserve;
+            return aboveQuorum ? _reservePrice : initialReserve;        
         }
     }
 
@@ -421,7 +428,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private view {
-        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
+        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;        
         if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
         if (newUserReserve > reservePriceMax) revert PriceTooHigh();
@@ -476,7 +483,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         address,
         uint256
     ) internal virtual override {
-        IPriceOracle(IFNFTSettings(settings).priceOracle()).updatefNFTPairInfo(address(this));
+        address priceOracle = IFNFTSettings(settings).priceOracle();
+        if (address(priceOracle) != address(0)) {
+            IPriceOracle(priceOracle).updatefNFTPairInfo(address(this));
+        }
     }
 
     /// @notice kick off an auction. Must send reservePrice in ETH

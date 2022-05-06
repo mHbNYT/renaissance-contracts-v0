@@ -6,19 +6,20 @@ import "ds-test/test.sol";
 
 import "../contracts/FNFTSettings.sol";
 import "../contracts/mocks/NFT.sol";
-import {CheatCodes} from "./utils/cheatcodes.sol";
+import {console, CheatCodes, SetupEnvironment} from "./utils/utils.sol";
+
 
 /// @author andy8052
 /// @title Tests for the settings
 contract FNFTSettingsTest is DSTest {
-    CheatCodes public cheatcodes;
+    CheatCodes public vm;
 
     FNFTSettings public settings;
     MockNFT public token;
     MockNFT public token2;
 
     function setUp() public {
-        cheatcodes = CheatCodes(HEVM_ADDRESS);
+        (vm,,,,,,) = SetupEnvironment.setup(10 ether, 10 ether);        
 
         settings = new FNFTSettings(address(0), address(0), address(0));
 
