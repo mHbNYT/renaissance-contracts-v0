@@ -53,8 +53,6 @@ contract IFOSettings is Ownable, IIFOSettings {
     }
 
     function setCreatorUtilityContract(address _utility) external onlyOwner {
-        if (_utility == address(0)) revert ZeroAddressDisallowed();        
-
         emit UpdateCreatorUtilityContract(creatorUtilityContract, _utility);
 
         creatorUtilityContract = _utility;
