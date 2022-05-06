@@ -4,6 +4,9 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
+import {IFOSettings} from "../contracts/IFOSettings.sol";
+import {IFOFactory} from "../contracts/IFOFactory.sol";
+import {IFO} from "../contracts/IFO.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
@@ -20,6 +23,8 @@ contract FNFTTest is DSTest, ERC721Holder {
     CheatCodes public vm;
 
     WETH public weth;
+    IFOSettings public ifoSettings;
+    IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     IUniswapV2Factory public pairFactory;
     FNFTFactory public factory;
@@ -37,9 +42,12 @@ contract FNFTTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);
+        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);        
 
-        settings = new FNFTSettings(address(weth), address(priceOracle));
+        ifoSettings = new IFOSettings();
+        ifoFactory = new IFOFactory(address(ifoSettings));
+
+        settings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
 
         settings.setGovernanceFee(10);
 
@@ -399,6 +407,62 @@ contract FNFTTest is DSTest, ERC721Holder {
         assertEq(user3Bal + 1 ether, wethBal);
 
         assertTrue(fNFT.auctionState() == FNFT.State.ended);
+    }
+
+    function testGetQuorum() public {
+        fNFT.transfer(address(user1), 25 ether);
+        user1.call_updatePrice(1 ether);
+        fNFT.transfer(address(user2), 25 ether);
+        user2.call_updatePrice(1 ether);                
+        fNFT.transfer(address(user4), 50 ether);
+        
+        assertEq(fNFT.getQuorum(), 500);
+        
+        user4.call_updatePrice(1 ether);
+
+        assertEq(fNFT.getQuorum(), 1000);
+    }
+
+    function testGetQuorumOnIFOLock() public {
+        fNFT.approve(address(ifoFactory), fNFT.balanceOf(address(this)));
+        ifoFactory.create(
+            address(fNFT), // the address of the fractionalized token
+            fNFT.balanceOf(address(this)), //amountForSale
+            0.1 ether, //price per token
+            fNFT.totalSupply(), // max amount someone can buy
+            ifoSettings.minimumDuration(), //sale duration
+            false // allow whitelist
+        );
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fNFT)));
+        ifoSettings.setCreatorIFOLock(true);
+
+        fNFTIfo.start();
+
+        vm.startPrank(address(user1));
+        fNFTIfo.deposit{value: 1 ether}(); // 10 eth
+        vm.stopPrank();
+
+        vm.startPrank(address(user2));
+        fNFTIfo.deposit{value: 3 ether}(); // 30 eth
+        vm.stopPrank();
+
+        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+
+        fNFTIfo.end();
+
+        //60 eth should be locked up in IFO now. 40 eth should be the circulating supply        
+
+        user1.call_updatePrice(1 ether);
+
+        assertEq(fNFT.getQuorum(), 250);
+
+        user2.call_updatePrice(1 ether);
+
+        assertEq(fNFT.getQuorum(), 1000);
+
+        ifoSettings.setCreatorIFOLock(false);
+
+        assertEq(fNFT.getQuorum(), 400);
     }
 
     receive() external payable {}

@@ -55,8 +55,12 @@ install submodules
 `git submodule update --init`
 install cargo
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh`
-run test
+run test with specific network
 `forge test -f https://rpc.api.moonbase.moonbeam.network -vvv --force`
+run specific test
+`forge test --match-contract IFOTest`
+run gas costs
+`forge test --gas-report`
 
 ## setup seed data / subgraph
 -run yarn install and forge install and whatever else to setup project

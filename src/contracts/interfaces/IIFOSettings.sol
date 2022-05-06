@@ -2,15 +2,15 @@
 pragma solidity ^0.8.0;
 
 interface IIFOSettings {
-    function creatorIFOLock() external returns (bool);
+    function creatorIFOLock() external view returns (bool);
 
-    function minimumDuration() external returns (uint256);
+    function minimumDuration() external view returns (uint256);
 
-    function maximumDuration() external returns (uint256);
+    function maximumDuration() external view returns (uint256);
 
-    function creatorUtilityContract() external returns (address);
+    function creatorUtilityContract() external view returns (address);
 
-    function governanceFee() external returns (uint256);
+    function governanceFee() external view returns (uint256);
 
-    function feeReceiver() external returns (address payable);
+    function feeReceiver() external view returns (address payable);
 }

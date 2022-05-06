@@ -3,13 +3,10 @@ pragma solidity 0.8.13;
 
 import "./IFOSettings.sol";
 import "./interfaces/IFNFT.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract IFO is Initializable {
-    using SafeERC20 for IERC20;
-
     struct UserInfo {
         uint256 amount; // Amount ETH deposited by user
         uint256 debt; // total fNFT claimed thus fNFT debt
@@ -17,7 +14,6 @@ contract IFO is Initializable {
 
     enum FNFTState {
         inactive,
-        presale,
         live,
         ended,
         redeemed
@@ -30,6 +26,7 @@ contract IFO is Initializable {
     uint256 public totalRaised; // total ETH raised by sale
     uint256 public profitRaised;
     uint256 public totalSold; // total fNFT sold by sale
+    uint256 public lockedSupply;
 
     uint256 public duration; // ifo duration
     uint256 public startBlock; // block started
@@ -61,7 +58,7 @@ contract IFO is Initializable {
     error InvalidPrice();
     error InvalidCap();
     error InvalidDuration();
-    // error InvalidReservePrice(uint256 proposedPrice);
+    error InvalidReservePrice();
     error WhitelistingDisallowed();
     error ContractPaused();
     error TooManyWhitelists();
@@ -104,20 +101,17 @@ contract IFO is Initializable {
         uint256 curatorSupply = fnft.balanceOf(_curator);
         uint256 totalSupply = fnft.totalSupply();
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (curatorSupply < totalSupply) revert NotEnoughSupply();
+        if (curatorSupply < totalSupply) revert NotEnoughSupply();        
         // make sure amount for sale is not bigger than the supply if FNFT
-        if (
-            _amountForSale == 0 || _amountForSale > curatorSupply
-            // _amountForSale % _cap != 0
-        ) revert InvalidAmountForSale();
-        if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
+        if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
+        if (_cap == 0 || _cap > totalSupply) revert InvalidCap();        
         // expect ifo duration to be between minimum and maximum durations set by the DAO
         if (_duration != 0 && 
         (_duration < IIFOSettings(settings).minimumDuration() 
         || _duration > IIFOSettings(settings).maximumDuration())) revert InvalidDuration();
         // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
         //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
-        // if ((_price * totalSupply) / 1e18 > fnft.initialReserve()) revert InvalidReservePrice(_price);
+        if (_price * totalSupply / (10 ** FNFT.decimals()) > fnft.initialReserve()) revert InvalidReservePrice();
         
         curator = _curator;
         amountForSale = _amountForSale;
@@ -125,10 +119,11 @@ contract IFO is Initializable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;        
+        lockedSupply = 0;
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         if (IIFOSettings(settings).creatorUtilityContract() != address(0)) {
-            FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
+            FNFT.approve(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
         }
     }
 
@@ -229,6 +224,7 @@ contract IFO is Initializable {
         if (ended) revert SaleAlreadyEnded();
 
         ended = true;
+        lockedSupply = FNFT.balanceOf(address(this));
         emit End(block.number);
     }
     
@@ -242,12 +238,12 @@ contract IFO is Initializable {
 
         UserInfo storage user = userInfo[msg.sender];
 
-        uint256 payout = msg.value / price; // fNFT to mint for msg.value
+        uint256 payout = msg.value * (10 ** FNFT.decimals()) / price; // fNFT to mint for msg.value
 
         if (user.amount + payout > cap) revert OverLimit();
 
 
-        totalSold = totalSold + payout;
+        totalSold += payout;
         
         address govAddress = IIFOSettings(settings).feeReceiver();
         uint256 govFee = IIFOSettings(settings).governanceFee();
@@ -259,7 +255,7 @@ contract IFO is Initializable {
         totalRaised += msg.value;
         profitRaised += profit;
 
-        FNFT.safeTransfer(msg.sender, payout);
+        FNFT.transfer(msg.sender, payout);
         _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
@@ -296,12 +292,13 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (IIFOSettings(settings).creatorIFOLock() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended)) {
+        if (_fnftLocked() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended)) {
             revert FNFTLocked();
-        }            
+        }
 
-        uint256 fNFTBalance = IFNFT(address(FNFT)).balanceOf(address(this));
-        FNFT.safeTransfer(address(msg.sender), fNFTBalance);
+        uint256 fNFTBalance = FNFT.balanceOf(address(this));
+        lockedSupply -= fNFTBalance;
+        FNFT.transfer(msg.sender, fNFTBalance);        
 
         emit AdminFNFTWithdrawal(address(FNFT), fNFTBalance);
     }
@@ -309,7 +306,7 @@ contract IFO is Initializable {
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
     function approve() public onlyCurator {
         if (IIFOSettings(settings).creatorUtilityContract() == address(0)) revert InvalidAddress();
-        FNFT.safeApprove(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
+        FNFT.approve(IIFOSettings(settings).creatorUtilityContract(), IFNFT(address(FNFT)).totalSupply());
     }
 
     //Helper functions
@@ -321,5 +318,13 @@ contract IFO is Initializable {
     function _safeTransferETH(address _to, uint256 _value) private {
         (bool success, ) = _to.call{value: _value}(new bytes(0));
         if (!success) revert TxFailed();
+    }
+
+    function fnftLocked() external view returns(bool) {
+        return _fnftLocked();
+    }
+
+    function _fnftLocked() internal view returns(bool) {
+        return IIFOSettings(settings).creatorIFOLock();
     }
 }

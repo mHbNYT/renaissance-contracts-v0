@@ -4,29 +4,31 @@ import {IPriceOracle} from "./IPriceOracle.sol";
 import {IWETH} from "./IWETH.sol";
 
 interface IFNFTSettings {
-    function priceOracle() external returns (address);
+    function priceOracle() external view returns (address);
 
-    function WETH() external returns (address);
+    function ifoFactory() external view returns (address);
 
-    function maxAuctionLength() external returns (uint256);
+    function WETH() external view returns (address);
 
-    function minAuctionLength() external returns (uint256);
+    function maxAuctionLength() external view returns (uint256);
 
-    function maxCuratorFee() external returns (uint256);
+    function minAuctionLength() external view returns (uint256);
 
-    function governanceFee() external returns (uint256);
+    function maxCuratorFee() external view returns (uint256);
 
-    function minBidIncrease() external returns (uint256);
+    function governanceFee() external view returns (uint256);
 
-    function minVotePercentage() external returns (uint256);
+    function minBidIncrease() external view returns (uint256);
 
-    function maxReserveFactor() external returns (uint256);
+    function minVotePercentage() external view returns (uint256);
 
-    function minReserveFactor() external returns (uint256);
+    function maxReserveFactor() external view returns (uint256);
 
-    function liquidityThreshold() external returns (uint256);
+    function minReserveFactor() external view returns (uint256);
 
-    function instantBuyMultiplier() external returns (uint256);
+    function liquidityThreshold() external view returns (uint256);
 
-    function feeReceiver() external returns (address payable);
+    function instantBuyMultiplier() external view returns (uint256);
+
+    function feeReceiver() external view returns (address payable);
 }

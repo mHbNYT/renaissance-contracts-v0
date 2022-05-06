@@ -2,15 +2,13 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./InitializedProxy.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
+import "./interfaces/IERC20.sol";
 
 contract IFOFactory is Ownable, Pausable {
-    using SafeERC20 for IERC20;
-
     /// @notice the mapping of fNFT to IFO address
     mapping(address => address) public getIFO;
 
@@ -19,8 +17,6 @@ contract IFOFactory is Ownable, Pausable {
 
     /// @notice the TokenVault logic contract
     address public immutable logic;
-
-    bytes4 public constant IFO_SALT = 0xefefefef;
 
     event IFOCreated(
         address indexed IFO,
@@ -67,7 +63,7 @@ contract IFOFactory is Ownable, Pausable {
         address _IFO = address(new InitializedProxy(logic, _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
-        IERC20(_FNFT).safeTransferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
+        IERC20(_FNFT).transferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));
 
         emit IFOCreated(_IFO, _FNFT, _amountForSale, _price, _cap, _duration, _allowWhitelisting);
 

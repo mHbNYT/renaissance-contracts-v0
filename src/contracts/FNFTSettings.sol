@@ -10,6 +10,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
 
     address public priceOracle;
 
+    address public ifoFactory;
+
     /// @notice the maximum auction length
     uint256 public override maxAuctionLength;
 
@@ -95,9 +97,10 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     error ZeroAddressDisallowed();
     error MultiplierTooLow();
 
-    constructor(address _weth, address _priceOracle) {
+    constructor(address _weth, address _priceOracle, address _ifoFactory) {
         WETH = _weth;
         priceOracle = _priceOracle;
+        ifoFactory = _ifoFactory;
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
         feeReceiver = payable(msg.sender);
