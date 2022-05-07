@@ -75,8 +75,8 @@ contract MultiProxyController is Ownable {
         require(!proxyMap[key].isValue, "Exists");
 
         IAdminUpgradeabilityProxy proxyContract = IAdminUpgradeabilityProxy(proxyAddress);
-        Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);
-        proxyKeys.push(newProxy);        
+        proxyKeys.push(key);
+        Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);        
         proxyMap[key] = newProxy;
         emit ProxyUpdated(key, proxyAddress);
     }

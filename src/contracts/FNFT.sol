@@ -168,7 +168,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     }
 
     modifier onlyGov() {
-        if (msg.sender != Ownable(settings).owner()) revert NotGov();
+        if (msg.sender != OwnableUpgradeable(settings).owner()) revert NotGov();
         _;
     }
 

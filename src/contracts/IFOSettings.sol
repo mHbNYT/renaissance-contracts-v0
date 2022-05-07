@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IIFOSettings.sol";
 
-contract IFOSettings is Ownable, IIFOSettings {
+contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     /// @notice the boolean whether creator should have access to the creator's fNFT shares after IFO
     bool public override creatorIFOLock;
     uint256 public override minimumDuration;
@@ -25,8 +25,10 @@ contract IFOSettings is Ownable, IIFOSettings {
 
     error ZeroAddressDisallowed();
     error GovFeeTooHigh();
+    
+    function initialize() external initializer {
+        __Ownable_init();
 
-    constructor() {
         creatorIFOLock = false;
         minimumDuration = 86400; // 1 day;
         feeReceiver = payable(msg.sender);

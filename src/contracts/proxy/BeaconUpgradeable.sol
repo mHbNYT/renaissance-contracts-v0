@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 
 import "./IBeacon.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * @dev This contract is used in conjunction with one or more instances of {BeaconProxy} to determine their
@@ -12,13 +12,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  *
  * An owner is able to change the implementation the beacon points to, thus upgrading the proxies that use this beacon.
  */
-contract Beacon is Ownable, IBeacon {
+contract BeaconUpgradeable is OwnableUpgradeable, IBeacon {
     address private _childImplementation;
 
     /**
      * @dev Emitted when the child implementation returned by the beacon is changed.
      */
     event Upgraded(address indexed childImplementation);
+
+    function __UpgradeableBeacon__init(address childImplementation_) public initializer {
+        _setChildImplementation(childImplementation_);
+    }
 
     /**
      * @dev Returns the current child implementation address.
