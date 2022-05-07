@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -7,126 +8,141 @@ import "../interfaces/IAdminUpgradeabilityProxy.sol";
 contract MultiProxyController is Ownable {
     struct Proxy {
         string name;
-        IAdminUpgradeabilityProxy proxy;
-        address impl;
+        IAdminUpgradeabilityProxy proxy;     
+        uint index;
+        bool isValue;
     }
 
-    Proxy[] private proxies;
+    mapping(string => Proxy) public proxyMap;
+    string[] public proxyKeys;
 
-    event ProxyAdded(string name, address proxy);
-    event ProxyRemoved(uint256 index);
-    event ProxyAdminChanged(uint256 index, address newAdmin);
+    address public deployer;
 
-    constructor(string[] memory _names, address[] memory _proxies) Ownable() {
+    event ProxyUpdated(string key, address proxy);
+    event ProxyRemoved(string key);
+    event ProxyAdminChanged(string key, address newAdmin);
+
+    constructor(string[] memory _keys, address[] memory _proxies, address _deployer) Ownable() {
+        deployer = _deployer;
         uint256 length = _proxies.length;
-        require(_names.length == length, "Not equal length");
+        require(_keys.length == length, "Not equal length");
         for (uint256 i; i < length; i++) {
-            addProxy(_names[i], _proxies[i]);
+            addProxy(_keys[i], _proxies[i]);
         } 
+    }    
+
+    // Proxy Gov
+
+    function upgradeProxyTo(string memory key, address newImpl) public onlyOwner {
+        require(proxyMap[key].isValue, "Doesn't exist");
+        proxyMap[key].proxy.upgradeTo(newImpl);
     }
 
-    function upgradeProxyTo(uint256 index, address newImpl) public onlyOwner {
-        require(index < proxies.length, "Out of bounds");
-        proxies[index].proxy.upgradeTo(newImpl);
+    function changeProxyAdmin(string memory key, address newAdmin) public onlyOwner {
+        require(proxyMap[key].isValue, "Doesn't exist");
+        proxyMap[key].proxy.changeAdmin(newAdmin);
+        emit ProxyAdminChanged(key, newAdmin);
     }
 
-    function changeProxyAdmin(uint256 index, address newAdmin) public onlyOwner {
-        require(index < proxies.length, "Out of bounds");
-        proxies[index].proxy.changeAdmin(newAdmin);
-        emit ProxyAdminChanged(index, newAdmin);
+    // MultiProxyController Gov
+
+    function changeDeployer(address _deployer) public onlyOwner {
+        deployer = _deployer;
     }
 
-    function addProxy(string memory name, address proxy) public onlyOwner {
-        IAdminUpgradeabilityProxy _proxy = IAdminUpgradeabilityProxy(proxy);
-        proxies.push(Proxy(name, _proxy, address(0)));
-        emit ProxyAdded(name, proxy);
+    function deployerAddProxy(string memory key, address proxy) public {
+        require(msg.sender == deployer, "Not deployer");
+        addProxy(key, proxy);
     }
 
-    function removeProxy(uint256 index) public onlyOwner {
-        // Preferably want to maintain order to reduce chance of mistake.
-        uint256 length = proxies.length;
-        if (index >= length) return;
+    function changeProxy(string memory key, address proxyAddress) public onlyOwner {
+        require(proxyMap[key].isValue, "Doesn't exist");
 
-        for (uint i = index; i < length-1; ++i) {
-            proxies[i] = proxies[i+1];
-        }
-        proxies.pop();
-        emit ProxyRemoved(index);
+        proxyMap[key].proxy = IAdminUpgradeabilityProxy(proxyAddress);
     }
+
+    function changeProxyKey(string memory oldKey, string memory newKey) public onlyOwner {
+        require(proxyMap[oldKey].isValue, "Doesn't exist");
+
+        Proxy memory proxy = proxyMap[oldKey];
+
+        proxyMap[newKey] = proxy;
+        proxyKeys[proxy.index] = newKey;
+        delete proxyMap[oldKey];
+    }
+
+    function addProxy(string memory key, address proxyAddress) public onlyOwner {
+        require(!proxyMap[key].isValue, "Exists");
+
+        IAdminUpgradeabilityProxy proxyContract = IAdminUpgradeabilityProxy(proxyAddress);
+        Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);
+        proxyKeys.push(newProxy);        
+        proxyMap[key] = newProxy;
+        emit ProxyUpdated(key, proxyAddress);
+    }
+
+    function removeProxy(string memory key) public onlyOwner {
+        require(proxyMap[key].isValue, "Doesn't exist");
+        string[] storage keys = proxyKeys;
+        Proxy memory proxy = proxyMap[key];
+
+        proxyMap[keys[keys.length - 1]].index = proxy.index;
+
+        keys[proxy.index] = keys[keys.length - 1];
+        keys.pop();
+
+        delete proxyMap[key];
+
+        emit ProxyRemoved(key);
+    }
+
+    function getName(string memory key) public view returns (string memory) {
+        return proxyMap[key].name;
+    }
+
+    function getAdmin(string memory key) public view returns (address) {
+        return proxyMap[key].proxy.admin();
+    }
+
+    function getImpl(string memory key) public view returns(address) {
+        return proxyMap[key].proxy.implementation();
+    }
+
+    // Bulk
 
     function changeAllAdmins(address newAdmin) public onlyOwner {
-        uint256 length = proxies.length;
+        uint256 length = proxyKeys.length;
         for (uint256 i; i < length; ++i) {
-            changeProxyAdmin(i, newAdmin);
+            changeProxyAdmin(proxyKeys[i], newAdmin);
         }
-    }
-
-    function changeAllAdmins(uint256 start, uint256 count, address newAdmin) public onlyOwner {
-        require(start + count <= proxies.length, "Out of bounds");
-        for (uint256 i = start; i < start + count; ++i) {
-            changeProxyAdmin(i, newAdmin);
-        }
-    }
-
-    function getName(uint256 index) public view returns (string memory) {
-        return proxies[index].name;
-    }
-
-    function getAdmin(uint256 index) public view returns (address) {
-        return proxies[index].proxy.admin();
-    }
-
-    function getImpl(uint256 index) public view returns(address) {
-        return proxies[index].proxy.implementation();
     }
 
     function getAllProxiesInfo() public view returns (string[] memory) {
-        uint256 length = proxies.length;
+        uint256 length = proxyKeys.length;
         string[] memory proxyInfos = new string[](length);
         for (uint256 i; i < length; ++i) {
-            Proxy memory _proxy = proxies[i];
-            proxyInfos[i] = string(abi.encodePacked(uint2str(i), ": ", _proxy.name));
+            string memory key = proxyKeys[i];
+            Proxy memory _proxy = proxyMap[key];
+            proxyInfos[i] = string(abi.encodePacked(key, ": ", _proxy.name));
         }
         return proxyInfos;
     }
 
     function getAllProxies() public view returns (address[] memory) {
-        uint256 length = proxies.length;
+        uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
         for (uint256 i; i < length; ++i) {
-            proxyInfos[i] = address(proxies[i].proxy);
+            proxyInfos[i] = address(proxyMap[proxyKeys[i]].proxy);
         }
         return proxyInfos;
     }
     
     function getAllImpls() public view returns (address[] memory) {
-        uint256 length = proxies.length;
+        uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
         for (uint256 i; i < length; ++i) {
-            proxyInfos[i] = address(proxies[i].proxy.implementation());
+            proxyInfos[i] = address(proxyMap[proxyKeys[i]].proxy.implementation());
         }
         return proxyInfos;
-    }
-
-    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint j = _i;
-        uint len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint k = len;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
     }
 }

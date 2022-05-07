@@ -97,9 +97,8 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     error ZeroAddressDisallowed();
     error MultiplierTooLow();
 
-    constructor(address _weth, address _priceOracle, address _ifoFactory) {
+    constructor(address _weth, address _ifoFactory) {
         WETH = _weth;
-        priceOracle = _priceOracle;
         ifoFactory = _ifoFactory;
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
