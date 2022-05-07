@@ -103,16 +103,15 @@ contract PriceOracleTest is DSTest {
         // VERIFY 
         // check that price has been updated in price oracle.
         PairInfo memory pairInfo = priceOracle.getPairInfo(token0, token1);
+        (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(pairAddress).getReserves();
         
-        // price(0|1)CumulativeLast = 0 * t0 + token(0|1)Balance * t1
-        uint112 token0Balance = uint112(IERC20Upgradeable(token0).balanceOf(pairAddress));
-        uint112 token1Balance = uint112(IERC20Upgradeable(token1).balanceOf(pairAddress));
-        assertEq(pairInfo.price0CumulativeLast, uint256(UQ112x112.encode(token1Balance).uqdiv(token0Balance)) * jump);
-        assertEq(pairInfo.price1CumulativeLast, uint256(UQ112x112.encode(token0Balance).uqdiv(token1Balance)) * jump);
+        // price(0|1)CumulativeLast = 0 * t0 + token(0|1)Balance * t1        
+        assertEq(pairInfo.price0CumulativeLast, uint256(UQ112x112.encode(uint112(reserve1)).uqdiv(uint112(reserve0))) * jump);
+        assertEq(pairInfo.price1CumulativeLast, uint256(UQ112x112.encode(uint112(reserve0)).uqdiv(uint112(reserve1))) * jump);
 
         // price(0|1)Average = (0 * t0 + token(0|1)Balance * t1) / period
-        assertEq(pairInfo.price0Average._x, uint256(UQ112x112.encode(token1Balance).uqdiv(token0Balance))); 
-        assertEq(pairInfo.price1Average._x, uint256(UQ112x112.encode(token0Balance).uqdiv(token1Balance)));
+        assertEq(pairInfo.price0Average._x, uint256(UQ112x112.encode(uint112(reserve1)).uqdiv(uint112(reserve0)))); 
+        assertEq(pairInfo.price1Average._x, uint256(UQ112x112.encode(uint112(reserve0)).uqdiv(uint112(reserve1))));
     }
    
     /**
@@ -135,11 +134,16 @@ contract PriceOracleTest is DSTest {
     Test updatePairInfo when period has not elapsed. 
      */
     function testUpdatePairInfo_periodNotElapsed() public {
-        // ACTION
-        // Add pair info to price oracle.
+        // SETUP
         address pairAddress = address(pair.uPair());
         address token0 = address(pair.token0());
         address token1 = address(pair.token1());
+        // Get cumulative last prices of the tokens before the pair as been updated. 
+        uint256 price0CumulativeLast = IUniswapV2Pair(pairAddress).price0CumulativeLast();
+        uint256 price1CumulativeLast = IUniswapV2Pair(pairAddress).price1CumulativeLast();
+        
+        // ACTION
+        // Add pair info to price oracle.
         priceOracle.updatePairInfo(token0, token1);
 
         // Sync pair to match reserve to token balances. 
@@ -158,15 +162,13 @@ contract PriceOracleTest is DSTest {
         // check that price has NOT been updated in price oracle.
         PairInfo memory pairInfo = priceOracle.getPairInfo(token0, token1);
         
-        // price(0|1)CumulativeLast = 0 * t0 + token(0|1)Balance * t1
-        uint112 token0Balance = uint112(IERC20Upgradeable(token0).balanceOf(pairAddress));
-        uint112 token1Balance = uint112(IERC20Upgradeable(token1).balanceOf(pairAddress));
-        assertTrue(pairInfo.price0CumulativeLast != uint256(UQ112x112.encode(token1Balance).uqdiv(token0Balance)) * jump);
-        assertTrue(pairInfo.price1CumulativeLast != uint256(UQ112x112.encode(token0Balance).uqdiv(token1Balance)) * jump);
+        // price(0|1)CumulativeLast = 0 * t0 + token(0|1)Balance * t1        
+        assertEq(pairInfo.price0CumulativeLast, price0CumulativeLast);
+        assertEq(pairInfo.price1CumulativeLast, price1CumulativeLast);
 
         // price(0|1)Average = (0 * t0 + token(0|1)Balance * t1) / period
-        assertTrue(pairInfo.price0Average._x != uint256(UQ112x112.encode(token1Balance).uqdiv(token0Balance))); 
-        assertTrue(pairInfo.price1Average._x != uint256(UQ112x112.encode(token1Balance).uqdiv(token0Balance)));
+        assertEq(pairInfo.price0Average._x, 0); 
+        assertEq(pairInfo.price1Average._x, 0);
     }
     
     /**

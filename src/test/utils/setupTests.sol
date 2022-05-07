@@ -21,7 +21,7 @@ library SetupEnvironment {
     }
 
     function setupPairFactory() public pure returns (IUniswapV2Factory v2Factory) {
-        v2Factory = IUniswapV2Factory(0x60913758635b54e6C9685f92201A5704eEe74748);
+        v2Factory = IUniswapV2Factory(0xc66F594268041dB60507F00703b152492fb176E7);
     }
 
     function setupPriceOracle(address v2Factory, address weth) public returns (PriceOracle priceOracle) {
