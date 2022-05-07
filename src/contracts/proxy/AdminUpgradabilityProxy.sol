@@ -1,17 +1,17 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./UpgradabilityProxy.sol";
+import "./UpgradeabilityProxy.sol";
 
 /**
- * @title AdminUpgradeabilityProxy
+ * @title BaseAdminUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with an authorization
  * mechanism for administrative tasks.
  * All external functions in this contract must be guarded by the
  * `ifAdmin` modifier. See ethereum/solidity#3864 for a Solidity
  * feature proposal that would enable this to be done automatically.
  */
-contract AdminUpgradeabilityProxy is UpgradeabilityProxy {
+contract AdminUpgradabilityProxy is UpgradeabilityProxy {
   /**
    * @dev Emitted when the administration has been transferred.
    * @param previousAdmin Address of the previous admin.
@@ -128,7 +128,7 @@ contract AdminUpgradeabilityProxy is UpgradeabilityProxy {
   /**
    * @dev Only fall back when the sender is not the admin.
    */
-  function _willFallback() internal override virtual {
+  function _willFallback() internal override {
     require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
     super._willFallback();
   }
