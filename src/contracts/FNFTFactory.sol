@@ -31,7 +31,7 @@ contract FNFTFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeab
     ) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __UpgradeableBeacon__init(address(new FNFT(_fnftSettings)));
+        __BeaconUpgradeable__init(address(new FNFT(_fnftSettings)));
     }
 
     /// @notice the function to mint a fNFT

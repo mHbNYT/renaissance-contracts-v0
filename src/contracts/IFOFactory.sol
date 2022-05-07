@@ -30,7 +30,7 @@ contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeabl
     ) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __UpgradeableBeacon__init(address(new IFO(_ifoSettings)));
+        __BeaconUpgradeable__init(address(new IFO(_ifoSettings)));
     }
 
     /// @notice the function to create a ifo

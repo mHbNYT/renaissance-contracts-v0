@@ -20,7 +20,7 @@ contract BeaconUpgradeable is OwnableUpgradeable, IBeacon {
      */
     event Upgraded(address indexed childImplementation);
 
-    function __UpgradeableBeacon__init(address childImplementation_) public initializer {
+    function __BeaconUpgradeable__init(address childImplementation_) public initializer {
         _setChildImplementation(childImplementation_);
     }
 

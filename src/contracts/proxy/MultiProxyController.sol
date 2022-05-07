@@ -3,6 +3,7 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "../interfaces/IAdminUpgradeabilityProxy.sol";
 
 contract MultiProxyController is Ownable {
@@ -50,9 +51,13 @@ contract MultiProxyController is Ownable {
         deployer = _deployer;
     }
 
-    function deployerAddProxy(string memory key, address proxy) public {
+    function deployerUpdateProxy(string memory key, address proxy) public {
         require(msg.sender == deployer, "Not deployer");
-        addProxy(key, proxy);
+        if (proxyMap[key].isValue) {
+            changeProxy(key, proxy);
+        } else {
+            addProxy(key, proxy);
+        }        
     }
 
     function changeProxy(string memory key, address proxyAddress) public onlyOwner {
