@@ -7,6 +7,7 @@ import "../FNFTSettings.sol";
 import "../FNFTFactory.sol";
 import "../IFOSettings.sol";
 import "../IFOFactory.sol";
+import "../PriceOracle.sol";
 import "./AdminUpgradeabilityProxy.sol";
 
 contract Deployer is Ownable {
@@ -103,5 +104,19 @@ contract Deployer is Ownable {
         emit IFOFactoryProxyDeployed(ifoFactory, msg.sender);
                 
         return address(ifoFactory);
+    }
+
+    /// @notice the function to deploy PriceOracle
+    /// @param _logic the implementation    
+    function deployPriceOracle(address _logic) external onlyOwner returns (address) {
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            PriceOracle.initialize.selector            
+        );
+
+        address priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        
+        emit IFOFactoryProxyDeployed(priceOracle, msg.sender);
+                
+        return address(priceOracle);
     }
 }

@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./libraries/PriceOracleLibrary.sol";
 import "./libraries/UQ112x112.sol";
 import "./libraries/UniswapV2Library.sol";
@@ -13,7 +13,7 @@ import {IPriceOracle, PairInfo} from "./interfaces/IPriceOracle.sol";
     1. Store cumulative prices for each pair in the pool
     2. Update to calculate twap and update for each pair
 */
-contract PriceOracle is Ownable, IPriceOracle {
+contract PriceOracle is OwnableUpgradeable, IPriceOracle {
     using FixedPoint for *;
 
     uint256 public period;
@@ -43,6 +43,11 @@ contract PriceOracle is Ownable, IPriceOracle {
     constructor(address _factory, address _weth) {
         WETH = _weth;
         FACTORY = _factory;
+    }
+
+    function initialize() external initializer {
+        __Ownable_init();
+        
         period = 10 minutes;
         minimumPairInfoUpdate = 10;
     }
