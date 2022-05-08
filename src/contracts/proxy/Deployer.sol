@@ -56,7 +56,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            IFOSettings.initialize.selector            
+            IFOSettings.initialize.selector
         );
 
         address ifoSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));

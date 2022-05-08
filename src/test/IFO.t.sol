@@ -19,14 +19,11 @@ import {BeaconProxy} from "../contracts/proxy/BeaconProxy.sol";
 
 /// @author Nibble Market
 /// @title Tests for the fnfts
-contract IFOTest is DSTest, ERC721Holder {
-    CheatCodes internal vm;
-
+contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     FNFTFactory public fnftFactory;
     IFOFactory public ifoFactory;
-    FNFTSettings public fNFTSettings;
+    FNFTSettings public fnftSettings;
     IFOSettings public ifoSettings;
-    WETH public weth;
     IPriceOracle public priceOracle;
     MockNFT public nft;
     FNFT public fractionalizedNFT;
@@ -39,15 +36,10 @@ contract IFOTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, , priceOracle, , , ) = SetupEnvironment.setup(10 ether, 10 ether);
+        setupEnvironment(10 ether);
+        (, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);        
 
-        ifoSettings = new IFOSettings();
-        ifoFactory = new IFOFactory(address(ifoSettings));
-
-        fNFTSettings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
-        fNFTSettings.setGovernanceFee(0);
-
-        fnftFactory = new FNFTFactory(address(fNFTSettings));        
+        fnftSettings.setGovernanceFee(0);
 
         nft = new MockNFT();
 

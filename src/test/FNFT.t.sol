@@ -4,6 +4,8 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
+import {Deployer} from "../contracts/proxy/Deployer.sol";
+import {MultiProxyController} from "../contracts/proxy/MultiProxyController.sol";
 import {IFOSettings} from "../contracts/IFOSettings.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {IFO} from "../contracts/IFO.sol";
@@ -19,16 +21,13 @@ import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWit
 
 /// @author Nibble Market
 /// @title Tests for the vaults
-contract FNFTTest is DSTest, ERC721Holder {
-    CheatCodes public vm;
-
-    WETH public weth;
+contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     IFOSettings public ifoSettings;
     IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     IUniswapV2Factory public pairFactory;
-    FNFTFactory public factory;
-    FNFTSettings public settings;
+    FNFTFactory public fnftFactory;
+    FNFTSettings public fnftSettings;
     MockNFT public token;
     FNFT public fNFT;
 
@@ -42,25 +41,19 @@ contract FNFTTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);        
+        setupEnvironment(10 ether);
+        (pairFactory, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);
 
-        ifoSettings = new IFOSettings();
-        ifoFactory = new IFOFactory(address(ifoSettings));
-
-        settings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
-
-        settings.setGovernanceFee(10);
-
-        factory = new FNFTFactory(address(settings));
+        fnftSettings.setGovernanceFee(10);
 
         token = new MockNFT();
 
         token.mint(address(this), 1);
 
-        token.setApprovalForAll(address(factory), true);
+        token.setApprovalForAll(address(fnftFactory), true);
 
         // FNFT minted on this test contract address.
-        fNFT = FNFT(factory.mint(
+        fNFT = FNFT(fnftFactory.mint(
             "testName", 
             "TEST", 
             address(token), 
@@ -71,7 +64,7 @@ contract FNFTTest is DSTest, ERC721Holder {
         ));
 
         // create a curator account
-        curator = new Curator(address(factory));
+        curator = new Curator(address(fnftFactory));
 
         // create 3 users and provide funds through HEVM store
         user1 = new User(address(fNFT));
@@ -110,24 +103,24 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testPause() public {
-        factory.pause();
-        factory.unpause();
+        fnftFactory.pause();
+        fnftFactory.unpause();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
 
-        temp.setApprovalForAll(address(factory), true);
-        factory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        temp.setApprovalForAll(address(fnftFactory), true);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
     function testFail_pause() public {
-        factory.pause();
+        fnftFactory.pause();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
 
-        temp.setApprovalForAll(address(factory), true);
-        factory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        temp.setApprovalForAll(address(fnftFactory), true);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
     /// -------------------------------
@@ -189,7 +182,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testFail_ChangeReserveBelowMinReserveFactor() public {                
-        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
+        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
 
         //initial reserve is 1,
         //minReserveFactor is 20%
@@ -208,7 +201,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testFail_ChangeReserveAboveMaxReserveFactor() public {        
-        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
 
         //initial reserve is 1,
         //maxReserveFactor is 500%
@@ -280,10 +273,10 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testAuctionPrice() public {
-        settings.setPriceOracle(address(0));        
-        console.log("Quorum requirement: ", settings.minVotePercentage()); // 25%
-        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
-        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+        fnftSettings.setPriceOracle(address(0));        
+        console.log("Quorum requirement: ", fnftSettings.minVotePercentage()); // 25%
+        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
+        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
 
         assertEq(fNFT.getQuorum(), 1000, "Quorum 1");
         assertEq(fNFT.reservePrice(), 1 ether, "Reserve price 1");
@@ -421,7 +414,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testListPriceZero() public {
         token.mint(address(this), 2);
 
-        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fNFT = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
         assertEq(fNFT.votingTokens(), 0);
     }
@@ -429,7 +422,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testFail_listPriceZeroNoAuction() public {
         token.mint(address(this), 2);
 
-        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fNFT = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
         User userTemp = new User(address(fNFT));
 
@@ -443,7 +436,7 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testAuctionEndCurator0() public {
         fNFT.updateFee(0);
         fNFT.updateCurator(address(0));
-        settings.setGovernanceFee(0);
+        fnftSettings.setGovernanceFee(0);
         fNFT.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
         fNFT.transfer(address(user2), 25e18);
