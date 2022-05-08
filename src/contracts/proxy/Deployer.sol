@@ -10,6 +10,8 @@ import "../IFOFactory.sol";
 import "../PriceOracle.sol";
 import "./AdminUpgradeabilityProxy.sol";
 import "./IMultiProxyController.sol";
+import "../interfaces/IOwnable.sol";
+import "../interfaces/IIFOSettings.sol";
 
 contract Deployer is Ownable {
     event FNFTSettingsProxyDeployed(
@@ -52,20 +54,20 @@ contract Deployer is Ownable {
 
     /// @notice the function to deploy IFOSettings    
     /// @param _logic the implementation
-    function deployIFOSettings(address _logic) external onlyOwner returns (address) {
+    function deployIFOSettings(address _logic) external onlyOwner returns (address ifoSettings) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             IFOSettings.initialize.selector
         );
 
-        address ifoSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        ifoSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IIFOSettings(ifoSettings).setFeeReceiver(payable(msg.sender));
+        IOwnable(ifoSettings).transferOwnership(msg.sender);        
 
         proxyController.deployerUpdateProxy("IFOSettings", ifoSettings);
 
-        emit IFOSettingsProxyDeployed(ifoSettings, msg.sender);        
-        
-        return address(ifoSettings);
+        emit IFOSettingsProxyDeployed(ifoSettings, msg.sender);
     }
 
     /// @notice the function to deploy FNFTSettings
@@ -76,7 +78,7 @@ contract Deployer is Ownable {
         address _logic,
         address _weth,
         address _ifoFactory
-    ) external onlyOwner returns (address) {
+    ) external onlyOwner returns (address fnftSettings) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
@@ -85,13 +87,13 @@ contract Deployer is Ownable {
             _ifoFactory
         );
 
-        address fnftSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        
+        fnftSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IFNFTSettings(fnftSettings).setFeeReceiver(payable(msg.sender));
+        IOwnable(fnftSettings).transferOwnership(msg.sender);        
+
         proxyController.deployerUpdateProxy("FNFTSettings", fnftSettings);
 
         emit FNFTSettingsProxyDeployed(fnftSettings, msg.sender);
-                
-        return address(fnftSettings);
     }
 
     /// @notice the function to deploy FNFTFactory
@@ -100,7 +102,7 @@ contract Deployer is Ownable {
     function deployFNFTFactory(
         address _logic,
         address _fnftSettings
-    ) external onlyOwner returns (address) {
+    ) external onlyOwner returns (address fnftFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
@@ -108,13 +110,12 @@ contract Deployer is Ownable {
             _fnftSettings
         );
 
-        address fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        
+        fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(fnftFactory).transferOwnership(msg.sender);
+
         proxyController.deployerUpdateProxy("FNFTFactory", fnftFactory);
 
-        emit FNFTFactoryProxyDeployed(fnftFactory, msg.sender);
-                
-        return address(fnftFactory);
+        emit FNFTFactoryProxyDeployed(fnftFactory, msg.sender);                
     }
 
     /// @notice the function to deploy IFOFactory
@@ -123,7 +124,7 @@ contract Deployer is Ownable {
     function deployIFOFactory(
         address _logic,
         address _ifoSettings
-    ) external onlyOwner returns (address) {
+    ) external onlyOwner returns (address ifoFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
@@ -131,30 +132,28 @@ contract Deployer is Ownable {
             _ifoSettings
         );
 
-        address ifoFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        
+        ifoFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(ifoFactory).transferOwnership(msg.sender);
+
         proxyController.deployerUpdateProxy("IFOFactory", ifoFactory);
 
         emit IFOFactoryProxyDeployed(ifoFactory, msg.sender);
-                
-        return address(ifoFactory);
     }
 
     /// @notice the function to deploy PriceOracle
     /// @param _logic the implementation    
-    function deployPriceOracle(address _logic) external onlyOwner returns (address) {
+    function deployPriceOracle(address _logic) external onlyOwner returns (address priceOracle) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             PriceOracle.initialize.selector            
         );
 
-        address priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(priceOracle).transferOwnership(msg.sender);
         
         proxyController.deployerUpdateProxy("PriceOracle", priceOracle);
 
-        emit PriceOracleProxyDeployed(priceOracle, msg.sender);
-                
-        return address(priceOracle);
+        emit PriceOracleProxyDeployed(priceOracle, msg.sender);                
     }
 }

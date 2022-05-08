@@ -5,6 +5,7 @@ import "../../../lib/ds-test/src/test.sol";
 import {Deployer} from "../../contracts/proxy/Deployer.sol";
 import {MultiProxyController} from "../../contracts/proxy/MultiProxyController.sol";
 import {CheatCodes} from "./cheatcodes.sol";
+import {console} from "./console.sol";
 import {WETH} from "../../contracts/mocks/WETH.sol";
 import {PriceOracle} from "../../contracts/PriceOracle.sol";
 import {IFOSettings} from "../../contracts/IFOSettings.sol";
@@ -84,9 +85,9 @@ contract SetupEnvironment {
     }
    
     function setupEnvironment(uint256 _wethAmount) public {
-        vm = CheatCodes(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));
+        vm = CheatCodes(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));        
         setupDeployerAndProxyController();        
-        setupWETH(_wethAmount);        
+        setupWETH(_wethAmount);           
     }
 
     function setupContracts(uint256 _fnftAmount)
@@ -100,13 +101,13 @@ contract SetupEnvironment {
             FNFTFactory fnftFactory,
             FNFT fnft
         )
-    {
+    {             
         pairFactory = setupPairFactory();        
         priceOracle = setupPriceOracle(address(pairFactory));        
         ifoSettings = setupIFOSettings();
         ifoFactory = setupIFOFactory(address(ifoSettings));
         fnftSettings = setupFNFTSettings(address(ifoFactory), address(priceOracle));
         fnftFactory = setupFNFTFactory(address(fnftSettings));
-        fnft = setupFNFT(address(fnftFactory), _fnftAmount);
+        fnft = setupFNFT(address(fnftFactory), _fnftAmount);        
     }
 }

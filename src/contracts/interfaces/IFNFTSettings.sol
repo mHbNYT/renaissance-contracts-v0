@@ -31,4 +31,6 @@ interface IFNFTSettings {
     function instantBuyMultiplier() external view returns (uint256);
 
     function feeReceiver() external view returns (address payable);
+
+    function setFeeReceiver(address payable _receiver) external;
 }

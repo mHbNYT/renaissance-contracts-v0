@@ -54,17 +54,21 @@ contract MultiProxyController is Ownable {
     function deployerUpdateProxy(string memory key, address proxy) public {
         require(msg.sender == deployer, "Not deployer");
         if (proxyMap[key].isValue) {
-            changeProxy(key, proxy);
+            _changeProxy(key, proxy);
         } else {
-            addProxy(key, proxy);
+            _addProxy(key, proxy);
         }        
     }
 
-    function changeProxy(string memory key, address proxyAddress) public onlyOwner {
+    function _changeProxy(string memory key, address proxyAddress) private {
         require(proxyMap[key].isValue, "Doesn't exist");
 
         proxyMap[key].proxy = IAdminUpgradeabilityProxy(proxyAddress);
     }
+
+    function changeProxy(string memory key, address proxyAddress) public onlyOwner {
+        _changeProxy(key, proxyAddress);
+    }    
 
     function changeProxyKey(string memory oldKey, string memory newKey) public onlyOwner {
         require(proxyMap[oldKey].isValue, "Doesn't exist");
@@ -76,7 +80,7 @@ contract MultiProxyController is Ownable {
         delete proxyMap[oldKey];
     }
 
-    function addProxy(string memory key, address proxyAddress) public onlyOwner {
+    function _addProxy(string memory key, address proxyAddress) private {
         require(!proxyMap[key].isValue, "Exists");
 
         IAdminUpgradeabilityProxy proxyContract = IAdminUpgradeabilityProxy(proxyAddress);
@@ -84,6 +88,10 @@ contract MultiProxyController is Ownable {
         Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);        
         proxyMap[key] = newProxy;
         emit ProxyUpdated(key, proxyAddress);
+    }
+
+    function addProxy(string memory key, address proxyAddress) public onlyOwner {
+        _addProxy(key, proxyAddress);
     }
 
     function removeProxy(string memory key) public onlyOwner {
