@@ -27,7 +27,7 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
     PairWithWETH public pairWithWeth;
     
     function setUp() public {
-        setupEnvironment(10 ether);
+        setupEnvironment(1000 ether);
         (pairFactory, priceOracle, , , , , ) = setupContracts(10 ether);
         
         MockERC20Upgradeable token0 = new MockERC20Upgradeable();
