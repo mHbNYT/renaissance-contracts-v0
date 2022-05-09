@@ -1,22 +1,17 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "./InitializedProxy.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
 import "./interfaces/IERC20.sol";
+import "./proxy/BeaconUpgradeable.sol";
+import "./proxy/BeaconProxy.sol";
 
-contract IFOFactory is Ownable, Pausable {
+contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeable {
     /// @notice the mapping of fNFT to IFO address
     mapping(address => address) public getIFO;
-
-    /// @notice a settings contract controlled by governance
-    address public immutable settings;
-
-    /// @notice the TokenVault logic contract
-    address public immutable logic;
 
     event IFOCreated(
         address indexed IFO,
@@ -28,11 +23,14 @@ contract IFOFactory is Ownable, Pausable {
         bool allowWhitelisting
     );
 
-    error IFOExists(address nft);
+    error IFOExists(address nft);    
 
-    constructor(address _ifoSettings) {
-        settings = _ifoSettings;
-        logic = address(new IFO(_ifoSettings));
+    function initialize(
+        address _ifoSettings
+    ) external initializer {
+        __Ownable_init();
+        __Pausable_init();
+        __BeaconUpgradeable__init(address(new IFO(_ifoSettings)));
     }
 
     /// @notice the function to create a ifo
@@ -60,7 +58,7 @@ contract IFOFactory is Ownable, Pausable {
             _allowWhitelisting
         );
 
-        address _IFO = address(new InitializedProxy(logic, _initializationCalldata));
+        address _IFO = address(new BeaconProxy(address(this), _initializationCalldata));
         getIFO[_FNFT] = _IFO;
 
         IERC20(_FNFT).transferFrom(msg.sender, _IFO, IERC20(_FNFT).balanceOf(msg.sender));

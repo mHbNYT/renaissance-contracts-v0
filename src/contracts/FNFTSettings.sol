@@ -1,11 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./interfaces/IFNFTSettings.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
 
-contract FNFTSettings is Ownable, IFNFTSettings {
+contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     address public WETH;
 
     address public priceOracle;
@@ -97,9 +96,10 @@ contract FNFTSettings is Ownable, IFNFTSettings {
     error ZeroAddressDisallowed();
     error MultiplierTooLow();
 
-    constructor(address _weth, address _priceOracle, address _ifoFactory) {
+    function initialize(address _weth, address _ifoFactory) external initializer {
+        __Ownable_init();
+
         WETH = _weth;
-        priceOracle = _priceOracle;
         ifoFactory = _ifoFactory;
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;

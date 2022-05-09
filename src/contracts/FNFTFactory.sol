@@ -1,25 +1,19 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import "./InitializedProxy.sol";
 import "./FNFTSettings.sol";
 import "./FNFT.sol";
+import "./proxy/BeaconUpgradeable.sol";
+import "./proxy/BeaconProxy.sol";
 
-contract FNFTFactory is Ownable, Pausable {
+contract FNFTFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeable {
     /// @notice a mapping of fNFT ids (see getFnftId) to the address of the fNFT contract
     mapping(bytes32 => address) public fnfts;
-
-    /// @notice a settings contract controlled by governance
-    address public immutable settings;
-
-    /// @notice the TokenVault logic contract
-    address public immutable logic;
 
     event FNFTCreated(
         address indexed token, 
@@ -30,10 +24,13 @@ contract FNFTFactory is Ownable, Pausable {
         string name, 
         string symbol
     );
-
-    constructor(address _fnftSettings) {
-        settings = _fnftSettings;
-        logic = address(new FNFT(_fnftSettings));
+    
+    function initialize(
+        address _fnftSettings
+    ) external initializer {
+        __Ownable_init();
+        __Pausable_init();
+        __BeaconUpgradeable__init(address(new FNFT(_fnftSettings)));
     }
 
     /// @notice the function to mint a fNFT
@@ -64,7 +61,7 @@ contract FNFTFactory is Ownable, Pausable {
             _symbol
         );
 
-        address fnft = address(new InitializedProxy(logic, _initializationCalldata));
+        address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
 
         bytes32 fnftId = getFNFTId(_nft, _tokenId);
         

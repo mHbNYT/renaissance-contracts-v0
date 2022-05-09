@@ -4,29 +4,27 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {IFNFTSettings, FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {IIFOSettings, IFOSettings} from "../contracts/IFOSettings.sol";
 import {IPriceOracle} from "../contracts/interfaces/IPriceOracle.sol";
 import {PriceOracle} from "../contracts/PriceOracle.sol";
-import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
+import {FNFTFactory} from "../contracts/FNFTFactory.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IFO} from "../contracts/IFO.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
-import {InitializedProxy} from "../contracts/InitializedProxy.sol";
+import {BeaconProxy} from "../contracts/proxy/BeaconProxy.sol";
 
 /// @author Nibble Market
 /// @title Tests for the fnfts
-contract IFOTest is DSTest, ERC721Holder {
-    CheatCodes internal vm;
-
+contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     FNFTFactory public fnftFactory;
     IFOFactory public ifoFactory;
-    FNFTSettings public fNFTSettings;
+    FNFTSettings public fnftSettings;
     IFOSettings public ifoSettings;
-    WETH public weth;
     IPriceOracle public priceOracle;
     MockNFT public nft;
     FNFT public fractionalizedNFT;
@@ -39,15 +37,10 @@ contract IFOTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, , priceOracle, , , ) = SetupEnvironment.setup(10 ether, 10 ether);
+        setupEnvironment(10 ether);
+        (, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);        
 
-        ifoSettings = new IFOSettings();
-        ifoFactory = new IFOFactory(address(ifoSettings));
-
-        fNFTSettings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
-        fNFTSettings.setGovernanceFee(0);
-
-        fnftFactory = new FNFTFactory(address(fNFTSettings));        
+        fnftSettings.setGovernanceFee(0);
 
         nft = new MockNFT();
 
@@ -582,7 +575,7 @@ contract IFOTest is DSTest, ERC721Holder {
             true // allow whitelist
         );
 
-        IFO fNFTIfo = new IFO(address(new InitializedProxy(address(new IFO(address(ifoSettings))), _initializationCalldata)));
+        IFO fNFTIfo = new IFO(address(new BeaconProxy(address(new IFO(address(ifoSettings))), _initializationCalldata)));
 
         fNFTIfo.start();
     }

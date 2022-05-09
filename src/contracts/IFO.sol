@@ -133,7 +133,7 @@ contract IFO is Initializable {
     }
 
     modifier onlyGov() {
-        if (msg.sender != Ownable(settings).owner()) revert NotGov();
+        if (msg.sender != OwnableUpgradeable(settings).owner()) revert NotGov();
         _;
     }
 

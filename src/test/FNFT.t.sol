@@ -3,13 +3,15 @@
 pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
-
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {Deployer} from "../contracts/proxy/Deployer.sol";
+import {MultiProxyController} from "../contracts/proxy/MultiProxyController.sol";
 import {IFOSettings} from "../contracts/IFOSettings.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {IFO} from "../contracts/IFO.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
-import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
+import {FNFTFactory} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IWETH} from "../contracts/interfaces/IWETH.sol";
@@ -19,18 +21,15 @@ import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWit
 
 /// @author Nibble Market
 /// @title Tests for the vaults
-contract FNFTTest is DSTest, ERC721Holder {
-    CheatCodes public vm;
-
-    WETH public weth;
+contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     IFOSettings public ifoSettings;
     IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     IUniswapV2Factory public pairFactory;
-    FNFTFactory public factory;
-    FNFTSettings public settings;
+    FNFTFactory public fnftFactory;
+    FNFTSettings public fnftSettings;
     MockNFT public token;
-    FNFT public fNFT;
+    FNFT public fnft;
 
     User public user1;
     User public user2;
@@ -42,25 +41,19 @@ contract FNFTTest is DSTest, ERC721Holder {
     Curator public curator;
 
     function setUp() public {
-        (vm, weth, pairFactory, priceOracle, , ,) = SetupEnvironment.setup(10 ether, 10 ether);        
-
-        ifoSettings = new IFOSettings();
-        ifoFactory = new IFOFactory(address(ifoSettings));
-
-        settings = new FNFTSettings(address(weth), address(priceOracle), address(ifoFactory));
-
-        settings.setGovernanceFee(10);
-
-        factory = new FNFTFactory(address(settings));
+        setupEnvironment(10 ether);
+        (pairFactory, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);
+        
+        fnftSettings.setGovernanceFee(10);
 
         token = new MockNFT();
 
         token.mint(address(this), 1);
 
-        token.setApprovalForAll(address(factory), true);
+        token.setApprovalForAll(address(fnftFactory), true);
 
         // FNFT minted on this test contract address.
-        fNFT = FNFT(factory.mint(
+        fnft = FNFT(fnftFactory.mint(
             "testName", 
             "TEST", 
             address(token), 
@@ -71,13 +64,13 @@ contract FNFTTest is DSTest, ERC721Holder {
         ));
 
         // create a curator account
-        curator = new Curator(address(factory));
+        curator = new Curator(address(fnftFactory));
 
         // create 3 users and provide funds through HEVM store
-        user1 = new User(address(fNFT));
-        user2 = new User(address(fNFT));
-        user3 = new User(address(fNFT));
-        user4 = new UserNoETH(address(fNFT));
+        user1 = new User(address(fnft));
+        user2 = new User(address(fnft));
+        user3 = new User(address(fnft));
+        user4 = new UserNoETH(address(fnft));
         
         payable(address(user1)).transfer(10 ether);
         payable(address(user2)).transfer(10 ether);
@@ -86,48 +79,48 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testTransferBetweenUsers() public {
-        console.log("this balance", fNFT.balanceOf(address(this)) / 1e18);
-        console.log("this reserve price", fNFT.userReservePrice(address(this)) / 1e18);
-        console.log("user1 reserve price", fNFT.userReservePrice(address(user1)) / 1e18);
-        console.log("voting tokens", fNFT.votingTokens() / 1e18);
-        console.log("actual fNFT reserve price", fNFT.reservePrice() / 1e18);
+        console.log("this balance", fnft.balanceOf(address(this)) / 1e18);
+        console.log("this reserve price", fnft.userReservePrice(address(this)) / 1e18);
+        console.log("user1 reserve price", fnft.userReservePrice(address(user1)) / 1e18);
+        console.log("voting tokens", fnft.votingTokens() / 1e18);
+        console.log("actual fnft reserve price", fnft.reservePrice() / 1e18);
         console.log("TRANSFER__________________");
 
-        fNFT.transfer(address(user1), 100 ether);
-        console.log("voting tokens", fNFT.votingTokens() / 1e18);
-        console.log("this reserve price", fNFT.userReservePrice(address(this)) / 1e18);
-        console.log("user1 balance", fNFT.balanceOf(address(user1)) / 1e18);
-        console.log("user1 reserve price", fNFT.userReservePrice(address(user1)) / 1e18);
-        console.log("actual fNFT reserve price", fNFT.reservePrice() / 1e18);
+        fnft.transfer(address(user1), 100 ether);
+        console.log("voting tokens", fnft.votingTokens() / 1e18);
+        console.log("this reserve price", fnft.userReservePrice(address(this)) / 1e18);
+        console.log("user1 balance", fnft.balanceOf(address(user1)) / 1e18);
+        console.log("user1 reserve price", fnft.userReservePrice(address(user1)) / 1e18);
+        console.log("actual fnft reserve price", fnft.reservePrice() / 1e18);
         console.log("TRANSFER__________________");
 
         user1.call_transfer((address(user2)), 20 ether);
-        console.log("voting tokens", fNFT.votingTokens() / 1e18);
-        console.log("user2 reserve price", fNFT.userReservePrice(address(user2)) / 1e18);
-        console.log("user2 balance", fNFT.balanceOf(address(user2)) / 1e18);
-        console.log("user2 reserve price", fNFT.userReservePrice(address(user2)) / 1e18);
-        console.log("actual fNFT reserve price", fNFT.reservePrice() / 1e18);
+        console.log("voting tokens", fnft.votingTokens() / 1e18);
+        console.log("user2 reserve price", fnft.userReservePrice(address(user2)) / 1e18);
+        console.log("user2 balance", fnft.balanceOf(address(user2)) / 1e18);
+        console.log("user2 reserve price", fnft.userReservePrice(address(user2)) / 1e18);
+        console.log("actual fnft reserve price", fnft.reservePrice() / 1e18);
     }
 
     function testPause() public {
-        factory.pause();
-        factory.unpause();
+        fnftFactory.pause();
+        fnftFactory.unpause();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
 
-        temp.setApprovalForAll(address(factory), true);
-        factory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        temp.setApprovalForAll(address(fnftFactory), true);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
     function testFail_pause() public {
-        factory.pause();
+        fnftFactory.pause();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
 
-        temp.setApprovalForAll(address(factory), true);
-        factory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        temp.setApprovalForAll(address(fnftFactory), true);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
     /// -------------------------------
@@ -135,18 +128,18 @@ contract FNFTTest is DSTest, ERC721Holder {
     /// -------------------------------
 
     function testToggleVerified() public {
-        assertTrue(fNFT.verified() == false);
-        fNFT.toggleVerified();
-        assertTrue(fNFT.verified() == true);
-        fNFT.toggleVerified();
-        assertTrue(fNFT.verified() == false);
+        assertTrue(fnft.verified() == false);
+        fnft.toggleVerified();
+        assertTrue(fnft.verified() == true);
+        fnft.toggleVerified();
+        assertTrue(fnft.verified() == false);
     }
 
     function testKickCurator() public {
-        fNFT.updateCurator(address(curator));
-        assertTrue(fNFT.curator() == address(curator));
-        fNFT.kickCurator(address(this));
-        assertTrue(fNFT.curator() == address(this));
+        fnft.updateCurator(address(curator));
+        assertTrue(fnft.curator() == address(curator));
+        fnft.kickCurator(address(this));
+        assertTrue(fnft.curator() == address(this));
     }
 
     function testFail_kickCurator() public {
@@ -155,52 +148,52 @@ contract FNFTTest is DSTest, ERC721Holder {
 
     function testChangeReserve() public {
         // reserve price here should not change
-        fNFT.transfer(address(user1), 50e18);
-        assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(fNFT.votingTokens(), 50e18);
+        fnft.transfer(address(user1), 50e18);
+        assertEq(fnft.reservePrice(), 1 ether);
+        assertEq(fnft.votingTokens(), 50e18);
 
-        assertEq(fNFT.userReservePrice(address(user1)), 0);
+        assertEq(fnft.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
-        assertEq(fNFT.reservePrice(), 1.5 ether);
+        assertEq(fnft.reservePrice(), 1.5 ether);
 
         // lets pretend user1 found an exploit to push up their reserve price
-        fNFT.removeReserve(address(user1));
-        assertEq(fNFT.userReservePrice(address(user1)), 0);
-        assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(fNFT.votingTokens(), 50e18);
+        fnft.removeReserve(address(user1));
+        assertEq(fnft.userReservePrice(address(user1)), 0);
+        assertEq(fnft.reservePrice(), 1 ether);
+        assertEq(fnft.votingTokens(), 50e18);
     }
 
     function testFail_ChangeReserve() public {
         // reserve price here should not change
-        fNFT.transfer(address(user1), 50e18);
-        assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(fNFT.votingTokens(), 50e18);
+        fnft.transfer(address(user1), 50e18);
+        assertEq(fnft.reservePrice(), 1 ether);
+        assertEq(fnft.votingTokens(), 50e18);
 
-        assertEq(fNFT.userReservePrice(address(user1)), 0);
+        assertEq(fnft.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
-        assertEq(fNFT.reservePrice(), 1.5 ether);
+        assertEq(fnft.reservePrice(), 1.5 ether);
 
         // user1 is not gov so cannot do anything
         user1.call_remove(address(this));
     }
 
     function testFail_ChangeReserveBelowMinReserveFactor() public {                
-        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
+        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
 
         //initial reserve is 1,
         //minReserveFactor is 20%
 
-        fNFT.transfer(address(user1), 50 ether);
+        fnft.transfer(address(user1), 50 ether);
 
         user1.call_updatePrice(0.2 ether);
 
-        assertEq(fNFT.reservePrice(), 0.6 ether);
+        assertEq(fnft.reservePrice(), 0.6 ether);
 
-        fNFT.transfer(address(user2), 50 ether); 
+        fnft.transfer(address(user2), 50 ether); 
         // reservePrice is now 0.2 eth because transfering canceled the vote of 1 eth
 
         // 0.04 is the minimum since 20% of 0.2 is 0.04. Fail
@@ -208,18 +201,18 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testFail_ChangeReserveAboveMaxReserveFactor() public {        
-        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
 
         //initial reserve is 1,
         //maxReserveFactor is 500%
 
-        fNFT.transfer(address(user1), 50 ether);        
+        fnft.transfer(address(user1), 50 ether);        
 
         user1.call_updatePrice(5 ether);
 
-        assertEq(fNFT.reservePrice(), 3 ether);
+        assertEq(fnft.reservePrice(), 3 ether);
 
-        fNFT.transfer(address(user2), 50 ether); 
+        fnft.transfer(address(user2), 50 ether); 
         // reservePrice is now 5 eth because transfering canceled the vote of 1 eth
 
         // 25 is the minimum since 500% of 5 is 25. Fail
@@ -231,8 +224,8 @@ contract FNFTTest is DSTest, ERC721Holder {
     /// -----------------------------------
 
     function testupdateCurator() public {
-        fNFT.updateCurator(address(curator));
-        assertTrue(fNFT.curator() == address(curator));
+        fnft.updateCurator(address(curator));
+        assertTrue(fnft.curator() == address(curator));
     }
 
     function testFail_updateCurator() public {
@@ -240,25 +233,25 @@ contract FNFTTest is DSTest, ERC721Holder {
     }
 
     function testupdateAuctionLength() public {
-        fNFT.updateAuctionLength(2 weeks);
-        assertTrue(fNFT.auctionLength() == 2 weeks);
+        fnft.updateAuctionLength(2 weeks);
+        assertTrue(fnft.auctionLength() == 2 weeks);
     }
 
     function testFail_updateAuctionLength() public {
-        fNFT.updateAuctionLength(0.1 days);
+        fnft.updateAuctionLength(0.1 days);
     }
 
     function testFail_updateAuctionLength2() public {
-        fNFT.updateAuctionLength(100 weeks);
+        fnft.updateAuctionLength(100 weeks);
     }
 
     function testupdateFee() public {
-        fNFT.updateFee(25);
-        assertEq(fNFT.fee(), 25);
+        fnft.updateFee(25);
+        assertEq(fnft.fee(), 25);
     }
 
     function testFail_updateFee() public {
-        fNFT.updateFee(101);
+        fnft.updateFee(101);
     }
 
     function testclaimFees() public {
@@ -266,8 +259,8 @@ contract FNFTTest is DSTest, ERC721Holder {
         // gov fee is 1%
         // we should increase total supply by 6%
         vm.warp(block.timestamp + 31536000 seconds);
-        fNFT.claimFees();
-        assertTrue(fNFT.totalSupply() >= 105999999999900000000 && fNFT.totalSupply() < 106000000000000000000);
+        fnft.claimFees();
+        assertTrue(fnft.totalSupply() >= 105999999999900000000 && fnft.totalSupply() < 106000000000000000000);
     }
 
     /// --------------------------------
@@ -275,86 +268,86 @@ contract FNFTTest is DSTest, ERC721Holder {
     /// --------------------------------
 
     function testInitialReserve() public {
-        assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(fNFT.initialReserve(), 1 ether);
+        assertEq(fnft.reservePrice(), 1 ether);
+        assertEq(fnft.initialReserve(), 1 ether);
     }
 
     function testAuctionPrice() public {
-        settings.setPriceOracle(address(0));        
-        console.log("Quorum requirement: ", settings.minVotePercentage()); // 25%
-        console.log("Min reserve factor: ", settings.minReserveFactor()); // 20%
-        console.log("Max reserve factor: ", settings.maxReserveFactor()); // 500%
+        fnftSettings.setPriceOracle(address(0));        
+        console.log("Quorum requirement: ", fnftSettings.minVotePercentage()); // 25%
+        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
+        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
 
-        assertEq(fNFT.getQuorum(), 1000, "Quorum 1");
-        assertEq(fNFT.reservePrice(), 1 ether, "Reserve price 1");
-        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 1");
-        assertEq(fNFT.getAuctionPrice(), 1 ether, "Auction price 1");
+        assertEq(fnft.getQuorum(), 1000, "Quorum 1");
+        assertEq(fnft.reservePrice(), 1 ether, "Reserve price 1");
+        assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 1");
+        assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 1");
 
-        fNFT.transfer(address(user1), 25 ether);
-        fNFT.transfer(address(user2), 50 ether);
+        fnft.transfer(address(user1), 25 ether);
+        fnft.transfer(address(user2), 50 ether);
 
         // below quorum since 250 is not greater than minVotePercentage of 250
-        assertEq(fNFT.getQuorum(), 250, "Quorum 2");
-        assertEq(fNFT.reservePrice(), 1 ether, "Reserve price 2");
-        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 2");
-        assertEq(fNFT.getAuctionPrice(), 1 ether, "Auction price 2");            
+        assertEq(fnft.getQuorum(), 250, "Quorum 2");
+        assertEq(fnft.reservePrice(), 1 ether, "Reserve price 2");
+        assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 2");
+        assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 2");            
 
         user1.call_updatePrice(3 ether);
         // now auction price is 2 eth since this address and user1 have same amounts.
         // (1 + 3) / 2 = 2
-        assertEq(fNFT.getQuorum(), 500, "Quorum 3");
-        assertEq(fNFT.reservePrice(), 2 ether, "Reserve price 3");
-        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 3");
-        assertEq(fNFT.getAuctionPrice(), 2 ether, "Auction price 3");
+        assertEq(fnft.getQuorum(), 500, "Quorum 3");
+        assertEq(fnft.reservePrice(), 2 ether, "Reserve price 3");
+        assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 3");
+        assertEq(fnft.getAuctionPrice(), 2 ether, "Auction price 3");
 
         user2.call_updatePrice(1 ether);
         // now auction price is 1.5 eth since user2 holds 50%, and previous was 2 eth
         // (2 + 1) / 2 = 1.5
-        assertEq(fNFT.getQuorum(), 1000, "Quorum 4");
-        assertEq(fNFT.reservePrice(), 1.5 ether, "Reserve price 4");
-        assertEq(fNFT.initialReserve(), 1 ether, "Initial reserve 4");
-        assertEq(fNFT.getAuctionPrice(), 1.5 ether, "Auction price 4");
+        assertEq(fnft.getQuorum(), 1000, "Quorum 4");
+        assertEq(fnft.reservePrice(), 1.5 ether, "Reserve price 4");
+        assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 4");
+        assertEq(fnft.getAuctionPrice(), 1.5 ether, "Auction price 4");
     }
 
     function testReservePriceTransfer() public {
         // reserve price here should not change
-        fNFT.transfer(address(user1), 50e18);
-        assertEq(fNFT.reservePrice(), 1 ether);
-        assertEq(fNFT.votingTokens(), 50e18);
+        fnft.transfer(address(user1), 50e18);
+        assertEq(fnft.reservePrice(), 1 ether);
+        assertEq(fnft.votingTokens(), 50e18);
 
-        assertEq(fNFT.userReservePrice(address(user1)), 0);
+        assertEq(fnft.userReservePrice(address(user1)), 0);
 
         // reserve price should update to 1.5 ether
         user1.call_updatePrice(2 ether);
-        assertEq(fNFT.reservePrice(), 1.5 ether);
+        assertEq(fnft.reservePrice(), 1.5 ether);
 
         // now user 1 sends 2/5 their tokens to user 2
         // reserve price is now 1 * 5 + 2 * 3 / 8 = 1.375
         user1.call_transfer(address(user2), 20e18);
-        assertEq(fNFT.reservePrice(), 1.375 ether);
+        assertEq(fnft.reservePrice(), 1.375 ether);
 
         // now they are voting the same as user1 was so we go back to 1.5 eth
         user2.call_updatePrice(2 ether);
-        assertEq(fNFT.reservePrice(), 1.5 ether);
+        assertEq(fnft.reservePrice(), 1.5 ether);
 
         // send all tokens back to first user
         // their reserve price is 1 ether and they hold all tokens
         user1.call_transfer(address(this), 30e18);
         user2.call_transfer(address(this), 20e18);
-        assertEq(fNFT.reservePrice(), 1 ether);
+        assertEq(fnft.reservePrice(), 1 ether);
     }
 
     function testBid() public {
-        fNFT.transfer(address(user1), 25e18);
+        fnft.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
-        fNFT.transfer(address(user2), 25e18);
+        fnft.transfer(address(user2), 25e18);
         user2.call_updatePrice(1 ether);
-        fNFT.transfer(address(user3), 50e18);
+        fnft.transfer(address(user3), 50e18);
         user3.call_updatePrice(1 ether);
 
         user1.call_start(1.05 ether);
 
-        assertTrue(fNFT.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.live);
 
         uint256 bal = address(user1).balance;
         user2.call_bid(1.5 ether);
@@ -366,7 +359,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         vm.warp(block.timestamp + 7 days);
 
-        fNFT.end();
+        fnft.end();
 
         assertEq(token.balanceOf(address(user1)), 1);
 
@@ -390,28 +383,28 @@ contract FNFTTest is DSTest, ERC721Holder {
         wethBal = address(user3).balance;
         assertEq(user3Bal + 998850637622471404, wethBal);
 
-        assertTrue(fNFT.auctionState() == FNFT.State.ended);
+        assertTrue(fnft.auctionState() == FNFT.State.ended);
     }
 
     function testRedeem() public {
-        fNFT.redeem();
+        fnft.redeem();
 
-        assertTrue(fNFT.auctionState() == FNFT.State.redeemed);
+        assertTrue(fnft.auctionState() == FNFT.State.redeemed);
 
         assertEq(token.balanceOf(address(this)), 1);
     }
 
     function testGetWeth() public {
-        fNFT.transfer(address(user1), 25 * 1e18);
+        fnft.transfer(address(user1), 25 * 1e18);
         user1.call_updatePrice(1 ether);
-        fNFT.transfer(address(user2), 25 * 1e18);
+        fnft.transfer(address(user2), 25 * 1e18);
         user2.call_updatePrice(1 ether);
-        fNFT.transfer(address(user4), 50 * 1e18);
+        fnft.transfer(address(user4), 50 * 1e18);
         user4.call_updatePrice(1 ether);
 
         user4.call_start(1.05 ether);
         user4.setCanReceive(false);
-        assertTrue(fNFT.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.live);
         user2.call_bid(1.5 ether);
 
         assertTrue(address(user4).balance != 1.05 ether);
@@ -421,39 +414,39 @@ contract FNFTTest is DSTest, ERC721Holder {
     function testListPriceZero() public {
         token.mint(address(this), 2);
 
-        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
-        assertEq(fNFT.votingTokens(), 0);
+        assertEq(fnft.votingTokens(), 0);
     }
 
     function testFail_listPriceZeroNoAuction() public {
         token.mint(address(this), 2);
 
-        fNFT = FNFT(factory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
 
-        User userTemp = new User(address(fNFT));
+        User userTemp = new User(address(fnft));
 
         userTemp.call_start(1.05 ether);
     }
 
     function testTransfer() public {
-        fNFT.transfer(address(user1), 25e18);
+        fnft.transfer(address(user1), 25e18);
     }
 
     function testAuctionEndCurator0() public {
-        fNFT.updateFee(0);
-        fNFT.updateCurator(address(0));
-        settings.setGovernanceFee(0);
-        fNFT.transfer(address(user1), 25e18);
+        fnft.updateFee(0);
+        fnft.updateCurator(address(0));
+        fnftSettings.setGovernanceFee(0);
+        fnft.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
-        fNFT.transfer(address(user2), 25e18);
+        fnft.transfer(address(user2), 25e18);
         user2.call_updatePrice(1 ether);
-        fNFT.transfer(address(user3), 50e18);
+        fnft.transfer(address(user3), 50e18);
         user3.call_updatePrice(1 ether);
 
         user1.call_start(1.05 ether);
 
-        assertTrue(fNFT.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.live);
 
         uint256 bal = address(user1).balance;
         user2.call_bid(1.5 ether);
@@ -465,7 +458,7 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         vm.warp(block.timestamp + 7 days);
 
-        fNFT.end();
+        fnft.end();
 
         assertEq(token.balanceOf(address(user1)), 1);
 
@@ -489,35 +482,35 @@ contract FNFTTest is DSTest, ERC721Holder {
         wethBal = address(user3).balance;
         assertEq(user3Bal + 1 ether, wethBal);
 
-        assertTrue(fNFT.auctionState() == FNFT.State.ended);
+        assertTrue(fnft.auctionState() == FNFT.State.ended);
     }
 
     function testGetQuorum() public {
-        fNFT.transfer(address(user1), 25 ether);
+        fnft.transfer(address(user1), 25 ether);
         user1.call_updatePrice(1 ether);
-        fNFT.transfer(address(user2), 25 ether);
+        fnft.transfer(address(user2), 25 ether);
         user2.call_updatePrice(1 ether);                
-        fNFT.transfer(address(user4), 50 ether);
+        fnft.transfer(address(user4), 50 ether);
         
-        assertEq(fNFT.getQuorum(), 500);
+        assertEq(fnft.getQuorum(), 500);
         
         user4.call_updatePrice(1 ether);
 
-        assertEq(fNFT.getQuorum(), 1000);
+        assertEq(fnft.getQuorum(), 1000);
     }
 
     function testGetQuorumOnIFOLock() public {
-        fNFT.approve(address(ifoFactory), fNFT.balanceOf(address(this)));
+        fnft.approve(address(ifoFactory), fnft.balanceOf(address(this)));
         ifoFactory.create(
-            address(fNFT), // the address of the fractionalized token
-            fNFT.balanceOf(address(this)), //amountForSale
+            address(fnft), // the address of the fractionalized token
+            fnft.balanceOf(address(this)), //amountForSale
             0.01 ether, //price per token
-            fNFT.totalSupply(), // max amount someone can buy
+            fnft.totalSupply(), // max amount someone can buy
             ifoSettings.minimumDuration(), //sale duration
             false // allow whitelist
         );
         
-        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fNFT)));
+        IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fnft)));
         ifoSettings.setCreatorIFOLock(true);
 
         fNFTIfo.start();
@@ -538,15 +531,15 @@ contract FNFTTest is DSTest, ERC721Holder {
 
         user1.call_updatePrice(1 ether);
 
-        assertEq(fNFT.getQuorum(), 250);
+        assertEq(fnft.getQuorum(), 250);
 
         user2.call_updatePrice(1 ether);
 
-        assertEq(fNFT.getQuorum(), 1000);
+        assertEq(fnft.getQuorum(), 1000);
 
         ifoSettings.setCreatorIFOLock(false);
 
-        assertEq(fNFT.getQuorum(), 400);
+        assertEq(fnft.getQuorum(), 400);
     }
 
     receive() external payable {}

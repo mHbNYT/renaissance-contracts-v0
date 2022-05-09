@@ -1,7 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {ethers} from 'hardhat';
 import { BigNumber, parseFixed } from '@ethersproject/bignumber';
+import {ethers} from 'hardhat';
 
 /**
  * 
@@ -22,8 +22,8 @@ import { BigNumber, parseFixed } from '@ethersproject/bignumber';
 
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {getNamedAccounts} = hre;
-  const {get, deploy} = hre.deployments;
+  const {getNamedAccounts, ethers} = hre;
+  const {deploy} = hre.deployments;
   const {deployer} = await getNamedAccounts();
 
   // NFT1
@@ -172,24 +172,20 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await nft11Collection.mint(deployer, 11);
 
   // fractionalize nfts
-  const FNFTFactoryInfo = await get("FNFTFactory");
-  const FNFTFactory = await ethers.getContractAt(
-    FNFTFactoryInfo.abi, 
-    FNFTFactoryInfo.address
-  );
+  const FNFTFactory = await getContract(hre, "FNFTFactory");
 
   // approve factory
-  await nft1Collection.approve(FNFTFactoryInfo.address, 1);
-  await nft2Collection.approve(FNFTFactoryInfo.address, 2);
-  await nft3Collection.approve(FNFTFactoryInfo.address, 3);
-  await nft4Collection.approve(FNFTFactoryInfo.address, 4);
-  await nft5Collection.approve(FNFTFactoryInfo.address, 5);
-  await nft6Collection.approve(FNFTFactoryInfo.address, 6);
-  await nft7Collection.approve(FNFTFactoryInfo.address, 7);
-  await nft8Collection.approve(FNFTFactoryInfo.address, 8);
-  await nft9Collection.approve(FNFTFactoryInfo.address, 9);
-  await nft10Collection.approve(FNFTFactoryInfo.address, 10);
-  await nft11Collection.approve(FNFTFactoryInfo.address, 11);
+  await nft1Collection.approve(FNFTFactory.address, 1);
+  await nft2Collection.approve(FNFTFactory.address, 2);
+  await nft3Collection.approve(FNFTFactory.address, 3);
+  await nft4Collection.approve(FNFTFactory.address, 4);
+  await nft5Collection.approve(FNFTFactory.address, 5);
+  await nft6Collection.approve(FNFTFactory.address, 6);
+  await nft7Collection.approve(FNFTFactory.address, 7);
+  await nft8Collection.approve(FNFTFactory.address, 8);
+  await nft9Collection.approve(FNFTFactory.address, 9);
+  await nft10Collection.approve(FNFTFactory.address, 10);
+  await nft11Collection.approve(FNFTFactory.address, 11);
 
 
   // NFT1 - scenario is done here
@@ -324,13 +320,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const fNFT11Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft11CollectionInfo.address, 11));
 
   // IFOFactory
-  const IFOFactoryInfo = await get('IFOFactory');
-  const IFOFactory = await ethers.getContractAt(
-    IFOFactoryInfo.abi, 
-    IFOFactoryInfo.address
-  );
-
-
+  const IFOFactory = await getContract(hre, 'IFOFactory');
 
   const fNft2 = await ethers.getContractAt('FNFT', fNFT2Address);
   const fNft3 = await ethers.getContractAt('FNFT', fNFT3Address);
@@ -344,16 +334,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const fNft11 = await ethers.getContractAt('FNFT', fNFT11Address);
 
   
-  await fNft2.approve(IFOFactoryInfo.address, await fNft2.balanceOf(deployer));
-  await fNft3.approve(IFOFactoryInfo.address, await fNft3.balanceOf(deployer));
-  await fNft4.approve(IFOFactoryInfo.address, await fNft4.balanceOf(deployer));
-  await fNft5.approve(IFOFactoryInfo.address, await fNft5.balanceOf(deployer));
-  await fNft6.approve(IFOFactoryInfo.address, await fNft6.balanceOf(deployer));
-  await fNft7.approve(IFOFactoryInfo.address, await fNft7.balanceOf(deployer));
-  await fNft8.approve(IFOFactoryInfo.address, await fNft8.balanceOf(deployer));
-  await fNft9.approve(IFOFactoryInfo.address, await fNft9.balanceOf(deployer));
-  await fNft10.approve(IFOFactoryInfo.address, await fNft10.balanceOf(deployer));
-  await fNft11.approve(IFOFactoryInfo.address, await fNft11.balanceOf(deployer));
+  await fNft2.approve(IFOFactory.address, await fNft2.balanceOf(deployer));
+  await fNft3.approve(IFOFactory.address, await fNft3.balanceOf(deployer));
+  await fNft4.approve(IFOFactory.address, await fNft4.balanceOf(deployer));
+  await fNft5.approve(IFOFactory.address, await fNft5.balanceOf(deployer));
+  await fNft6.approve(IFOFactory.address, await fNft6.balanceOf(deployer));
+  await fNft7.approve(IFOFactory.address, await fNft7.balanceOf(deployer));
+  await fNft8.approve(IFOFactory.address, await fNft8.balanceOf(deployer));
+  await fNft9.approve(IFOFactory.address, await fNft9.balanceOf(deployer));
+  await fNft10.approve(IFOFactory.address, await fNft10.balanceOf(deployer));
+  await fNft11.approve(IFOFactory.address, await fNft11.balanceOf(deployer));
 
 
 
@@ -571,6 +561,23 @@ async function mineNBlocks(n:number) {
     // console.log(`Mining progress ${index}/${n}...`);
     await ethers.provider.send('evm_mine', []);
   }
+}
+
+async function getContract(hre:HardhatRuntimeEnvironment, key:string) {
+  const {deployments, getNamedAccounts} = hre;
+  const {get} = deployments;
+  const {deployer} = await getNamedAccounts();
+  const signer = await ethers.getSigner(deployer);
+
+  const proxyControllerInfo = await get('MultiProxyController');
+  const proxyController = new ethers.Contract(
+    proxyControllerInfo.address,
+    proxyControllerInfo.abi,
+    signer
+  );
+  const abi = (await get(key)).abi; // get abi of impl contract
+  const address = (await proxyController.proxyMap(key))[1];
+  return new ethers.Contract(address, abi, signer);
 }
 
 
