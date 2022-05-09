@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {testnets, ETH_UNISWAP_V2_FACTORY} from '../utils/constants';
+import {testnets} from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
@@ -13,20 +13,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // get WETH address
   let { WETH } = await getNamedAccounts();
-  let FACTORY;
   if (testnets.includes(chainId)) {
     const mockWETH = await get('WETH');
     WETH = mockWETH.address;
-    FACTORY = ETH_UNISWAP_V2_FACTORY;
-  } else {
-    // TODO add uniswap v2 factory addresses for production deployment
-    throw new Error('No factory address defined for price oracle');
   }
 
+  // get IFOFactory proxy address
+  const proxyControllerInfo = await get('MultiProxyController');
+  const proxyController = new ethers.Contract(
+    proxyControllerInfo.address,
+    proxyControllerInfo.abi,
+    signer
+  );
+  const ifoFactoryAddress = (await proxyController.proxyMap('IFOFactory'))[1];
+
   // deploy implementation contract
-  const priceOracleImpl = await deploy('PriceOracle', {
+  const fnftSettingsImpl = await deploy('FNFTSettings', {
     from: deployer,
-    args: [FACTORY, WETH],
     log: true,
   });
 
@@ -37,8 +40,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployerInfo.abi,
     signer
   );
-  await deployerContract.deployPriceOracle(priceOracleImpl.address);
+  await deployerContract.deployFNFTSettings(
+    fnftSettingsImpl.address, 
+    WETH, 
+    ifoFactoryAddress
+  );
 
 };
+
 func.tags = ['main', 'local', 'seed'];
 export default func;
