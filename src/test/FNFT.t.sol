@@ -3,7 +3,7 @@
 pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
-
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {Deployer} from "../contracts/proxy/Deployer.sol";
 import {MultiProxyController} from "../contracts/proxy/MultiProxyController.sol";
 import {IFOSettings} from "../contracts/IFOSettings.sol";
@@ -11,7 +11,7 @@ import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {IFO} from "../contracts/IFO.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
-import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
+import {FNFTFactory} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IWETH} from "../contracts/interfaces/IWETH.sol";
