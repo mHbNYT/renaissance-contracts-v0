@@ -1,19 +1,40 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
-import {ethers} from 'hardhat';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {get} = hre.deployments;
+  const {deployments, getNamedAccounts, ethers} = hre;
+  const {get} = deployments;
 
-  // set price oracle in FNFTsettings
-  const fnftSettingsInfo = await get('FNFTSettings');
-  const priceOracleInfo = await get('PriceOracle');
-  const FNFTSettings = await ethers.getContractAt(
-    fnftSettingsInfo.abi, 
-    fnftSettingsInfo.address
+  const {deployer} = await getNamedAccounts();
+
+  const signer = await ethers.getSigner(deployer);
+
+  /** SET PRICE ORACLE IN FNFTSettings */
+
+  // 1. get proxy controller
+  const proxyControllerInfo = await get('MultiProxyController');
+  const proxyController = new ethers.Contract(
+    proxyControllerInfo.address,
+    proxyControllerInfo.abi,
+    signer
   );
 
-  await FNFTSettings.setPriceOracle(priceOracleInfo.address);
+  // 1. get price oracle proxy address from controller
+  const priceOracleAddress = (await proxyController.proxyMap('PriceOracle'))[1];
+
+
+  // 2. get fnftSettings proxy address from controller
+  const fnftSettingsAbi = (await get('FNFTSettings')).abi; // get abi of impl contract
+  const fnftSettingsAddress = (await proxyController.proxyMap('FNFTSettings'))[1];
+  const fnftSettings = new ethers.Contract(
+    fnftSettingsAddress,
+    fnftSettingsAbi,
+    signer
+  );
+
+  // 3. set price oracle address in FNFTSettings
+  await fnftSettings.setPriceOracle(priceOracleAddress);
+
 };
 func.tags = ['main', 'local', 'seed'];
 export default func;
