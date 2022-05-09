@@ -4,9 +4,10 @@ pragma solidity ^0.8.11;
 import "ds-test/test.sol";
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {FNFTSettings} from "../contracts/FNFTSettings.sol";
 import {PriceOracle, IPriceOracle, PairInfo} from "../contracts/PriceOracle.sol";
-import {FNFTFactory, ERC721Holder} from "../contracts/FNFTFactory.sol";
+import {FNFTFactory} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Pair} from "../contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
