@@ -43,7 +43,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         // Set up fnft environment.
         
         setupEnvironment(1000 ether);
-        (pairFactory, priceOracle, , , , , fnft) = setupContracts(100 ether);
+        (pairFactory, priceOracle, , , fnftSettings, fnftFactory, fnft) = setupContracts(100 ether);
 
         // Initialize mock fnft-WETH pair with empty reserves. 
         pair = new PairWithFNFTAndWETH(address(pairFactory), address(fnft), address(weth), vm);
@@ -179,6 +179,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         // Distribute fnft amongst users(fnft holders) and liquidity pair.
         uint256 pairFNFTAmount = fnft.totalSupply() / 2;
         uint256 userFNFTAmount = fnft.totalSupply() / 2;
+
         pair.receiveToken(pairFNFTAmount, fnftSettings.liquidityThreshold() + 1 ether);
         fnft.transfer(address(user1), userFNFTAmount);
         
