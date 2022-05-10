@@ -77,21 +77,21 @@ contract IFO is Initializable {
     constructor(address _settings) {
         settings = _settings;
     }
-    
+
+    /// @param _curator original owner
+    /// @param _FNFT FNFT address
+    /// @param _amountForSale Amount of FNFT for sale in IFO
+    /// @param _price Price per FNFT in IFO
+    /// @param _cap Maximum an account can buy
+    /// @param _duration Duration of IFO. Max duration set by DAO if _duration == 0
+    /// @param _allowWhitelisting If IFO should be governed by whitelists
     function initialize(
-        //original owner
         address _curator,
-        //FNFT address
         address _FNFT,
-        //Amount of FNFT for sale in IFO
         uint256 _amountForSale,
-        //Price per FNFT in IFO
         uint256 _price,
-        //Maximum an account can buy
         uint256 _cap,
-        //Duration of IFO. Max duration set by DAO if _duration == 0
         uint256 _duration,
-        //If IFO should be governed by whitelists
         bool _allowWhitelisting
     ) external initializer {
         // set storage variables
