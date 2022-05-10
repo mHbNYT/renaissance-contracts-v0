@@ -43,9 +43,9 @@ contract IFO is Initializable {
     mapping(address => bool) public whitelisted; // True if user is whitelisted
 
     event Deposit(address indexed buyer, uint256 amount, uint256 payout);
-    event Start(uint256 block);
-    event End(uint256 block);
-    event Pause(bool paused, uint256 block);
+    event Start();
+    event End();
+    event Pause(bool paused);
     event AdminProfitWithdrawal(address FNFT, uint256 amount);
     event AdminFNFTWithdrawal(address FNFT, uint256 amount);
 
@@ -191,7 +191,7 @@ contract IFO is Initializable {
         startBlock = block.number;
 
         started = true;
-        emit Start(block.number);
+        emit Start();
     }
 
     //TODO: Add a circute breaker controlled by the DAO
@@ -208,7 +208,7 @@ contract IFO is Initializable {
             pauseBlock = block.number;
             paused = true;
         }
-        emit Pause(paused, block.number);
+        emit Pause(paused);
         return paused;
     }
 
@@ -223,7 +223,7 @@ contract IFO is Initializable {
 
         ended = true;
         lockedSupply = fnft.balanceOf(address(this));
-        emit End(block.number);
+        emit End();
     }
 
     ///@notice it deposits ETH for the sale
