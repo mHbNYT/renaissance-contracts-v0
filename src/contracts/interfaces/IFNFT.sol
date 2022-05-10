@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 interface IFNFT {
     enum State {
-        inactive,
-        live,
-        ended,
-        redeemed
+        Inactive,
+        Live,
+        Ended,
+        Redeemed
     }
-    
+
     function balanceOf(address _account) external returns (uint256);
 
     function totalSupply() external returns (uint256);

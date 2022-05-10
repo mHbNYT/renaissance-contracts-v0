@@ -44,10 +44,10 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     address payable public winning;
 
     enum State {
-        inactive,
-        live,
-        ended,
-        redeemed
+        Inactive,
+        Live,
+        Ended,
+        Redeemed
     }
 
     State public auctionState;
@@ -154,7 +154,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         curator = _curator;
         fee = _fee;
         lastClaimed = block.timestamp;
-        auctionState = State.inactive;
+        auctionState = State.Inactive;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
         verified = false;
@@ -192,7 +192,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice allow governance to remove bad reserve prices
     function removeReserve(address _user) external onlyGov {
-        if (auctionState != State.inactive) revert AuctionLive();
+        if (auctionState != State.Inactive) revert AuctionLive();
 
         uint256 old = userReservePrice[_user];
         if (old == 0) revert NotAnUpdate();
@@ -253,7 +253,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @dev interal fuction to calculate and mint fees
     function _claimFees() internal {
-        if (auctionState == State.ended) revert AuctionEnded();
+        if (auctionState == State.Ended) revert AuctionEnded();
 
         // get how much in fees the curator would make in a year
         uint256 currentAnnualFee = (fee * totalSupply()) / 1000;
@@ -292,7 +292,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     }
 
     function buyItNow() external payable {
-        if (auctionState != State.inactive) revert AuctionLive();
+        if (auctionState != State.Inactive) revert AuctionLive();
         uint256 price = _buyItNowPrice();
         if (price == 0) revert PriceTooLow(); 
         if (msg.value < price) revert NotEnoughETH();
@@ -305,7 +305,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // transfer erc721 to buyer
         IERC721(token).transferFrom(address(this), msg.sender, id);
 
-        auctionState = State.ended;
+        auctionState = State.Ended;
 
         emit Won(msg.sender, price);
     }
@@ -317,11 +317,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function _buyItNowPrice() internal view returns (uint256) {
         return (_getAuctionPrice() * IFNFTSettings(settings).instantBuyMultiplier()) / 10;
     }
-    
+
     /// @notice a function for an end user to update their desired sale price
     /// @param newUserReserve the desired price in ETH
     function updateUserPrice(uint256 newUserReserve) external {
-        if (auctionState != State.inactive) revert AuctionLive();
+        if (auctionState != State.Inactive) revert AuctionLive();
         uint256 previousUserReserve = userReservePrice[msg.sender];
         if (newUserReserve == previousUserReserve) revert NotAnUpdate();
 
@@ -443,7 +443,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         address _to,
         uint256 _amount
     ) internal virtual override {
-        if (auctionState == State.inactive) {
+        if (auctionState == State.Inactive) {
             uint256 sendersReservePrice = userReservePrice[_from];
             uint256 receiversReservePrice = userReservePrice[_to];
             // only do something if users have different reserve price
@@ -491,12 +491,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable {
-        if (auctionState != State.inactive) revert AuctionLive();
+        if (auctionState != State.Inactive) revert AuctionLive();
         uint256 _auctionPrice = _getAuctionPrice();
         if (_auctionPrice == 0 || msg.value < _auctionPrice) revert BidTooLow();
 
         auctionEnd = block.timestamp + auctionLength;
-        auctionState = State.live;
+        auctionState = State.Live;
 
         livePrice = msg.value;
         winning = payable(msg.sender);
@@ -506,7 +506,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable {
-        if (auctionState != State.live) revert AuctionNotLive();
+        if (auctionState != State.Live) revert AuctionNotLive();
         uint256 increase = IFNFTSettings(settings).minBidIncrease() + 1000;
         if (msg.value * 1000 < livePrice * increase) revert BidTooLow();
         if (block.timestamp >= auctionEnd) revert AuctionEnded();
@@ -526,7 +526,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice an external function to end an auction after the timer has run out
     function end() external {
-        if (auctionState != State.live) revert AuctionNotLive();
+        if (auctionState != State.Live) revert AuctionNotLive();
         if (block.timestamp < auctionEnd) revert AuctionNotEnded();
 
         _claimFees();
@@ -534,27 +534,27 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // transfer erc721 to winner
         IERC721(token).transferFrom(address(this), winning, id);
 
-        auctionState = State.ended;
+        auctionState = State.Ended;
 
         emit Won(winning, livePrice);
     }
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
     function redeem() external {
-        if (auctionState != State.inactive) revert AuctionLive();
+        if (auctionState != State.Inactive) revert AuctionLive();
         _burn(msg.sender, totalSupply());
 
         // transfer erc721 to redeemer
         IERC721(token).transferFrom(address(this), msg.sender, id);
 
-        auctionState = State.redeemed;
+        auctionState = State.Redeemed;
 
         emit Redeem(msg.sender);
     }
 
     /// @notice an external function to burn ERC20 tokens to receive ETH from ERC721 token purchase
     function cash() external {
-        if (auctionState != State.ended) revert AuctionNotEnded();
+        if (auctionState != State.Ended) revert AuctionNotEnded();
         uint256 bal = balanceOf(msg.sender);
         if (bal <= 0) revert NoTokens();
 
