@@ -25,7 +25,8 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
 
     error ZeroAddressDisallowed();
     error GovFeeTooHigh();
-    
+    error InvalidDuration();
+
     function initialize() external initializer {
         __Ownable_init();
 
@@ -43,12 +44,16 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     }
 
     function setMinimumDuration(uint256 _blocks) external onlyOwner {
+        if (_blocks > maximumDuration) revert InvalidDuration();
+
         emit UpdateMinimumDuration(minimumDuration, _blocks);
 
         minimumDuration = _blocks;
     }
 
     function setMaximumDuration(uint256 _blocks) external onlyOwner {
+        if (minimumDuration > _blocks) revert InvalidDuration();
+
         emit UpdateMaximumDuration(maximumDuration, _blocks);
 
         maximumDuration = _blocks;

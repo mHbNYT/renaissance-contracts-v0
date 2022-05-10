@@ -31,8 +31,17 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
     }
 
     function test_setMaximumDuration() public {
-        ifoSettings.setMaximumDuration(100);
-        assertEq(ifoSettings.maximumDuration(), 100);
+        ifoSettings.setMaximumDuration(86401);
+        assertEq(ifoSettings.maximumDuration(), 86401);
+    }
+
+    function testFail_invalidMinimumDuration() public {
+        ifoSettings.setMaximumDuration(86401);
+        ifoSettings.setMinimumDuration(86402);
+    }
+
+    function testFail_invalidMaximumDuration() public {
+        ifoSettings.setMaximumDuration(ifoSettings.minimumDuration() - 1);
     }
 
     function test_setCreatorUtilityContract() public {
