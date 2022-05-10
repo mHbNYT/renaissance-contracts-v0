@@ -363,7 +363,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await fNft3.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
     await fNft3.totalSupply(), // cap
-    1_000_000, //dduration
+    1_000_000, //duration
     false // allow whitelisting
   );
   const IFO3Address = await IFOFactory.getIFO(fNFT3Address)
@@ -407,7 +407,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     await fNft7.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
     await fNft7.totalSupply(), // cap
-    1_000_000, //dduration
+    1_000_000, //duration
     false // allow whitelisting
   );
   const IFO7Address = await IFOFactory.getIFO(fNFT7Address)
