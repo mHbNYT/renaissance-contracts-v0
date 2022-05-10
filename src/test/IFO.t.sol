@@ -1145,11 +1145,11 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         //start and end the bidding process
         user1.call_start(10 ether);
-        assertTrue(fractionalizedNFT.auctionState() == FNFT.State.live);
+        assertTrue(fractionalizedNFT.auctionState() == FNFT.State.Live);
         vm.warp(block.timestamp + 7 days);
 
         fractionalizedNFT.end();
-        assertTrue(fractionalizedNFT.auctionState() == FNFT.State.ended);
+        assertTrue(fractionalizedNFT.auctionState() == FNFT.State.Ended);
 
         fNFTIfo.adminWithdrawFNFT();
 

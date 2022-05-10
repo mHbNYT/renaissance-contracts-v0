@@ -13,10 +13,10 @@ contract IFO is Initializable {
     }
 
     enum FNFTState {
-        inactive,
-        live,
-        ended,
-        redeemed
+        Inactive,
+        Live,
+        Ended,
+        Redeemed
     }
 
     IERC20 public FNFT; // fNFT the ifo contract sells
@@ -292,7 +292,7 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (_fnftLocked() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.ended)) {
+        if (_fnftLocked() && IFNFT(address(FNFT)).auctionState() != uint256(FNFTState.Ended)) {
             revert FNFTLocked();
         }
 

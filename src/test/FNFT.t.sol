@@ -347,7 +347,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         user1.call_start(1.05 ether);
 
-        assertTrue(fnft.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.Live);
 
         uint256 bal = address(user1).balance;
         user2.call_bid(1.5 ether);
@@ -383,13 +383,13 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         wethBal = address(user3).balance;
         assertEq(user3Bal + 998850637622471404, wethBal);
 
-        assertTrue(fnft.auctionState() == FNFT.State.ended);
+        assertTrue(fnft.auctionState() == FNFT.State.Ended);
     }
 
     function testRedeem() public {
         fnft.redeem();
 
-        assertTrue(fnft.auctionState() == FNFT.State.redeemed);
+        assertTrue(fnft.auctionState() == FNFT.State.Redeemed);
 
         assertEq(token.balanceOf(address(this)), 1);
     }
@@ -404,7 +404,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         user4.call_start(1.05 ether);
         user4.setCanReceive(false);
-        assertTrue(fnft.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.Live);
         user2.call_bid(1.5 ether);
 
         assertTrue(address(user4).balance != 1.05 ether);
@@ -446,7 +446,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         user1.call_start(1.05 ether);
 
-        assertTrue(fnft.auctionState() == FNFT.State.live);
+        assertTrue(fnft.auctionState() == FNFT.State.Live);
 
         uint256 bal = address(user1).balance;
         user2.call_bid(1.5 ether);
@@ -482,7 +482,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         wethBal = address(user3).balance;
         assertEq(user3Bal + 1 ether, wethBal);
 
-        assertTrue(fnft.auctionState() == FNFT.State.ended);
+        assertTrue(fnft.auctionState() == FNFT.State.Ended);
     }
 
     function testGetQuorum() public {
