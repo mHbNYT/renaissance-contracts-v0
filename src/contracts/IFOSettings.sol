@@ -30,7 +30,6 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     function initialize() external initializer {
         __Ownable_init();
 
-        creatorIFOLock = false;
         minimumDuration = 86400; // 1 day;
         feeReceiver = payable(msg.sender);
         maximumDuration = 7776000; // 90 days;
