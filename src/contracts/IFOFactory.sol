@@ -33,12 +33,13 @@ contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeabl
         __BeaconUpgradeable__init(address(new IFO(_ifoSettings)));
     }
 
-    /// @notice the function to create a ifo
-    /// @param _FNFT the desired name of the vault
-    /// @param _amountForSale the desired sumbol of the vault
-    /// @param _price the ERC721 token address fo the NFT
-    /// @param _cap the uint256 ID of the token
-    /// @param _allowWhitelisting the initial price of the NFT
+    /// @notice the function to create an IFO
+    /// @param _FNFT the ERC20 token address of the FNFT
+    /// @param _amountForSale the amount of FNFT for sale in IFO
+    /// @param _price the price of each FNFT token
+    /// @param _cap the maximum amount an account can buy
+    /// @param _allowWhitelisting if IFO should be governed by whitelists
+    /// @return IFO address
     function create(
         address _FNFT,
         uint256 _amountForSale,
