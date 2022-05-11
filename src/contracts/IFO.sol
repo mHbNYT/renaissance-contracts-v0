@@ -171,8 +171,11 @@ contract IFO is Initializable {
      */
     function addMultipleWhitelists(address[] calldata _addresses) external onlyCurator whitelistingAllowed {
         if (_addresses.length > 333) revert TooManyWhitelists();
-        for (uint256 i = 0; i < _addresses.length; i++) {
+        for (uint256 i; i < _addresses.length;) {
             whitelisted[_addresses[i]] = true;
+            unchecked {
+                ++i;
+            }
         }
     }
 
