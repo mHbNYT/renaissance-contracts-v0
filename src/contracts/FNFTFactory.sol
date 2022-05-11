@@ -35,7 +35,7 @@ contract FNFTFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeab
 
     /// @notice the function to mint a fNFT
     /// @param _name the desired name of the vault
-    /// @param _symbol the desired sumbol of the vault
+    /// @param _symbol the desired symbol of the vault
     /// @param _nft the ERC721 token address
     /// @param _tokenId the uint256 ID of the token
     /// @param _listPrice the initial price of the NFT
