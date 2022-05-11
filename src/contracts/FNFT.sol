@@ -154,10 +154,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         curator = _curator;
         fee = _fee;
         lastClaimed = block.timestamp;
-        auctionState = State.Inactive;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
-        verified = false;
 
         _mint(_curator, _supply);
     }
