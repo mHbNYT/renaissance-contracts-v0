@@ -227,12 +227,12 @@ contract IFO is Initializable {
         lockedSupply = FNFT.balanceOf(address(this));
         emit End(block.number);
     }
-    
+
     ///@notice it deposits ETH for the sale
     function deposit() external payable checkPaused checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
-        if (allowWhitelisting == true) {
+        if (allowWhitelisting) {
             if (!whitelisted[msg.sender]) revert NotWhitelisted();
         }
 
