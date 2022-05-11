@@ -485,45 +485,45 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // SIMULATE RANDOM IFO SALE
 
   // NFT3 scenario is done after this loop.
+  const ifo3Price = await IFO3.price();
   signers.forEach(async signer => { // 20 addresses
-    const value = await IFO3.price();
-    await IFO3.connect(signer).deposit({value});
+    await IFO3.connect(signer).deposit({value: ifo3Price});
   });
 
   // NFT4
+  const ifo4Price = await IFO4.price();
   signers.slice(9, 19).forEach(async (signer) => {
-    const value = await IFO4.price();
-    await IFO4.connect(signer).deposit({value});
+    await IFO4.connect(signer).deposit({value: ifo4Price});
   });
 
   // NFT5
+  const ifo5Price = await IFO5.price();
   signers.slice(0, 9).forEach(async (signer) => {
-    const value = await IFO5.price();
-    await IFO5.connect(signer).deposit({value});
+    await IFO5.connect(signer).deposit({value: ifo5Price});
   });
 
   // NFT6
+  const ifo6Price = await IFO6.price();
   signers.slice(0, 9).forEach(async (signer) => {
-    const value = await IFO6.price();
-    await IFO6.connect(signer).deposit({value});
+    await IFO6.connect(signer).deposit({value: ifo6Price});
   });
 
   // NFT7
+  const ifo7Price = await IFO7.price();
   signers.slice(9, 19).forEach(async (signer) => {
-    const value = await IFO7.price();
-    await IFO7.connect(signer).deposit({value});
+    await IFO7.connect(signer).deposit({value: ifo7Price});
   });
 
   // NFT8
+  const ifo8Price = await IFO8.price();
   signers.slice(0, 9).forEach(async (signer) => {
-    const value = await IFO8.price();
-    await IFO8.connect(signer).deposit({value});
+    await IFO8.connect(signer).deposit({value: ifo8Price});
   });
 
   // NFT9
+  const ifo9Price = await IFO9.price();
   signers.slice(0, 9).forEach(async (signer) => {
-    const value = await IFO9.price();
-    await IFO9.connect(signer).deposit({value});
+    await IFO9.connect(signer).deposit({value: ifo9Price});
   });
 
   // mine here to allow sales time to finish and also to allow IFO5 duration to complete
