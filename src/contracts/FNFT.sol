@@ -386,13 +386,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 _reservePrice = reservePrice();
 
         if (address(priceOracle) != address(0)) {
-            IUniswapV2Pair pair = IUniswapV2Pair(
-                IPriceOracle(priceOracle).getPairAddress(address(this), IFNFTSettings(settings).WETH())
-            );
+            address weth = IFNFTSettings(settings).WETH();
+            IUniswapV2Pair pair = IUniswapV2Pair(IPriceOracle(priceOracle).getPairAddress(address(this), weth));
             uint256 reserve1;
             uint256 twapPrice;
             if (IPriceOracle(priceOracle).getPairInfo(address(pair)).exists) {
-                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), IFNFTSettings(settings).WETH());
+                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), weth);
                 twapPrice = _getTWAP();
             }
 
@@ -573,8 +572,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
             // If the transfer fails, wrap and send as WETH, so that
             // the auction is not impeded and the recipient still
             // can claim ETH via the WETH contract (similar to escrow).
-            IWETH(IFNFTSettings(settings).WETH()).deposit{value: value}();
-            IWETH(IFNFTSettings(settings).WETH()).transfer(to, value);
+            IWETH weth = IWETH(IFNFTSettings(settings).WETH());
+            weth.deposit{value: value}();
+            weth.transfer(to, value);
             // At this point, the recipient can unwrap WETH.
         }
     }
