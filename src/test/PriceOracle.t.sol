@@ -109,6 +109,8 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
         // price(0|1)Average = (0 * t0 + token(0|1)Balance * t1) / period
         assertEq(pairInfo.price0Average._x, uint256(UQ112x112.encode(uint112(reserve1)).uqdiv(uint112(reserve0)))); 
         assertEq(pairInfo.price1Average._x, uint256(UQ112x112.encode(uint112(reserve0)).uqdiv(uint112(reserve1))));
+
+        assertEq(pairInfo.totalUpdates, 1);
     }
    
     /**
