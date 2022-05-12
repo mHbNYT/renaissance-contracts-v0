@@ -396,7 +396,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 twapPrice = _getTWAP();
             }
 
-            bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();            
+            bool aboveLiquidityThreshold = reserve1 * 2 > IFNFTSettings(settings).liquidityThreshold();
 
             if (!aboveLiquidityThreshold && aboveQuorum){
                 //average reserve
