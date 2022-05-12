@@ -246,7 +246,7 @@ contract IFO is Initializable {
         address govAddress = IIFOSettings(settings).feeReceiver();
         uint256 govFee = IIFOSettings(settings).governanceFee();
 
-        uint256 fee = (govFee * msg.value) / 1000;
+        uint256 fee = (govFee * msg.value) / 10000;
         uint256 profit = msg.value - fee;
 
         user.amount += payout;
