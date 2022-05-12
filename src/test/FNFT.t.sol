@@ -54,10 +54,10 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         // FNFT minted on this test contract address.
         fnft = FNFT(fnftFactory.mint(
-            "testName", 
-            "TEST", 
-            address(token), 
-            1, 
+            "testName",
+            "TEST",
+            address(token),
+            1,
             100 ether, // supply
             1 ether, // initialReserve
             50 // fee (5%)
@@ -128,13 +128,14 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
-    function testFail_pause() public {
+    function testFnftFactoryPausedCannotMint() public {
         fnftFactory.pause();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
 
         temp.setApprovalForAll(address(fnftFactory), true);
+        vm.expectRevert("Pausable: paused");
         fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
     }
 
@@ -170,9 +171,8 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.kickCurator(address(curator));
     }
 
-    function testFail_kickCurator() public {
-        vm.expectEmit(false, false, false, false);
-        emit KickCurator(fnft.curator(), address(curator));
+    function testKickCuratorNotGov() public {
+        vm.expectRevert(FNFT.NotGov.selector);
         curator.call_kickCurator(address(curator));
     }
 
@@ -195,7 +195,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnft.votingTokens(), 50e18);
     }
 
-    function testFail_ChangeReserve() public {
+    function testChangeReserveNotGov() public {
         // reserve price here should not change
         fnft.transfer(address(user1), 50e18);
         assertEq(fnft.reservePrice(), 1 ether);
@@ -207,12 +207,13 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         user1.call_updatePrice(2 ether);
         assertEq(fnft.reservePrice(), 1.5 ether);
 
+        vm.expectRevert(FNFT.NotGov.selector);
         // user1 is not gov so cannot do anything
         user1.call_remove(address(this));
     }
 
-    function testFail_ChangeReserveBelowMinReserveFactor() public {                
-        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
+    function testChangeReserveBelowMinReserveFactor() public {
+        assertEq(fnftSettings.minReserveFactor(), 200);
 
         //initial reserve is 1,
         //minReserveFactor is 20%
@@ -223,28 +224,30 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertEq(fnft.reservePrice(), 0.6 ether);
 
-        fnft.transfer(address(user2), 50 ether); 
+        fnft.transfer(address(user2), 50 ether);
         // reservePrice is now 0.2 eth because transfering canceled the vote of 1 eth
 
+        vm.expectRevert(FNFT.PriceTooLow.selector);
         // 0.04 is the minimum since 20% of 0.2 is 0.04. Fail
         user1.call_updatePrice(0.039 ether);
     }
 
-    function testFail_ChangeReserveAboveMaxReserveFactor() public {        
-        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
+    function testChangeReserveAboveMaxReserveFactor() public {
+        assertEq(fnftSettings.maxReserveFactor(), 5000);
 
         //initial reserve is 1,
         //maxReserveFactor is 500%
 
-        fnft.transfer(address(user1), 50 ether);        
+        fnft.transfer(address(user1), 50 ether);
 
         user1.call_updatePrice(5 ether);
 
         assertEq(fnft.reservePrice(), 3 ether);
 
-        fnft.transfer(address(user2), 50 ether); 
+        fnft.transfer(address(user2), 50 ether);
         // reservePrice is now 5 eth because transfering canceled the vote of 1 eth
 
+        vm.expectRevert(FNFT.PriceTooHigh.selector);
         // 25 is the minimum since 500% of 5 is 25. Fail
         user2.call_updatePrice(26 ether);
     }
@@ -253,7 +256,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     /// -------- CURATOR FUNCTIONS --------
     /// -----------------------------------
 
-    function testupdateCurator() public {
+    function testUpdateCurator() public {
         vm.expectEmit(true, true, false, true);
         emit UpdateCurator(fnft.curator(), address(curator));
         fnft.updateCurator(address(curator));
@@ -267,35 +270,38 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.updateCurator(address(curator));
     }
 
-    function testupdateAuctionLength() public {
+    function testUpdateAuctionLength() public {
         fnft.updateAuctionLength(2 weeks);
         assertTrue(fnft.auctionLength() == 2 weeks);
     }
 
-    function testFail_updateAuctionLength() public {
+    function testUpdateAuctionLengthTooShort() public {
+        vm.expectRevert(FNFT.InvalidAuctionLength.selector);
         fnft.updateAuctionLength(0.1 days);
     }
 
-    function testFail_updateAuctionLength2() public {
+    function testUpdateAuctionLengthTooLong() public {
+        vm.expectRevert(FNFT.InvalidAuctionLength.selector);
         fnft.updateAuctionLength(100 weeks);
     }
 
-    function testupdateFee() public {
+    function testUpdateFee() public {
         fnft.updateFee(25);
         assertEq(fnft.fee(), 25);
     }
 
-    function testFail_updateFee() public {
+    function testUpdateFeeCanNotRaise() public {
+        vm.expectRevert(FNFT.CanNotRaise.selector);
         fnft.updateFee(101);
     }
 
-    function testclaimFees() public {
+    function testClaimFees() public {
         // curator fee is 5%
         // gov fee is 1%
         // we should increase total supply by 6%
         vm.warp(block.timestamp + 31536000 seconds);
         fnft.claimFees();
-        assertTrue(fnft.totalSupply() >= 105999999999900000000 && fnft.totalSupply() < 106000000000000000000);
+        assertTrue(fnft.totalSupply() == 105999999999949936000);
     }
 
     /// --------------------------------
@@ -308,7 +314,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testAuctionPrice() public {
-        fnftSettings.setPriceOracle(address(0));        
+        fnftSettings.setPriceOracle(address(0));
         console.log("Quorum requirement: ", fnftSettings.minVotePercentage()); // 25%
         console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
         console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
@@ -325,7 +331,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnft.getQuorum(), 250, "Quorum 2");
         assertEq(fnft.reservePrice(), 1 ether, "Reserve price 2");
         assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 2");
-        assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 2");            
+        assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 2");
 
         user1.call_updatePrice(3 ether);
         // now auction price is 2 eth since this address and user1 have same amounts.
@@ -524,11 +530,11 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.transfer(address(user1), 25 ether);
         user1.call_updatePrice(1 ether);
         fnft.transfer(address(user2), 25 ether);
-        user2.call_updatePrice(1 ether);                
+        user2.call_updatePrice(1 ether);
         fnft.transfer(address(user4), 50 ether);
-        
+
         assertEq(fnft.getQuorum(), 500);
-        
+
         user4.call_updatePrice(1 ether);
 
         assertEq(fnft.getQuorum(), 1000);
@@ -544,7 +550,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
             ifoSettings.minimumDuration(), //sale duration
             false // allow whitelist
         );
-        
+
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fnft)));
         ifoSettings.setCreatorIFOLock(true);
 
@@ -562,7 +568,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.end();
 
-        //60 eth should be locked up in IFO now. 40 eth should be the circulating supply        
+        //60 eth should be locked up in IFO now. 40 eth should be the circulating supply
 
         user1.call_updatePrice(1 ether);
 

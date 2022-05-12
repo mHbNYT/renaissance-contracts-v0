@@ -35,13 +35,16 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
         assertEq(ifoSettings.maximumDuration(), 86401);
     }
 
-    function testFail_invalidMinimumDuration() public {
+    function testInvalidMinimumDuration() public {
         ifoSettings.setMaximumDuration(86401);
+        vm.expectRevert(IFOSettings.InvalidDuration.selector);
         ifoSettings.setMinimumDuration(86402);
     }
 
-    function testFail_invalidMaximumDuration() public {
-        ifoSettings.setMaximumDuration(ifoSettings.minimumDuration() - 1);
+    function testInvalidMaximumDuration() public {
+        uint256 val = ifoSettings.minimumDuration() - 1;
+        vm.expectRevert(IFOSettings.InvalidDuration.selector);
+        ifoSettings.setMaximumDuration(val);
     }
 
     function test_setCreatorUtilityContract() public {
@@ -57,7 +60,8 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
         assertEq(ifoSettings.governanceFee(), 1000);
     }
 
-    function testFail_setGovernanceFee() public {
+    function testSetGovernanceFeeTooHigh() public {
+        vm.expectRevert(IFOSettings.GovFeeTooHigh.selector);
         ifoSettings.setGovernanceFee(1001);
     }
 
@@ -66,7 +70,8 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
         assertEq(ifoSettings.feeReceiver(), payable(address(1)));
     }
 
-    function testFail_setFeeReceiver() public {
+    function testSetFeeReceiverZeroAddressDisallowed() public {
+        vm.expectRevert(IFOSettings.ZeroAddressDisallowed.selector);
         ifoSettings.setFeeReceiver(payable(address(0)));
     }
 }
