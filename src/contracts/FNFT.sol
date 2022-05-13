@@ -62,9 +62,6 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice whether or not this FNFT has been verified by DAO
     bool public verified;
 
-    /// @notice a boolean to indicate if the vault has closed
-    bool public vaultClosed;
-
     /// @notice the address who initially deposited the NFT
     address public curator;
 
@@ -147,6 +144,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // initialize inherited contracts
         __ERC20_init(_name, _symbol);
         __ERC721Holder_init();
+
+        if (_fee > IFNFTSettings(settings).maxCuratorFee()) revert FeeTooHigh();
+
         // set storage variables
         token = _token;
         id = _id;
@@ -265,7 +265,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // now lets do the same for governance
         address govAddress = IFNFTSettings(settings).feeReceiver();
         uint256 govFee = IFNFTSettings(settings).governanceFee();
-        currentAnnualFee = (govFee * totalSupply()) / 1000;
+        currentAnnualFee = (govFee * totalSupply()) / 10000;
         feePerSecond = currentAnnualFee / 31536000;
         uint256 govMint = sinceLastClaim * feePerSecond;
 
@@ -384,17 +384,16 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 _reservePrice = reservePrice();
 
         if (address(priceOracle) != address(0)) {
-            IUniswapV2Pair pair = IUniswapV2Pair(
-                IPriceOracle(priceOracle).getPairAddress(address(this), IFNFTSettings(settings).WETH())
-            );
+            address weth = IFNFTSettings(settings).WETH();
+            IUniswapV2Pair pair = IUniswapV2Pair(IPriceOracle(priceOracle).getPairAddress(address(this), weth));
             uint256 reserve1;
             uint256 twapPrice;
             if (IPriceOracle(priceOracle).getPairInfo(address(pair)).exists) {
-                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), IFNFTSettings(settings).WETH());
+                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), weth);
                 twapPrice = _getTWAP();
             }
 
-            bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
+            bool aboveLiquidityThreshold = reserve1 * 2 > IFNFTSettings(settings).liquidityThreshold();
 
             if (!aboveLiquidityThreshold && aboveQuorum){
                 //average reserve
@@ -571,8 +570,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
             // If the transfer fails, wrap and send as WETH, so that
             // the auction is not impeded and the recipient still
             // can claim ETH via the WETH contract (similar to escrow).
-            IWETH(IFNFTSettings(settings).WETH()).deposit{value: value}();
-            IWETH(IFNFTSettings(settings).WETH()).transfer(to, value);
+            IWETH weth = IWETH(IFNFTSettings(settings).WETH());
+            weth.deposit{value: value}();
+            weth.transfer(to, value);
             // At this point, the recipient can unwrap WETH.
         }
     }

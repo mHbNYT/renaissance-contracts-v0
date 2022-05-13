@@ -17,7 +17,7 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
 
     function setUp() public {
         setupEnvironment(10 ether);
-        (, , ifoSettings, , , , ) = setupContracts(10 ether);        
+        (, , ifoSettings, , , , ) = setupContracts(10 ether);
     }
 
     function test_setCreatorIFOLock() public {
@@ -53,12 +53,12 @@ contract IFOSettingsTest is DSTest, SetupEnvironment {
     }
 
     function test_setGovernanceFee() public {
-        ifoSettings.setGovernanceFee(100);
-        assertEq(ifoSettings.governanceFee(), 100);
+        ifoSettings.setGovernanceFee(1000);
+        assertEq(ifoSettings.governanceFee(), 1000);
     }
 
     function testFail_setGovernanceFee() public {
-        ifoSettings.setGovernanceFee(101);        
+        ifoSettings.setGovernanceFee(1001);
     }
 
     function test_setFeeReceiver() public {

@@ -26,9 +26,9 @@ contract SetupEnvironment {
 
     function setupDeployerAndProxyController() public {
         deployer = new Deployer();
-        string[] memory keys;
+        bytes32[] memory keys;
         address[] memory proxies;
-        proxyController = new MultiProxyController(keys,proxies, address(deployer));
+        proxyController = new MultiProxyController(keys, proxies, address(deployer));
         deployer.setProxyController(address(proxyController));
     }
 
