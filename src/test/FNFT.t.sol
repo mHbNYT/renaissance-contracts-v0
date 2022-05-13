@@ -43,8 +43,8 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     function setUp() public {
         setupEnvironment(10 ether);
         (pairFactory, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);
-        
-        fnftSettings.setGovernanceFee(10);
+
+        fnftSettings.setGovernanceFee(100);
 
         token = new MockNFT();
 
@@ -71,11 +71,26 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         user2 = new User(address(fnft));
         user3 = new User(address(fnft));
         user4 = new UserNoETH(address(fnft));
-        
+
         payable(address(user1)).transfer(10 ether);
         payable(address(user2)).transfer(10 ether);
         payable(address(user3)).transfer(10 ether);
         payable(address(user4)).transfer(10 ether);
+    }
+
+    function test_InitializeFeeTooHigh() public {
+        uint256 maxCuratorFee = fnftSettings.maxCuratorFee();
+        token.mint(address(this), 2);
+        vm.expectRevert(FNFT.FeeTooHigh.selector);
+        fnft = FNFT(fnftFactory.mint(
+            "TheFeeIsTooDamnHigh",
+            "HIGH",
+            address(token),
+            2,
+            100 ether, // supply
+            1 ether, // list price
+            maxCuratorFee + 1
+        ));
     }
 
     function testTransferBetweenUsers() public {
@@ -128,11 +143,11 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     /// -------------------------------
 
     function testToggleVerified() public {
-        assertTrue(fnft.verified() == false);
+        assertTrue(!fnft.verified());
         fnft.toggleVerified();
-        assertTrue(fnft.verified() == true);
+        assertTrue(fnft.verified());
         fnft.toggleVerified();
-        assertTrue(fnft.verified() == false);
+        assertTrue(!fnft.verified());
     }
 
     function testKickCurator() public {
