@@ -135,14 +135,29 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         assertTrue(!fnft.verified());
     }
 
+    event KickCurator(address indexed oldCurator, address indexed newCurator);
+    event UpdateCurator(address indexed oldCurator, address indexed newCurator);
+
     function testKickCurator() public {
+        vm.expectEmit(true, true, false, true);
+        emit UpdateCurator(fnft.curator(), address(curator));
         fnft.updateCurator(address(curator));
         assertTrue(fnft.curator() == address(curator));
+        vm.expectEmit(true, true, false, true);
+        emit KickCurator(address(curator), address(this));
         fnft.kickCurator(address(this));
         assertTrue(fnft.curator() == address(this));
     }
 
+    function testKickSameCurator() public {
+        fnft.updateCurator(address(curator));
+        vm.expectRevert(FNFT.SameCurator.selector);
+        fnft.kickCurator(address(curator));
+    }
+
     function testFail_kickCurator() public {
+        vm.expectEmit(false, false, false, false);
+        emit KickCurator(fnft.curator(), address(curator));
         curator.call_kickCurator(address(curator));
     }
 
@@ -224,12 +239,17 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     /// -----------------------------------
 
     function testupdateCurator() public {
+        vm.expectEmit(true, true, false, true);
+        emit UpdateCurator(fnft.curator(), address(curator));
         fnft.updateCurator(address(curator));
         assertTrue(fnft.curator() == address(curator));
     }
 
-    function testFail_updateCurator() public {
-        curator.call_updateCurator(address(curator));
+    function testUpdateSameCurator() public {
+        fnft.updateCurator(address(curator));
+        vm.prank(address(curator));
+        vm.expectRevert(FNFT.SameCurator.selector);
+        fnft.updateCurator(address(curator));
     }
 
     function testupdateAuctionLength() public {
