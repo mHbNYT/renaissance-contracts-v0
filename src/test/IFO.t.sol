@@ -865,11 +865,11 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         ifoSettings.setFeeReceiver(payable(address(user1)));
         uint256 govFee = ifoSettings.governanceFee();
-        uint256 fee = (govFee * 1 ether) / 1000;
+        uint256 fee = (govFee * 1 ether) / 10000;
         uint256 profit = 1 ether - fee;
 
         fNFTIfo.start();
-
+        
         assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
@@ -1296,7 +1296,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         ifoSettings.setFeeReceiver(payable(address(user1)));
         uint256 govFee = ifoSettings.governanceFee();
-        uint256 fee = (govFee * 1 ether) / 1000;
+        uint256 fee = (govFee * 1 ether) / 10000;
         uint256 profit = 1 ether - fee;
 
         fNFTIfo.start();

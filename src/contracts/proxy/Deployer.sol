@@ -44,6 +44,12 @@ contract Deployer is Ownable {
 
     IMultiProxyController public proxyController;
 
+    bytes32 constant public IFO_SETTINGS = bytes32(0x49464f53657474696e6773000000000000000000000000000000000000000000);
+    bytes32 constant public FNFT_SETTINGS = bytes32(0x464e465453657474696e67730000000000000000000000000000000000000000);
+    bytes32 constant public FNFT_FACTORY = bytes32(0x464e4654466163746f7279000000000000000000000000000000000000000000);
+    bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
+    bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
+
     // Gov
 
     function setProxyController(address _controller) external onlyOwner {
@@ -65,7 +71,7 @@ contract Deployer is Ownable {
         IIFOSettings(ifoSettings).setFeeReceiver(payable(msg.sender));
         IOwnable(ifoSettings).transferOwnership(msg.sender);        
 
-        proxyController.deployerUpdateProxy("IFOSettings", ifoSettings);
+        proxyController.deployerUpdateProxy(IFO_SETTINGS, ifoSettings);
 
         emit IFOSettingsProxyDeployed(ifoSettings, msg.sender);
     }
@@ -91,7 +97,7 @@ contract Deployer is Ownable {
         IFNFTSettings(fnftSettings).setFeeReceiver(payable(msg.sender));
         IOwnable(fnftSettings).transferOwnership(msg.sender);        
 
-        proxyController.deployerUpdateProxy("FNFTSettings", fnftSettings);
+        proxyController.deployerUpdateProxy(FNFT_SETTINGS, fnftSettings);
 
         emit FNFTSettingsProxyDeployed(fnftSettings, msg.sender);
     }
@@ -113,7 +119,7 @@ contract Deployer is Ownable {
         fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IOwnable(fnftFactory).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy("FNFTFactory", fnftFactory);
+        proxyController.deployerUpdateProxy(FNFT_FACTORY, fnftFactory);
 
         emit FNFTFactoryProxyDeployed(fnftFactory, msg.sender);                
     }
@@ -135,7 +141,7 @@ contract Deployer is Ownable {
         ifoFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IOwnable(ifoFactory).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy("IFOFactory", ifoFactory);
+        proxyController.deployerUpdateProxy(IFO_FACTORY, ifoFactory);
 
         emit IFOFactoryProxyDeployed(ifoFactory, msg.sender);
     }
@@ -151,9 +157,9 @@ contract Deployer is Ownable {
 
         priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IOwnable(priceOracle).transferOwnership(msg.sender);
-        
-        proxyController.deployerUpdateProxy("PriceOracle", priceOracle);
 
-        emit PriceOracleProxyDeployed(priceOracle, msg.sender);                
+        proxyController.deployerUpdateProxy(PRICE_ORACLE, priceOracle);
+
+        emit PriceOracleProxyDeployed(priceOracle, msg.sender);
     }
 }

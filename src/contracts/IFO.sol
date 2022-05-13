@@ -249,7 +249,7 @@ contract IFO is Initializable {
         address govAddress = IIFOSettings(settings).feeReceiver();
         uint256 govFee = IIFOSettings(settings).governanceFee();
 
-        uint256 fee = (govFee * msg.value) / 1000;
+        uint256 fee = (govFee * msg.value) / 10000;
         uint256 profit = msg.value - fee;
 
         user.amount += payout;
@@ -305,7 +305,7 @@ contract IFO is Initializable {
     }
 
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
-    function approve() public onlyCurator {
+    function approve() external onlyCurator {
         address creatorUtilityContract = IIFOSettings(settings).creatorUtilityContract();
         if (creatorUtilityContract == address(0)) revert InvalidAddress();
         fnft.approve(creatorUtilityContract, fnft.totalSupply());

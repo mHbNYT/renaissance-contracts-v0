@@ -27,7 +27,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     uint256 public override governanceFee;
 
     /// @notice 10% fee is max
-    uint256 public constant MAX_GOV_FEE = 100;
+    uint256 public constant MAX_GOV_FEE = 1000;
 
     /// @notice max curator fee
     uint256 public override maxCuratorFee;

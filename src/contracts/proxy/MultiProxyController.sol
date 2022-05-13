@@ -8,22 +8,22 @@ import "../interfaces/IAdminUpgradeabilityProxy.sol";
 
 contract MultiProxyController is Ownable {
     struct Proxy {
-        string name;
-        IAdminUpgradeabilityProxy proxy;     
+        bytes32 name;
+        IAdminUpgradeabilityProxy proxy;
         uint index;
         bool isValue;
     }
 
-    mapping(string => Proxy) public proxyMap;
-    string[] public proxyKeys;
+    mapping(bytes32 => Proxy) public proxyMap;
+    bytes32[] public proxyKeys;
 
     address public deployer;
 
-    event ProxyUpdated(string key, address proxy);
-    event ProxyRemoved(string key);
-    event ProxyAdminChanged(string key, address newAdmin);
+    event ProxyUpdated(bytes32 key, address proxy);
+    event ProxyRemoved(bytes32 key);
+    event ProxyAdminChanged(bytes32 key, address newAdmin);
 
-    constructor(string[] memory _keys, address[] memory _proxies, address _deployer) Ownable() {
+    constructor(bytes32[] memory _keys, address[] memory _proxies, address _deployer) Ownable() {
         deployer = _deployer;
         uint256 length = _proxies.length;
         require(_keys.length == length, "Not equal length");
@@ -37,12 +37,12 @@ contract MultiProxyController is Ownable {
 
     // Proxy Gov
 
-    function upgradeProxyTo(string memory key, address newImpl) public onlyOwner {
+    function upgradeProxyTo(bytes32 key, address newImpl) public onlyOwner {
         require(proxyMap[key].isValue, "Doesn't exist");
         proxyMap[key].proxy.upgradeTo(newImpl);
     }
 
-    function changeProxyAdmin(string memory key, address newAdmin) public onlyOwner {
+    function changeProxyAdmin(bytes32 key, address newAdmin) public onlyOwner {
         require(proxyMap[key].isValue, "Doesn't exist");
         proxyMap[key].proxy.changeAdmin(newAdmin);
         emit ProxyAdminChanged(key, newAdmin);
@@ -50,30 +50,30 @@ contract MultiProxyController is Ownable {
 
     // MultiProxyController Gov
 
-    function changeDeployer(address _deployer) public onlyOwner {
+    function changeDeployer(address _deployer) external onlyOwner {
         deployer = _deployer;
     }
 
-    function deployerUpdateProxy(string memory key, address proxy) public {
+    function deployerUpdateProxy(bytes32 key, address proxy) public {
         require(msg.sender == deployer, "Not deployer");
         if (proxyMap[key].isValue) {
             _changeProxy(key, proxy);
         } else {
             _addProxy(key, proxy);
-        }        
+        }
     }
 
-    function _changeProxy(string memory key, address proxyAddress) private {
+    function _changeProxy(bytes32 key, address proxyAddress) private {
         require(proxyMap[key].isValue, "Doesn't exist");
 
         proxyMap[key].proxy = IAdminUpgradeabilityProxy(proxyAddress);
     }
 
-    function changeProxy(string memory key, address proxyAddress) public onlyOwner {
+    function changeProxy(bytes32 key, address proxyAddress) public onlyOwner {
         _changeProxy(key, proxyAddress);
-    }    
+    }
 
-    function changeProxyKey(string memory oldKey, string memory newKey) public onlyOwner {
+    function changeProxyKey(bytes32 oldKey, bytes32 newKey) public onlyOwner {
         require(proxyMap[oldKey].isValue, "Doesn't exist");
 
         Proxy memory proxy = proxyMap[oldKey];
@@ -83,23 +83,23 @@ contract MultiProxyController is Ownable {
         delete proxyMap[oldKey];
     }
 
-    function _addProxy(string memory key, address proxyAddress) private {
+    function _addProxy(bytes32 key, address proxyAddress) private {
         require(!proxyMap[key].isValue, "Exists");
 
         IAdminUpgradeabilityProxy proxyContract = IAdminUpgradeabilityProxy(proxyAddress);
         proxyKeys.push(key);
-        Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);        
+        Proxy memory newProxy = Proxy(key, proxyContract, proxyKeys.length - 1, true);
         proxyMap[key] = newProxy;
         emit ProxyUpdated(key, proxyAddress);
     }
 
-    function addProxy(string memory key, address proxyAddress) public onlyOwner {
+    function addProxy(bytes32 key, address proxyAddress) public onlyOwner {
         _addProxy(key, proxyAddress);
     }
 
-    function removeProxy(string memory key) public onlyOwner {
+    function removeProxy(bytes32 key) public onlyOwner {
         require(proxyMap[key].isValue, "Doesn't exist");
-        string[] storage keys = proxyKeys;
+        bytes32[] storage keys = proxyKeys;
         Proxy memory proxy = proxyMap[key];
 
         proxyMap[keys[keys.length - 1]].index = proxy.index;
@@ -112,21 +112,21 @@ contract MultiProxyController is Ownable {
         emit ProxyRemoved(key);
     }
 
-    function getName(string memory key) public view returns (string memory) {
+    function getName(bytes32 key) public view returns (bytes32) {
         return proxyMap[key].name;
     }
 
-    function getAdmin(string memory key) public view returns (address) {
+    function getAdmin(bytes32 key) public view returns (address) {
         return proxyMap[key].proxy.admin();
     }
 
-    function getImpl(string memory key) public view returns(address) {
+    function getImpl(bytes32 key) public view returns(address) {
         return proxyMap[key].proxy.implementation();
     }
 
     // Bulk
 
-    function changeAllAdmins(address newAdmin) public onlyOwner {
+    function changeAllAdmins(address newAdmin) external onlyOwner {
         uint256 length = proxyKeys.length;
         for (uint256 i; i < length;) {
             changeProxyAdmin(proxyKeys[i], newAdmin);
@@ -136,7 +136,7 @@ contract MultiProxyController is Ownable {
         }
     }
 
-    function getAllProxiesInfo() public view returns (string[] memory) {
+    function getAllProxiesInfo() public view returns (bytes32[] memory) {
         uint256 length = proxyKeys.length;
         string[] memory proxyInfos = new string[](length);
         for (uint256 i; i < length;) {
@@ -150,7 +150,7 @@ contract MultiProxyController is Ownable {
         return proxyInfos;
     }
 
-    function getAllProxies() public view returns (address[] memory) {
+    function getAllProxies() external view returns (address[] memory) {
         uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
         for (uint256 i; i < length;) {
@@ -162,7 +162,7 @@ contract MultiProxyController is Ownable {
         return proxyInfos;
     }
 
-    function getAllImpls() public view returns (address[] memory) {
+    function getAllImpls() external view returns (address[] memory) {
         uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
         for (uint256 i; i < length;) {

@@ -8,10 +8,10 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     /// @notice the boolean whether creator should have access to the creator's fNFT shares after IFO
     bool public override creatorIFOLock;
     uint256 public override minimumDuration;
-    uint256 public override maximumDuration;    
+    uint256 public override maximumDuration;
     uint256 public override governanceFee;
     /// @notice 10% fee is max
-    uint256 public constant MAX_GOV_FEE = 100;
+    uint256 public constant MAX_GOV_FEE = 1000;
     address public override creatorUtilityContract;
     /// @notice the address who receives ifo fees
     address payable public override feeReceiver;
@@ -73,7 +73,7 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     }
 
     function setFeeReceiver(address payable _receiver) external onlyOwner {
-        if (_receiver == address(0)) revert ZeroAddressDisallowed();        
+        if (_receiver == address(0)) revert ZeroAddressDisallowed();
 
         emit UpdateFeeReceiver(feeReceiver, _receiver);
 
