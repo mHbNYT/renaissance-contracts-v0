@@ -305,7 +305,7 @@ contract IFO is Initializable {
     }
 
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
-    function approve() public onlyCurator {
+    function approve() external onlyCurator {
         address creatorUtilityContract = IIFOSettings(settings).creatorUtilityContract();
         if (creatorUtilityContract == address(0)) revert InvalidAddress();
         fnft.approve(creatorUtilityContract, fnft.totalSupply());
