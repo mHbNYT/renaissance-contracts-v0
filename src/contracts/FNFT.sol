@@ -556,7 +556,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function cash() external {
         if (auctionState != State.Ended) revert AuctionNotEnded();
         uint256 bal = balanceOf(msg.sender);
-        if (bal <= 0) revert NoTokens();
+        if (bal == 0) revert NoTokens();
 
         uint256 share = (bal * address(this).balance) / totalSupply();
         _burn(msg.sender, bal);

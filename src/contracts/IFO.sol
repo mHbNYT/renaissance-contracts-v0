@@ -281,7 +281,7 @@ contract IFO is Initializable {
     /// @notice withdraws ETH from sale only after IFO over
     function adminWithdrawProfit() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (profitRaised <= 0) revert NoProfit();
+        if (profitRaised == 0) revert NoProfit();
         uint256 profit = profitRaised;
         profitRaised = 0;
 
