@@ -59,6 +59,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the governance contract which gets paid in ETH
     address public immutable settings;
 
+    /// @notice whether or not this FNFT has been verified by DAO
+    bool public verified;
+
+    /// @notice a boolean to indicate if the vault has closed
+    bool public vaultClosed;
+
     /// @notice the address who initially deposited the NFT
     address public curator;
 
@@ -68,17 +74,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the last timestamp where fees were claimed
     uint256 public lastClaimed;
 
-    /// @notice a boolean to indicate if the vault has closed
-    bool public vaultClosed;
-
     /// @notice the number of ownership tokens voting on the reserve price at any given time
     uint256 public votingTokens;
 
     /// @notice initial price of NFT set by curator on creation
     uint256 public initialReserve;
-
-    /// @notice whether or not this FNFT has been verified by DAO
-    bool public verified;
 
     /// @notice a mapping of users to their desired token price
     mapping(address => uint256) public userReservePrice;
@@ -147,6 +147,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // initialize inherited contracts
         __ERC20_init(_name, _symbol);
         __ERC721Holder_init();
+
+        if (_fee > IFNFTSettings(settings).maxCuratorFee()) revert FeeTooHigh();
+
         // set storage variables
         token = _token;
         id = _id;
@@ -154,10 +157,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         curator = _curator;
         fee = _fee;
         lastClaimed = block.timestamp;
-        auctionState = State.Inactive;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
-        verified = false;
 
         _mint(_curator, _supply);
     }
@@ -267,7 +268,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // now lets do the same for governance
         address govAddress = IFNFTSettings(settings).feeReceiver();
         uint256 govFee = IFNFTSettings(settings).governanceFee();
-        currentAnnualFee = (govFee * totalSupply()) / 1000;
+        currentAnnualFee = (govFee * totalSupply()) / 10000;
         feePerSecond = currentAnnualFee / 31536000;
         uint256 govMint = sinceLastClaim * feePerSecond;
 
@@ -294,14 +295,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function buyItNow() external payable {
         if (auctionState != State.Inactive) revert AuctionLive();
         uint256 price = _buyItNowPrice();
-        if (price == 0) revert PriceTooLow(); 
+        if (price == 0) revert PriceTooLow();
         if (msg.value < price) revert NotEnoughETH();
 
         _claimFees();
 
         // deposit weth
         IWETH(IFNFTSettings(settings).WETH()).deposit{value: msg.value}();
-        
+
         // transfer erc721 to buyer
         IERC721(token).transferFrom(address(this), msg.sender, id);
 
@@ -386,13 +387,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256 _reservePrice = reservePrice();
 
         if (address(priceOracle) != address(0)) {
-            IUniswapV2Pair pair = IUniswapV2Pair(
-                IPriceOracle(priceOracle).getPairAddress(address(this), IFNFTSettings(settings).WETH())
-            );
+            address weth = IFNFTSettings(settings).WETH();
+            IUniswapV2Pair pair = IUniswapV2Pair(IPriceOracle(priceOracle).getPairAddress(address(this), weth));
             uint256 reserve1;
             uint256 twapPrice;
             if (IPriceOracle(priceOracle).getPairInfo(address(pair)).exists) {
-                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), IFNFTSettings(settings).WETH());
+                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), weth);
                 twapPrice = _getTWAP();
             }
 
@@ -403,7 +403,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 return _reservePrice;
             } else if (aboveLiquidityThreshold && !aboveQuorum) {
                 //twap price if twap > initial reserve
-                //reserve price if twap < initial reserve 
+                //reserve price if twap < initial reserve
                 return twapPrice > initialReserve ? twapPrice : initialReserve;
             } else if (aboveLiquidityThreshold && aboveQuorum) {
                 //twap price if twap > reserve
@@ -414,7 +414,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 return initialReserve;
             }
         } else {
-            return aboveQuorum ? _reservePrice : initialReserve;        
+            return aboveQuorum ? _reservePrice : initialReserve;
         }
     }
 
@@ -428,7 +428,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private view {
-        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;        
+        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
         if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
         if (newUserReserve > reservePriceMax) revert PriceTooHigh();
@@ -556,7 +556,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function cash() external {
         if (auctionState != State.Ended) revert AuctionNotEnded();
         uint256 bal = balanceOf(msg.sender);
-        if (bal <= 0) revert NoTokens();
+        if (bal == 0) revert NoTokens();
 
         uint256 share = (bal * address(this).balance) / totalSupply();
         _burn(msg.sender, bal);
@@ -573,8 +573,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
             // If the transfer fails, wrap and send as WETH, so that
             // the auction is not impeded and the recipient still
             // can claim ETH via the WETH contract (similar to escrow).
-            IWETH(IFNFTSettings(settings).WETH()).deposit{value: value}();
-            IWETH(IFNFTSettings(settings).WETH()).transfer(to, value);
+            IWETH weth = IWETH(IFNFTSettings(settings).WETH());
+            weth.deposit{value: value}();
+            weth.transfer(to, value);
             // At this point, the recipient can unwrap WETH.
         }
     }
