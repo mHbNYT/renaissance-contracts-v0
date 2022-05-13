@@ -15,19 +15,19 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     uint256 public override maxAuctionLength;
 
     /// @notice the longest an auction can ever be
-    uint256 public constant maxMaxAuctionLength = 8 weeks;
+    uint256 public constant MAX_MAX_AUCTION_LENGTH = 8 weeks;
 
     /// @notice the minimum auction length
     uint256 public override minAuctionLength;
 
     /// @notice the shortest an auction can ever be
-    uint256 public constant minMinAuctionLength = 1 days;
+    uint256 public constant MIN_MIN_AUCTION_LENGTH = 1 days;
 
     /// @notice governance fee max
     uint256 public override governanceFee;
 
     /// @notice 10% fee is max
-    uint256 public constant maxGovFee = 100;
+    uint256 public constant MAX_GOV_FEE = 100;
 
     /// @notice max curator fee
     uint256 public override maxCuratorFee;
@@ -36,10 +36,10 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     uint256 public override minBidIncrease;
 
     /// @notice 10% bid increase is max
-    uint256 public constant maxMinBidIncrease = 100;
+    uint256 public constant MAX_MIN_BID_INCREASE = 100;
 
     /// @notice 1% bid increase is min
-    uint256 public constant minMinBidIncrease = 10;
+    uint256 public constant MIN_MIN_BID_INCREASE = 10;
 
     /// @notice the % of tokens required to be voting for an auction to start
     uint256 public override minVotePercentage;
@@ -119,7 +119,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setMaxAuctionLength(uint256 _length) external onlyOwner {
-        if (_length > maxMaxAuctionLength) revert MaxAuctionLengthTooHigh();
+        if (_length > MAX_MAX_AUCTION_LENGTH) revert MaxAuctionLengthTooHigh();
         if (_length <= minAuctionLength) revert MaxAuctionLengthTooLow();
 
         emit UpdateMaxAuctionLength(maxAuctionLength, _length);
@@ -128,8 +128,8 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setMinAuctionLength(uint256 _length) external onlyOwner {
-        if (_length < minMinAuctionLength) revert MinAuctionLengthTooLow();
-        if (_length >= maxAuctionLength) revert MinAuctionLengthTooHigh();        
+        if (_length < MIN_MIN_AUCTION_LENGTH) revert MinAuctionLengthTooLow();
+        if (_length >= maxAuctionLength) revert MinAuctionLengthTooHigh();
 
         emit UpdateMinAuctionLength(minAuctionLength, _length);
 
@@ -137,7 +137,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setGovernanceFee(uint256 _fee) external onlyOwner {
-        if (_fee > maxGovFee) revert GovFeeTooHigh();
+        if (_fee > MAX_GOV_FEE) revert GovFeeTooHigh();
 
         emit UpdateGovernanceFee(governanceFee, _fee);
 
@@ -151,8 +151,8 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setMinBidIncrease(uint256 _min) external onlyOwner {
-        if (_min > maxMinBidIncrease) revert MinBidIncreaseTooHigh();
-        if (_min < minMinBidIncrease) revert MinBidIncreaseTooLow();        
+        if (_min > MAX_MIN_BID_INCREASE) revert MinBidIncreaseTooHigh();
+        if (_min < MIN_MIN_BID_INCREASE) revert MinBidIncreaseTooLow();
 
         emit UpdateMinBidIncrease(minBidIncrease, _min);
 
