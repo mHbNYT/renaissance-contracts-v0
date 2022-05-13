@@ -291,7 +291,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     function buyItNow() external payable {
         if (auctionState != State.Inactive) revert AuctionLive();
-        uint256 price = _buyItNowPrice();
+        uint256 price = buyItNowPrice();
         if (price == 0) revert PriceTooLow();
         if (msg.value < price) revert NotEnoughETH();
 
@@ -308,11 +308,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         emit Won(msg.sender, price);
     }
 
-    function buyItNowPrice() external view returns (uint256) {
-        return _buyItNowPrice();
-    }
-
-    function _buyItNowPrice() internal view returns (uint256) {
+    function buyItNowPrice() public view returns (uint256) {
         return (_getAuctionPrice() * IFNFTSettings(settings).instantBuyMultiplier()) / 10;
     }
 
