@@ -481,7 +481,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         uint256
     ) internal virtual override {
         address priceOracle = IFNFTSettings(settings).priceOracle();
-        if (address(priceOracle) != address(0)) {
+        if (priceOracle != address(0)) {
             IPriceOracle(priceOracle).updatefNFTPairInfo(address(this));
         }
     }

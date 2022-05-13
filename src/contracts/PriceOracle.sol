@@ -127,10 +127,9 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
     function _updatePairInfo(address _token0, address _token1) internal {
         // Get predetermined pair address.
         address pairAddress = _getPairAddress(_token0, _token1);
-        PairInfo storage pairInfo = _getTwap[pairAddress];
-
         // Update or add pair info if the pair has been created from factory.
         if (pairAddress != address(0)){
+            PairInfo storage pairInfo = _getTwap[pairAddress];
             // we want an update to silently skip because it's updated from the token contract itself
             if (pairInfo.exists) {
                 // Get cumulative prices for each token pairs and block timestampe in the pool.
@@ -152,7 +151,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
                         pairInfo.price0CumulativeLast = price0Cumulative;
                         pairInfo.price1CumulativeLast = price1Cumulative;
                         pairInfo.blockTimestampLast = blockTimestamp;
-                        pairInfo.totalUpdates++;
+                        ++pairInfo.totalUpdates;
                     }
                 }
             } else {
