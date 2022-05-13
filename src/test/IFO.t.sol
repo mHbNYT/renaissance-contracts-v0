@@ -485,11 +485,11 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+        assertTrue(!fNFTIfo.started());
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
     }
 
     function testFail_startNotCurator() public {
@@ -504,7 +504,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+        assertTrue(!fNFTIfo.started());
 
         vm.startPrank(address(user1));
 
@@ -525,11 +525,11 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+        assertTrue(!fNFTIfo.started());
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.start();
     }
@@ -546,17 +546,17 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+        assertTrue(!fNFTIfo.started());
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
-        assertEq(fNFTIfo.ended() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.ended());
 
         fNFTIfo.start();
     }
@@ -594,7 +594,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
@@ -615,7 +615,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
@@ -640,11 +640,11 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.togglePause();
 
-        assertEq(fNFTIfo.paused() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.paused());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
@@ -663,7 +663,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        assertEq(fNFTIfo.started() ? 1 : 0, false ? 1 : 0);
+        assertTrue(!fNFTIfo.started());
 
         fNFTIfo.end();
     }
@@ -682,7 +682,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration());
 
@@ -704,13 +704,13 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
         fNFTIfo.end();
 
-        assertEq(fNFTIfo.ended() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.ended());
 
         fNFTIfo.end();
     }
@@ -729,7 +729,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.end();
     }
@@ -748,7 +748,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
 
@@ -769,7 +769,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         vm.roll(fNFTIfo.startBlock() + 1000);
 
@@ -777,7 +777,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.togglePause();
 
-        assertEq(fNFTIfo.paused() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.paused());
 
         assertEq(fNFTIfo.duration(), ifoSettings.minimumDuration());
 
@@ -869,8 +869,8 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 profit = 1 ether - fee;
 
         fNFTIfo.start();
-
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
 
@@ -917,7 +917,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
 
@@ -946,7 +946,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
 
@@ -971,7 +971,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
 
@@ -996,7 +996,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         fNFTIfo.deposit{value: 1 ether}();
 
@@ -1022,7 +1022,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         assertEq(fractionalizedNFT.balanceOf(address(this)), 0);
 
@@ -1060,7 +1060,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         assertEq(fractionalizedNFT.balanceOf(address(this)), 0);
 
@@ -1090,7 +1090,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         assertEq(fractionalizedNFT.balanceOf(address(this)), 0);
 
@@ -1127,7 +1127,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         assertEq(fractionalizedNFT.balanceOf(address(this)), 0);
 
@@ -1173,7 +1173,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         ifoSettings.setCreatorIFOLock(true);
         fNFTIfo.start();
 
-        assertEq(fNFTIfo.started() ? 1 : 0, true ? 1 : 0);
+        assertTrue(fNFTIfo.started());
 
         assertEq(fractionalizedNFT.balanceOf(address(this)), 0);
 

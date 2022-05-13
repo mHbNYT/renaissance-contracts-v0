@@ -43,9 +43,9 @@ contract IFO is Initializable {
     mapping(address => bool) public whitelisted; // True if user is whitelisted
 
     event Deposit(address indexed buyer, uint256 amount, uint256 payout);
-    event Start(uint256 block);
-    event End(uint256 block);
-    event Pause(bool paused, uint256 block);
+    event Start();
+    event End();
+    event Pause(bool paused);
     event AdminProfitWithdrawal(address FNFT, uint256 amount);
     event AdminFNFTWithdrawal(address FNFT, uint256 amount);
 
@@ -169,8 +169,11 @@ contract IFO is Initializable {
      */
     function addMultipleWhitelists(address[] calldata _addresses) external onlyCurator whitelistingAllowed {
         if (_addresses.length > 333) revert TooManyWhitelists();
-        for (uint256 i = 0; i < _addresses.length; i++) {
+        for (uint256 i; i < _addresses.length;) {
             whitelisted[_addresses[i]] = true;
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -191,7 +194,7 @@ contract IFO is Initializable {
         startBlock = block.number;
 
         started = true;
-        emit Start(block.number);
+        emit Start();
     }
 
     //TODO: Add a circute breaker controlled by the DAO
@@ -208,7 +211,7 @@ contract IFO is Initializable {
             pauseBlock = block.number;
             paused = true;
         }
-        emit Pause(paused, block.number);
+        emit Pause(paused);
         return paused;
     }
 
@@ -223,14 +226,14 @@ contract IFO is Initializable {
 
         ended = true;
         lockedSupply = fnft.balanceOf(address(this));
-        emit End(block.number);
+        emit End();
     }
 
     ///@notice it deposits ETH for the sale
     function deposit() external payable checkPaused checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
-        if (allowWhitelisting == true) {
+        if (allowWhitelisting) {
             if (!whitelisted[msg.sender]) revert NotWhitelisted();
         }
 
@@ -278,7 +281,7 @@ contract IFO is Initializable {
     /// @notice withdraws ETH from sale only after IFO over
     function adminWithdrawProfit() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (profitRaised <= 0) revert NoProfit();
+        if (profitRaised == 0) revert NoProfit();
         uint256 profit = profitRaised;
         profitRaised = 0;
 

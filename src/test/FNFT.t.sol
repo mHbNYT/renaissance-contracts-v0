@@ -128,11 +128,11 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     /// -------------------------------
 
     function testToggleVerified() public {
-        assertTrue(fnft.verified() == false);
+        assertTrue(!fnft.verified());
         fnft.toggleVerified();
-        assertTrue(fnft.verified() == true);
+        assertTrue(fnft.verified());
         fnft.toggleVerified();
-        assertTrue(fnft.verified() == false);
+        assertTrue(!fnft.verified());
     }
 
     function testKickCurator() public {
