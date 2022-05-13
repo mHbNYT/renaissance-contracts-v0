@@ -668,7 +668,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         fNFTIfo.end();
     }
 
-    function testFail_endBeforDuration() public {
+    function testFail_endBeforeDuration() public {
         fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));                
         ifoFactory.create(
             address(fractionalizedNFT), // the address of the fractionalized token
