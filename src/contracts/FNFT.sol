@@ -265,7 +265,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // now lets do the same for governance
         address govAddress = IFNFTSettings(settings).feeReceiver();
         uint256 govFee = IFNFTSettings(settings).governanceFee();
-        currentAnnualFee = (govFee * totalSupply()) / 1000;
+        currentAnnualFee = (govFee * totalSupply()) / 10000;
         feePerSecond = currentAnnualFee / 31536000;
         uint256 govMint = sinceLastClaim * feePerSecond;
 

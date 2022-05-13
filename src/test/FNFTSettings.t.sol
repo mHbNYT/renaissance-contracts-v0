@@ -54,12 +54,12 @@ contract FNFTSettingsTest is DSTest, SetupEnvironment {
     }
 
     function test_setGovernanceFee() public {
-        fnftSettings.setGovernanceFee(90);
+        fnftSettings.setGovernanceFee(1000);
     }
 
     // too high
     function testFail_setGovernanceFee() public {
-        fnftSettings.setGovernanceFee(110);
+        fnftSettings.setGovernanceFee(1001);
     }
 
     function test_setMinBidIncrease() public {
