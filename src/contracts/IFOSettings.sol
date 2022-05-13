@@ -11,7 +11,7 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     uint256 public override maximumDuration;
     uint256 public override governanceFee;
     /// @notice 10% fee is max
-    uint256 public constant maxGovFee = 1000;
+    uint256 public constant MAX_GOV_FEE = 1000;
     address public override creatorUtilityContract;
     /// @notice the address who receives ifo fees
     address payable public override feeReceiver;
@@ -65,7 +65,7 @@ contract IFOSettings is OwnableUpgradeable, IIFOSettings {
     }
 
     function setGovernanceFee(uint256 _fee) external onlyOwner {
-        if (_fee > maxGovFee) revert GovFeeTooHigh();
+        if (_fee > MAX_GOV_FEE) revert GovFeeTooHigh();
 
         emit UpdateGovernanceFee(governanceFee, _fee);
 
