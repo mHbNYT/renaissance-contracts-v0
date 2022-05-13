@@ -147,6 +147,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         // initialize inherited contracts
         __ERC20_init(_name, _symbol);
         __ERC721Holder_init();
+
+        if (_fee > IFNFTSettings(settings).maxCuratorFee()) revert FeeTooHigh();
+
         // set storage variables
         token = _token;
         id = _id;
