@@ -138,11 +138,9 @@ contract MultiProxyController is Ownable {
 
     function getAllProxiesInfo() public view returns (bytes32[] memory) {
         uint256 length = proxyKeys.length;
-        string[] memory proxyInfos = new string[](length);
+        bytes32[] memory proxyInfos = new bytes32[](length);
         for (uint256 i; i < length;) {
-            string memory key = proxyKeys[i];
-            Proxy memory _proxy = proxyMap[key];
-            proxyInfos[i] = string(abi.encodePacked(key, ": ", _proxy.name));
+            proxyInfos[i] = proxyKeys[i];
             unchecked {
                 ++i;
             }
