@@ -110,8 +110,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     event Verified(bool verified);
 
+    event KickCurator(address indexed oldCurator, address indexed newCurator);
+    event UpdateCurator(address indexed oldCurator, address indexed newCurator);
+
     error NotGov();
     error NotCurator();
+    error SameCurator();
     error AuctionLive();
     error NotAnUpdate();
     error InvalidAuctionLength();
@@ -185,6 +189,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice allow governance to boot a bad actor curator
     /// @param _curator the new curator
     function kickCurator(address _curator) external onlyGov {
+        if (curator == _curator) revert SameCurator();
+        emit KickCurator(curator, _curator);
         curator = _curator;
     }
 
@@ -218,6 +224,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice allow curator to update the curator address
     /// @param _curator the new curator
     function updateCurator(address _curator) external onlyCurator {
+        if (curator == _curator) revert SameCurator();
+        emit UpdateCurator(curator, _curator);
         curator = _curator;
     }
 
