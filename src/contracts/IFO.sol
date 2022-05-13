@@ -233,7 +233,7 @@ contract IFO is Initializable {
     function deposit() external payable checkPaused checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
-        if (allowWhitelisting == true) {
+        if (allowWhitelisting) {
             if (!whitelisted[msg.sender]) revert NotWhitelisted();
         }
 
