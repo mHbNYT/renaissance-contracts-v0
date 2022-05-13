@@ -62,9 +62,6 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice whether or not this FNFT has been verified by DAO
     bool public verified;
 
-    /// @notice a boolean to indicate if the vault has closed
-    bool public vaultClosed;
-
     /// @notice the address who initially deposited the NFT
     address public curator;
 
