@@ -97,7 +97,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
         uint256 _amountIn
     ) external view returns (uint256 amountOut) {
         PairInfo memory pairInfo = _getTwap[_pair];
-        if (pairInfo.exists == false) revert PairInfoDoesNotExist();
+        if (!pairInfo.exists) revert PairInfoDoesNotExist();
 
         amountOut = _calculatePrice(_token, _amountIn, pairInfo);
     }
@@ -107,7 +107,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
     function getfNFTPriceETH(address _fNFT, uint256 _amountIn) external view returns (uint256 amountOut) {
         address pair = _getPairAddress(_fNFT, WETH);
         PairInfo memory pairInfo = _getTwap[pair];
-        if (pairInfo.exists == false) revert PairInfoDoesNotExist();
+        if (!pairInfo.exists) revert PairInfoDoesNotExist();
         if (pairInfo.totalUpdates < minimumPairInfoUpdate) revert NotEnoughUpdates();
 
         amountOut = _calculatePrice(_fNFT, _amountIn, pairInfo);
@@ -160,17 +160,17 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
             }
         }
     }
-    
+
     // Add pair info to price oracle.
     function _addPairInfo(address _token0, address _token1) internal {
         // Get predetermined pair address.
         address pairAddress = _getPairAddress(_token0, _token1);
         PairInfo storage pairInfo = _getTwap[pairAddress];
-        if (pairInfo.exists == true) revert PairInfoAlreadyExists();
+        if (pairInfo.exists) revert PairInfoAlreadyExists();
 
         // Get pair information for the given pair address.
         IUniswapV2Pair pair = IUniswapV2Pair(pairAddress);
-        
+
         // Get last block timestamp from reserves.
         (, , uint32 blockTimestampLast) = pair.getReserves();
 
