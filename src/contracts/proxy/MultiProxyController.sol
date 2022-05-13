@@ -27,10 +27,13 @@ contract MultiProxyController is Ownable {
         deployer = _deployer;
         uint256 length = _proxies.length;
         require(_keys.length == length, "Not equal length");
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length;) {
             addProxy(_keys[i], _proxies[i]);
-        } 
-    }    
+            unchecked {
+                ++i;
+            }
+        }
+    }
 
     // Proxy Gov
 
@@ -125,18 +128,24 @@ contract MultiProxyController is Ownable {
 
     function changeAllAdmins(address newAdmin) public onlyOwner {
         uint256 length = proxyKeys.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             changeProxyAdmin(proxyKeys[i], newAdmin);
+            unchecked {
+                ++i;
+            }
         }
     }
 
     function getAllProxiesInfo() public view returns (string[] memory) {
         uint256 length = proxyKeys.length;
         string[] memory proxyInfos = new string[](length);
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             string memory key = proxyKeys[i];
             Proxy memory _proxy = proxyMap[key];
             proxyInfos[i] = string(abi.encodePacked(key, ": ", _proxy.name));
+            unchecked {
+                ++i;
+            }
         }
         return proxyInfos;
     }
@@ -144,17 +153,23 @@ contract MultiProxyController is Ownable {
     function getAllProxies() public view returns (address[] memory) {
         uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             proxyInfos[i] = address(proxyMap[proxyKeys[i]].proxy);
+            unchecked {
+                ++i;
+            }
         }
         return proxyInfos;
     }
-    
+
     function getAllImpls() public view returns (address[] memory) {
         uint256 length = proxyKeys.length;
         address[] memory proxyInfos = new address[](length);
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             proxyInfos[i] = address(proxyMap[proxyKeys[i]].proxy.implementation());
+            unchecked {
+                ++i;
+            }
         }
         return proxyInfos;
     }
