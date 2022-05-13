@@ -291,11 +291,11 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
     function _updatePriceOracleMinimumTimes(address _priceOracle, address _pair) internal {
         PairInfo memory pairInfo = IPriceOracle(_priceOracle).getPairInfo(_pair);
         uint blockTimestampLast = pairInfo.blockTimestampLast;
-    
+
         // Move block.timestamp forward and sync uniswap pair and update price oracle.
         // Update price oracle pair 10 times to meet the requirement.
         uint jump = priceOracle.period();
-        for (uint i = 0; i <= priceOracle.minimumPairInfoUpdate(); i++) {
+        for (uint i = 0; i < priceOracle.minimumPairInfoUpdate(); i++) {
             blockTimestampLast += jump;
             vm.warp(blockTimestampLast);
             IUniswapV2Pair(_pair).sync();
