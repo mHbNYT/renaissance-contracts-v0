@@ -59,6 +59,12 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the governance contract which gets paid in ETH
     address public immutable settings;
 
+    /// @notice whether or not this FNFT has been verified by DAO
+    bool public verified;
+
+    /// @notice a boolean to indicate if the vault has closed
+    bool public vaultClosed;
+
     /// @notice the address who initially deposited the NFT
     address public curator;
 
@@ -68,17 +74,11 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice the last timestamp where fees were claimed
     uint256 public lastClaimed;
 
-    /// @notice a boolean to indicate if the vault has closed
-    bool public vaultClosed;
-
     /// @notice the number of ownership tokens voting on the reserve price at any given time
     uint256 public votingTokens;
 
     /// @notice initial price of NFT set by curator on creation
     uint256 public initialReserve;
-
-    /// @notice whether or not this FNFT has been verified by DAO
-    bool public verified;
 
     /// @notice a mapping of users to their desired token price
     mapping(address => uint256) public userReservePrice;
@@ -292,14 +292,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function buyItNow() external payable {
         if (auctionState != State.Inactive) revert AuctionLive();
         uint256 price = _buyItNowPrice();
-        if (price == 0) revert PriceTooLow(); 
+        if (price == 0) revert PriceTooLow();
         if (msg.value < price) revert NotEnoughETH();
 
         _claimFees();
 
         // deposit weth
         IWETH(IFNFTSettings(settings).WETH()).deposit{value: msg.value}();
-        
+
         // transfer erc721 to buyer
         IERC721(token).transferFrom(address(this), msg.sender, id);
 
@@ -394,14 +394,14 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 twapPrice = _getTWAP();
             }
 
-            bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();            
+            bool aboveLiquidityThreshold = uint256(reserve1 * 2) > IFNFTSettings(settings).liquidityThreshold();
 
             if (!aboveLiquidityThreshold && aboveQuorum){
                 //average reserve
                 return _reservePrice;
             } else if (aboveLiquidityThreshold && !aboveQuorum) {
                 //twap price if twap > initial reserve
-                //reserve price if twap < initial reserve 
+                //reserve price if twap < initial reserve
                 return twapPrice > initialReserve ? twapPrice : initialReserve;
             } else if (aboveLiquidityThreshold && aboveQuorum) {
                 //twap price if twap > reserve
@@ -412,7 +412,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
                 return initialReserve;
             }
         } else {
-            return aboveQuorum ? _reservePrice : initialReserve;        
+            return aboveQuorum ? _reservePrice : initialReserve;
         }
     }
 
@@ -426,7 +426,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
 
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private view {
-        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;        
+        uint256 reservePriceMin = (prevUserReserve * IFNFTSettings(settings).minReserveFactor()) / 1000;
         if (newUserReserve < reservePriceMin) revert PriceTooLow();
         uint256 reservePriceMax = (prevUserReserve * IFNFTSettings(settings).maxReserveFactor()) / 1000;
         if (newUserReserve > reservePriceMax) revert PriceTooHigh();
