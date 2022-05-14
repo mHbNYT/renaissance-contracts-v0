@@ -18,8 +18,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
   const fnftSettingsAddress = (await proxyController.proxyMap(
     ethers.utils.formatBytes32String("FNFTSettings")
-  ))[1];
-  
+  ))[1];  
 
   // deploy implementation contract
   const fnftFactoryImpl = await deploy('FNFTFactory', {

@@ -35,6 +35,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
+
   // deploy proxy contract
   const deployerInfo = await get('Deployer')
   const deployerContract = new ethers.Contract(
@@ -42,12 +43,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployerInfo.abi,
     signer
   );
-  await deployerContract.deployFNFTSettings(
+  const fnftSettingsProxy = await deployerContract.deployFNFTSettings(
     fnftSettingsImpl.address, 
     WETH, 
     ifoFactoryAddress
   );
-
 };
 
 func.tags = ['main', 'local', 'seed'];

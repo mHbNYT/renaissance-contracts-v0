@@ -576,7 +576,9 @@ async function getContract(hre:HardhatRuntimeEnvironment, key:string) {
     signer
   );
   const abi = (await get(key)).abi; // get abi of impl contract
-  const address = (await proxyController.proxyMap(key))[1];
+  const address = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String(key)
+  ))[1];
   return new ethers.Contract(address, abi, signer);
 }
 
