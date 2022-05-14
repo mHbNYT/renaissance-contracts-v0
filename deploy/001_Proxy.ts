@@ -7,8 +7,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deploy} = deployments;
   const {deployer} = await getNamedAccounts();
 
-  const signer = await ethers.getSigner(deployer)
-
+  const signer = await ethers.getSigner(deployer)  
+  
   // deploy the deployer
   const deployerResult = await deploy('Deployer', {
     from: deployer,
