@@ -9,7 +9,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployer} = await getNamedAccounts();
   const chainId = await hre.getChainId();
 
-  const signer = await ethers.getSigner(deployer);
+  const signer = await ethers.getSigner(deployer);  
 
   // get WETH address
   let { WETH } = await getNamedAccounts();
@@ -25,13 +25,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     proxyControllerInfo.abi,
     signer
   );
-  const ifoFactoryAddress = (await proxyController.proxyMap('IFOFactory'))[1];
+  const ifoFactoryAddress = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String("IFOFactory")
+  ))[1];
 
   // deploy implementation contract
   const fnftSettingsImpl = await deploy('FNFTSettings', {
     from: deployer,
     log: true,
   });
+
 
   // deploy proxy contract
   const deployerInfo = await get('Deployer')
@@ -40,12 +43,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployerInfo.abi,
     signer
   );
-  await deployerContract.deployFNFTSettings(
+  const fnftSettingsProxy = await deployerContract.deployFNFTSettings(
     fnftSettingsImpl.address, 
     WETH, 
     ifoFactoryAddress
   );
-
 };
 
 func.tags = ['main', 'local', 'seed'];

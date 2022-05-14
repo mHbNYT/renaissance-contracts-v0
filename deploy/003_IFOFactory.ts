@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deploy, get} = deployments;
   const {deployer} = await getNamedAccounts();
   
-  const signer = await ethers.getSigner(deployer);
+  const signer = await ethers.getSigner(deployer);  
 
   // get IFOSettings proxy address
   const proxyControllerInfo = await get('MultiProxyController');
@@ -16,7 +16,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     proxyControllerInfo.abi,
     signer
   );
-  const ifoSettingsAddress = (await proxyController.proxyMap('IFOSettings'))[1];
+  const ifoSettingsAddress = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String("IFOSettings")
+  ))[1];
 
   // deploy implementation contract
   const ifoFactoryImpl = await deploy('IFOFactory', {

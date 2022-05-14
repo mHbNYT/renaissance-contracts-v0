@@ -2,6 +2,7 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import { BigNumber, parseFixed } from '@ethersproject/bignumber';
 import {ethers} from 'hardhat';
+import { Bytes } from 'ethers';
 
 /**
  * 
@@ -25,6 +26,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {getNamedAccounts, ethers} = hre;
   const {deploy} = hre.deployments;
   const {deployer} = await getNamedAccounts();
+
+  console.log("Proxy contracts");
+  await printProxies(hre);
 
   // NFT1
   const nft1CollectionInfo = await deploy('NameableMockNFT', {
@@ -525,7 +529,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   signers.slice(0, 9).forEach(async (signer) => {
     await IFO9.connect(signer).deposit({value: ifo9Price});
   });
-
+  
   // mine here to allow sales time to finish and also to allow IFO5 duration to complete
   console.log('starting to mine...');
   await mineNBlocks(86400); // this takes a few min unfortunately
@@ -576,10 +580,31 @@ async function getContract(hre:HardhatRuntimeEnvironment, key:string) {
     signer
   );
   const abi = (await get(key)).abi; // get abi of impl contract
-  const address = (await proxyController.proxyMap(key))[1];
+  const address = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String(key)
+  ))[1];
   return new ethers.Contract(address, abi, signer);
 }
 
+async function printProxies(hre: HardhatRuntimeEnvironment) {
+  const {deployments, getNamedAccounts} = hre;
+  const {get} = deployments;
+  const {deployer} = await getNamedAccounts();
+  const signer = await ethers.getSigner(deployer);
+
+  const proxyControllerInfo = await get('MultiProxyController');
+  const proxyController = new ethers.Contract(
+    proxyControllerInfo.address,
+    proxyControllerInfo.abi,
+    signer
+  );  
+
+  const keys = await proxyController.getAllProxiesInfo();
+  await Promise.all(keys.map(async (key: Bytes) => {
+    const address = await proxyController.proxyMap(key);
+    console.log(`${ethers.utils.parseBytes32String(key)} : ${address[1]}`);
+  }));  
+}
 
 func.tags = ['seed'];
 export default func;

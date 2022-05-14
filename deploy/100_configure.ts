@@ -20,12 +20,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // 1. get price oracle proxy address from controller
-  const priceOracleAddress = (await proxyController.proxyMap('PriceOracle'))[1];
+  const priceOracleAddress = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String("PriceOracle")
+  ))[1];
 
 
   // 2. get fnftSettings proxy address from controller
   const fnftSettingsAbi = (await get('FNFTSettings')).abi; // get abi of impl contract
-  const fnftSettingsAddress = (await proxyController.proxyMap('FNFTSettings'))[1];
+  const fnftSettingsAddress = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String("FNFTSettings")
+  ))[1];
   const fnftSettings = new ethers.Contract(
     fnftSettingsAddress,
     fnftSettingsAbi,

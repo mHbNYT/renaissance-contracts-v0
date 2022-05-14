@@ -9,7 +9,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const signer = await ethers.getSigner(deployer);
 
-
   // get fnft settings proxy address
   const proxyControllerInfo = await get('MultiProxyController');
   const proxyController = new ethers.Contract(
@@ -17,8 +16,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     proxyControllerInfo.abi,
     signer
   );
-  const fnftSettingsAddress = (await proxyController.proxyMap('FNFTSettings'))[1];
-  
+  const fnftSettingsAddress = (await proxyController.proxyMap(
+    ethers.utils.formatBytes32String("FNFTSettings")
+  ))[1];  
 
   // deploy implementation contract
   const fnftFactoryImpl = await deploy('FNFTFactory', {
