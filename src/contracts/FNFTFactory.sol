@@ -16,15 +16,15 @@ contract FNFTFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeab
     mapping(bytes32 => address) public fnfts;
 
     event FNFTCreated(
-        address indexed token, 
-        address FNFT, 
-        address creator, 
-        
-        uint256 price,         
-        string name, 
+        address indexed token,
+        address FNFT,
+        address creator,
+
+        uint256 price,
+        string name,
         string symbol
     );
-    
+
     function initialize(
         address _fnftSettings
     ) external initializer {
@@ -64,13 +64,13 @@ contract FNFTFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeab
         address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
 
         bytes32 fnftId = getFNFTId(_nft, _tokenId);
-        
+
         emit FNFTCreated(_nft, fnft, msg.sender, _listPrice, _name, _symbol);
 
         fnfts[fnftId] = fnft;
 
         IERC721(_nft).safeTransferFrom(msg.sender, fnft, _tokenId);
-        return address(fnft);
+        return fnft;
     }
 
     function getFNFTId(address nftContract, uint256 tokenId) public pure returns (bytes32) {
