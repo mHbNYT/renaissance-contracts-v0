@@ -49,7 +49,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         pair = new PairWithFNFTAndWETH(address(pairFactory), address(fnft), address(weth), vm);
 
         // create a curator account
-        curator = new Curator(address(fnftFactory));
+        curator = new Curator(address(fnft));
 
         // create 3 users and provide funds through HEVM store
         user1 = new User(address(fnft));

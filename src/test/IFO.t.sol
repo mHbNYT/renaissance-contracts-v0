@@ -60,7 +60,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
 
         // create a curator account
-        curator = new Curator(address(fnftFactory));
+        curator = new Curator(address(fractionalizedNFT));
 
         // create 3 users and provide funds through HEVM store
         user1 = new User(address(fractionalizedNFT));
