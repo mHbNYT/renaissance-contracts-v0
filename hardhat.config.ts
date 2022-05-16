@@ -39,7 +39,7 @@ const config: HardhatUserConfig = {
       },
       saveDeployments: false,
       forking: {
-        url: "https://cloudflare-eth.com"
+        url: "https://eth-mainnet.alchemyapi.io/v2/7p4KzWgfAW2gU_4xOoPT5mpxDdOgFycO"
       }
     },
     aurora_testnet: {
