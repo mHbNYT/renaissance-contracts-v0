@@ -716,7 +716,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await fNft12.end();
 
   // SCENARIO 12 ends here, everyone cashes out
-  signers.slice(1,9).forEach(async (signer) => {
+  signers.slice(0,9).forEach(async (signer) => {
     await fNft12.connect(signer).cash();
   });
 
