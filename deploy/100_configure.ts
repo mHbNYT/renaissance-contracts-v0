@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import { Bytes } from 'ethers';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
@@ -38,6 +39,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // 3. set price oracle address in FNFTSettings
   await fnftSettings.setPriceOracle(priceOracleAddress);
+
+
+
+  // finally, print all proxy addresses
+  console.log("Proxy contracts:");
+  const keys = await proxyController.getAllProxiesInfo();
+  await Promise.all(keys.map(async (key: Bytes) => {
+    const address = await proxyController.proxyMap(key);
+    console.log(`${ethers.utils.parseBytes32String(key)} : ${address[1]}`);
+  }));
 
 };
 func.tags = ['main', 'local', 'seed'];
