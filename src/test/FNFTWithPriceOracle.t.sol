@@ -250,7 +250,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
          */
         // Mock the next call as the user and update the user price which is set higher than the maxium reserve price relative to intial reserve price,
         // since the total voting token is set to 0.
-        uint256 userPrice = (fnft.initialReserve() * fnftSettings.maxReserveFactor() + 1 ether) / 1000;
+        uint256 userPrice = (fnft.initialReserve() * fnftSettings.maxReserveFactor() + 1 ether) / 10000;
         vm.startPrank(address(user1));
         vm.expectRevert(FNFT.PriceTooHigh.selector);
         fnft.updateUserPrice(userPrice);
@@ -268,7 +268,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
          */
         // Mock the next call as the user and update the user price which is set lower than the minimum reserve price relative to intial reserve price,
         // since the total voting token is set to 0.
-        uint256 userPrice = (fnft.initialReserve() * fnftSettings.minReserveFactor() - 1 ether) / 1000;
+        uint256 userPrice = (fnft.initialReserve() * fnftSettings.minReserveFactor() - 1 ether) / 10000;
         vm.startPrank(address(user1));
         vm.expectRevert(FNFT.PriceTooLow.selector);
         fnft.updateUserPrice(userPrice);
@@ -281,7 +281,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
     function _deriveOptimumReservePrice(uint256 _currentUserPrice, uint256 _minReserveFactor, uint256 _maxReserveFactor) internal pure returns (uint256) {
         uint256 averageReserveFactor = (_minReserveFactor + _maxReserveFactor) / 2;
         _currentUserPrice = _currentUserPrice == 0 ? 1 ether : _currentUserPrice;
-        return _currentUserPrice + (_currentUserPrice * averageReserveFactor / 1000);
+        return _currentUserPrice + (_currentUserPrice * averageReserveFactor / 10000);
     }
 
     /**
