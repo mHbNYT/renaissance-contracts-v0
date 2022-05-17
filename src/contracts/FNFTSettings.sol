@@ -108,7 +108,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
         maxReserveFactor = 5000; // 500%
         minBidIncrease = 50; // 5%
         maxCuratorFee = 1000;
-        minVotePercentage = 250; // 25%
+        minVotePercentage = 2500; // 25%
         liquidityThreshold = 10e18; // ~$30,000 USD in ETH
         instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
     }
@@ -160,8 +160,8 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setMinVotePercentage(uint256 _min) external onlyOwner {
-        // 1000 is 100%
-        if (_min > 1000) revert MinVotePercentageTooHigh();
+        // 10000 is 100%
+        if (_min > 10000) revert MinVotePercentageTooHigh();
 
         emit UpdateMinVotePercentage(minVotePercentage, _min);
 

@@ -319,7 +319,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
         console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
 
-        assertEq(fnft.getQuorum(), 1000, "Quorum 1");
+        assertEq(fnft.getQuorum(), 10000, "Quorum 1");
         assertEq(fnft.reservePrice(), 1 ether, "Reserve price 1");
         assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 1");
         assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 1");
@@ -327,8 +327,8 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.transfer(address(user1), 25 ether);
         fnft.transfer(address(user2), 50 ether);
 
-        // below quorum since 250 is not greater than minVotePercentage of 250
-        assertEq(fnft.getQuorum(), 250, "Quorum 2");
+        // below quorum since 2500 is not greater than minVotePercentage of 2500
+        assertEq(fnft.getQuorum(), 2500, "Quorum 2");
         assertEq(fnft.reservePrice(), 1 ether, "Reserve price 2");
         assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 2");
         assertEq(fnft.getAuctionPrice(), 1 ether, "Auction price 2");
@@ -336,7 +336,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         user1.call_updatePrice(3 ether);
         // now auction price is 2 eth since this address and user1 have same amounts.
         // (1 + 3) / 2 = 2
-        assertEq(fnft.getQuorum(), 500, "Quorum 3");
+        assertEq(fnft.getQuorum(), 5000, "Quorum 3");
         assertEq(fnft.reservePrice(), 2 ether, "Reserve price 3");
         assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 3");
         assertEq(fnft.getAuctionPrice(), 2 ether, "Auction price 3");
@@ -344,7 +344,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         user2.call_updatePrice(1 ether);
         // now auction price is 1.5 eth since user2 holds 50%, and previous was 2 eth
         // (2 + 1) / 2 = 1.5
-        assertEq(fnft.getQuorum(), 1000, "Quorum 4");
+        assertEq(fnft.getQuorum(), 10000, "Quorum 4");
         assertEq(fnft.reservePrice(), 1.5 ether, "Reserve price 4");
         assertEq(fnft.initialReserve(), 1 ether, "Initial reserve 4");
         assertEq(fnft.getAuctionPrice(), 1.5 ether, "Auction price 4");
@@ -533,11 +533,11 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         user2.call_updatePrice(1 ether);
         fnft.transfer(address(user4), 50 ether);
 
-        assertEq(fnft.getQuorum(), 500);
+        assertEq(fnft.getQuorum(), 5000);
 
         user4.call_updatePrice(1 ether);
 
-        assertEq(fnft.getQuorum(), 1000);
+        assertEq(fnft.getQuorum(), 10000);
     }
 
     function testGetQuorumOnIFOLock() public {
@@ -572,15 +572,15 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         user1.call_updatePrice(1 ether);
 
-        assertEq(fnft.getQuorum(), 250);
+        assertEq(fnft.getQuorum(), 2500);
 
         user2.call_updatePrice(1 ether);
 
-        assertEq(fnft.getQuorum(), 1000);
+        assertEq(fnft.getQuorum(), 10000);
 
         ifoSettings.setCreatorIFOLock(false);
 
-        assertEq(fnft.getQuorum(), 400);
+        assertEq(fnft.getQuorum(), 4000);
     }
 
     receive() external payable {}
