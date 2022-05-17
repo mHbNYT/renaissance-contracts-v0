@@ -33,7 +33,6 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
     User public user2;
     User public user3;
 
-    UserNoETH public user4;
 
     PairWithFNFTAndWETH public pair;
 
@@ -41,11 +40,11 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
 
     function setUp() public {
         // Set up fnft environment.
-        
+
         setupEnvironment(1000 ether);
         (pairFactory, priceOracle, , , fnftSettings, fnftFactory, fnft) = setupContracts(100 ether);
 
-        // Initialize mock fnft-WETH pair with empty reserves. 
+        // Initialize mock fnft-WETH pair with empty reserves.
         pair = new PairWithFNFTAndWETH(address(pairFactory), address(fnft), address(weth), vm);
 
         // create a curator account
@@ -55,23 +54,21 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         user1 = new User(address(fnft));
         user2 = new User(address(fnft));
         user3 = new User(address(fnft));
-        user4 = new UserNoETH(address(fnft));
 
         payable(address(user1)).transfer(10 ether);
         payable(address(user2)).transfer(10 ether);
         payable(address(user3)).transfer(10 ether);
-        payable(address(user4)).transfer(10 ether);
     }
 
     function testGetAuctionPrice_whenVotingBelowQuorumAndLiquidityBelowThreshold_returnInitialReserve() public {
         /**
         SETUP
          */
-        // Transfer fnft to user to reduce the voting tokens and move below quorum. 
-        // Transfer is required since voting quroum is set at 100% during mint. 
+        // Transfer fnft to user to reduce the voting tokens and move below quorum.
+        // Transfer is required since voting quroum is set at 100% during mint.
         uint256 tokenAmount = fnft.totalSupply() - ((fnftSettings.minVotePercentage() + 100) * fnft.totalSupply() / 1000);
         fnft.transfer(address(user1), tokenAmount);
-        
+
         // Transfer remaining of minted fnft to other user to seting the voting tokens to 0.
         fnft.transfer(address(user2), fnft.balanceOf(address(this)));
 
@@ -79,7 +76,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         ACTION
          */
         uint256 auctionPrice = fnft.getAuctionPrice();
-        
+
         /**
         VERIFY
          */
@@ -97,13 +94,13 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
     function testGetAuctionPrice_whenVotingAboveQuorumAndLiquidityBelowThreshold_returnUserReservePrice() public {
         /**
         SETUP
-         */ 
+         */
         // Transfer fnft to user so that the user holds more than the minium voting percentage.
         fnft.transfer(address(user1), (fnftSettings.minVotePercentage() + 100) * fnft.totalSupply() / 1000);
 
         // Transfer remaining of minted fnft to other user to seting the voting tokens to 0.
         fnft.transfer(address(user2), fnft.balanceOf(address(this)));
-    
+
         // Mock the next call as user and update reserve(user) price.
         uint userPrice = _deriveOptimumReservePrice(fnft.userReservePrice(address(user1)), fnftSettings.minReserveFactor(), fnftSettings.maxReserveFactor());
         vm.prank(address(user1));
@@ -113,7 +110,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         ACTION
          */
         uint256 auctionPrice = fnft.getAuctionPrice();
-        
+
         /**
         VERIFY
          */
@@ -145,8 +142,8 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.transfer(address(user2), fnft.balanceOf(address(this)));
 
         // Mock the next call as user and update user reserve price.
-        uint userPrice = _deriveOptimumReservePrice(fnft.userReservePrice(address(user1)), 
-                                                    fnftSettings.minReserveFactor(), 
+        uint userPrice = _deriveOptimumReservePrice(fnft.userReservePrice(address(user1)),
+                                                    fnftSettings.minReserveFactor(),
                                                     fnftSettings.maxReserveFactor());
         vm.prank(address(user1));
         fnft.updateUserPrice(userPrice);
@@ -182,13 +179,13 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
 
         pair.receiveToken(pairFNFTAmount, fnftSettings.liquidityThreshold() + 1 ether);
         fnft.transfer(address(user1), userFNFTAmount);
-        
+
         // // Update TWAP for fnft in WETH minimum required number of times to retrieve TWAP from price oracle.
         _updatePriceOracleMinimumTimes(address(priceOracle), address(pair.uPair()));
 
         // Update user reserve price that is greater than twap price.
         uint256 userPrice = _deriveOptimumReservePrice(fnft.userReservePrice(address(user1)), fnftSettings.minReserveFactor(), fnftSettings.maxReserveFactor());
-        vm.prank(address(user1)); 
+        vm.prank(address(user1));
         fnft.updateUserPrice(userPrice);
 
         /**
@@ -214,10 +211,10 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         /**
         SETUP
          */
-        // Setup environment where weth supply is more than the buy now price. 
+        // Setup environment where weth supply is more than the buy now price.
         uint256 fNFTAmount = 10 ether;
         uint256 wethAmount = fnft.buyItNowPrice();
-        
+
         setupEnvironment(wethAmount);
         (pairFactory, priceOracle, , , fnftSettings, fnftFactory, fnft) = setupContracts(fNFTAmount);
 
@@ -276,8 +273,8 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     /**
-    Derive optimum reserve price by calulating the average between minReserveFactor 
-    and maxReserveFactory and add to current fnft reserve price. 
+    Derive optimum reserve price by calulating the average between minReserveFactor
+    and maxReserveFactory and add to current fnft reserve price.
      */
     function _deriveOptimumReservePrice(uint256 _currentUserPrice, uint256 _minReserveFactor, uint256 _maxReserveFactor) internal pure returns (uint256) {
         uint256 averageReserveFactor = (_minReserveFactor + _maxReserveFactor) / 2;

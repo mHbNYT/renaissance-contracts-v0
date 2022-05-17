@@ -32,7 +32,6 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     User public user1;
     User public user2;
     User public user3;
-    UserNoETH public user4;
 
     Curator public curator;
 
@@ -66,12 +65,10 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         user1 = new User(address(fractionalizedNFT));
         user2 = new User(address(fractionalizedNFT));
         user3 = new User(address(fractionalizedNFT));
-        user4 = new UserNoETH(address(fractionalizedNFT));
 
         payable(address(user1)).transfer(20 ether);
         payable(address(user2)).transfer(20 ether);
         payable(address(user3)).transfer(20 ether);
-        payable(address(user4)).transfer(20 ether);
     }
 
     /// -------------------------------
