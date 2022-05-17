@@ -64,19 +64,19 @@ contract FNFTSettingsTest is DSTest, SetupEnvironment {
     }
 
     function test_setMinBidIncrease() public {
-        fnftSettings.setMinBidIncrease(75);
+        fnftSettings.setMinBidIncrease(750);
     }
 
     // too high
     function testSetMinBidIncreaseTooHigh() public {
         vm.expectRevert(FNFTSettings.MinBidIncreaseTooHigh.selector);
-        fnftSettings.setMinBidIncrease(110);
+        fnftSettings.setMinBidIncrease(1100);
     }
 
     // too low
     function testSetMinBidIncreaseTooLow() public {
         vm.expectRevert(FNFTSettings.MinBidIncreaseTooLow.selector);
-        fnftSettings.setMinBidIncrease(5);
+        fnftSettings.setMinBidIncrease(50);
     }
 
     function test_setMaxReserveFactor() public {
