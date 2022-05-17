@@ -53,7 +53,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     /// @notice minimum size of fNFT-ETH LP pool for TWAP to take effect
     uint256 public override liquidityThreshold;
 
-    /// @notice instant buy allowed if bid > MC * instantBuyMultiplier 
+    /// @notice instant buy allowed if bid > MC * instantBuyMultiplier
     uint256 public override instantBuyMultiplier;
 
     /// @notice the address who receives auction fees
@@ -81,7 +81,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
 
     event UpdateInstantBuyMultiplier(uint256 _old, uint256 _new);
 
-    event UpdateFeeReceiver(address _old, address _new);    
+    event UpdateFeeReceiver(address _old, address _new);
 
     error MaxAuctionLengthTooHigh();
     error MaxAuctionLengthTooLow();
@@ -107,7 +107,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
         minReserveFactor = 200; // 20%
         maxReserveFactor = 5000; // 500%
         minBidIncrease = 50; // 5%
-        maxCuratorFee = 100;
+        maxCuratorFee = 1000;
         minVotePercentage = 250; // 25%
         liquidityThreshold = 10e18; // ~$30,000 USD in ETH
         instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
@@ -169,7 +169,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setMaxReserveFactor(uint256 _factor) external onlyOwner {
-        if (_factor <= minReserveFactor) revert MaxReserveFactorTooLow();        
+        if (_factor <= minReserveFactor) revert MaxReserveFactorTooLow();
 
         emit UpdateMaxReserveFactor(maxReserveFactor, _factor);
 
@@ -199,7 +199,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     }
 
     function setFeeReceiver(address payable _receiver) external onlyOwner {
-        if (_receiver == address(0)) revert ZeroAddressDisallowed();        
+        if (_receiver == address(0)) revert ZeroAddressDisallowed();
 
         emit UpdateFeeReceiver(feeReceiver, _receiver);
 

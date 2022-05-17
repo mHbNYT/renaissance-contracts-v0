@@ -4,7 +4,7 @@ import {BigNumber, parseFixed} from '@ethersproject/bignumber';
 import {ethers} from 'hardhat';
 
 /**
- * 
+ *
  * SCENARIOS
  * 1.  NFT1 => FNFT1 that is just created
  * 2.  NFT2 => FNFT2 that is undergoing IFO but not started
@@ -15,13 +15,13 @@ import {ethers} from 'hardhat';
  * 7.  NFT7 => FNFT7 that has averageReserve that meets quorum
  * 8.  NFT8 => FNFT9 that has completed an auction w/ a few bids
  * 9.  NFT9 => FNFT9 that has a triggered start bid
- * 10. NFT10 => FNFT10 that is undergoing a bid war 
+ * 10. NFT10 => FNFT10 that is undergoing a bid war
  * 11. NFT11 => FNFT11 that is redeemed
  * 12: NFT12 => FNFT13 that is cashed out by a few people
  * 13. NFT13 => FNFT14 that has a liquidity pool above threshold
  */
 
-const PERCENTAGE_SCALE = 1000; // for converting percentages to fixed point
+const PERCENTAGE_SCALE = 10000; // for converting percentages to fixed point
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {getNamedAccounts, ethers} = hre;
@@ -36,7 +36,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft1Collection = await ethers.getContractAt(
-    nft1CollectionInfo.abi, 
+    nft1CollectionInfo.abi,
     nft1CollectionInfo.address
   );
 
@@ -48,7 +48,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft2Collection = await ethers.getContractAt(
-    nft2CollectionInfo.abi, 
+    nft2CollectionInfo.abi,
     nft2CollectionInfo.address
   );
 
@@ -60,7 +60,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft3Collection = await ethers.getContractAt(
-    nft3CollectionInfo.abi, 
+    nft3CollectionInfo.abi,
     nft3CollectionInfo.address
   );
 
@@ -72,10 +72,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft4Collection = await ethers.getContractAt(
-    nft4CollectionInfo.abi, 
+    nft4CollectionInfo.abi,
     nft4CollectionInfo.address
   );
-  
+
   // NFT5
   const nft5CollectionInfo = await deploy('NameableMockNFT', {
     from: deployer,
@@ -84,7 +84,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft5Collection = await ethers.getContractAt(
-    nft5CollectionInfo.abi, 
+    nft5CollectionInfo.abi,
     nft5CollectionInfo.address
   );
 
@@ -96,7 +96,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft6Collection = await ethers.getContractAt(
-    nft6CollectionInfo.abi, 
+    nft6CollectionInfo.abi,
     nft6CollectionInfo.address
   );
 
@@ -108,7 +108,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft7Collection = await ethers.getContractAt(
-    nft7CollectionInfo.abi, 
+    nft7CollectionInfo.abi,
     nft7CollectionInfo.address
   );
 
@@ -120,7 +120,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft8Collection = await ethers.getContractAt(
-    nft8CollectionInfo.abi, 
+    nft8CollectionInfo.abi,
     nft8CollectionInfo.address
   );
 
@@ -132,7 +132,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft9Collection = await ethers.getContractAt(
-    nft9CollectionInfo.abi, 
+    nft9CollectionInfo.abi,
     nft9CollectionInfo.address
   );
 
@@ -144,7 +144,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft10Collection = await ethers.getContractAt(
-    nft10CollectionInfo.abi, 
+    nft10CollectionInfo.abi,
     nft10CollectionInfo.address
   );
 
@@ -156,7 +156,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     autoMine: true
   });
   const nft11Collection = await ethers.getContractAt(
-    nft11CollectionInfo.abi, 
+    nft11CollectionInfo.abi,
     nft11CollectionInfo.address
   );
 
@@ -240,7 +240,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     .1 * PERCENTAGE_SCALE, // fee (10%)
   );
   const fNFT2Address = await FNFTFactory.fnfts(await FNFTFactory.getFNFTId(nft2CollectionInfo.address, 2));
-  
+
   // NFT3
   await FNFTFactory.mint(
     "fNFT3", // name
@@ -389,7 +389,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const fNft12 = await ethers.getContractAt('FNFT', fNFT12Address);
   const fNft13 = await ethers.getContractAt('FNFT', fNFT13Address);
 
-  
+
   await fNft2.approve(IFOFactory.address, await fNft2.balanceOf(deployer));
   await fNft3.approve(IFOFactory.address, await fNft3.balanceOf(deployer));
   await fNft4.approve(IFOFactory.address, await fNft4.balanceOf(deployer));
@@ -620,7 +620,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   signers.slice(9, 19).forEach(async (signer) => {
     await IFO13.connect(signer).deposit({value: ifo13Price});
   });
-  
+
   // mine here to allow sales time to finish and also to allow IFO5 duration to complete
   console.log('starting to mine... (this takes a few minutes)');
   await mineNBlocks(86400); // this takes a few min unfortunately
@@ -682,7 +682,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let auctionPrice9 = await fNft9.getAuctionPrice();
   await fNft9.start({value: auctionPrice9});
 
-  
+
   // SCENARIO 10 FINISHED, ongoing bid war
   let auctionPrice10 = await fNft10.getAuctionPrice();
   await fNft10.start({value: auctionPrice10});

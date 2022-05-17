@@ -60,7 +60,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
             1,
             100 ether, // supply
             1 ether, // initialReserve
-            50 // fee (5%)
+            500 // fee (5%)
         ));
 
         // create a curator account
@@ -125,7 +125,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         temp.mint(address(this), 1);
 
         temp.setApprovalForAll(address(fnftFactory), true);
-        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 500);
     }
 
     function testFnftFactoryPausedCannotMint() public {
@@ -136,7 +136,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         temp.setApprovalForAll(address(fnftFactory), true);
         vm.expectRevert("Pausable: paused");
-        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 50);
+        fnftFactory.mint("testName2", "TEST2", address(temp), 1, 100e18, 1 ether, 500);
     }
 
     /// -------------------------------
@@ -286,13 +286,13 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testUpdateFee() public {
-        fnft.updateFee(25);
-        assertEq(fnft.fee(), 25);
+        fnft.updateFee(250);
+        assertEq(fnft.fee(), 250);
     }
 
     function testUpdateFeeCanNotRaise() public {
         vm.expectRevert(FNFT.CanNotRaise.selector);
-        fnft.updateFee(101);
+        fnft.updateFee(1001);
     }
 
     function testClaimFees() public {
@@ -455,7 +455,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     function testListPriceZero() public {
         token.mint(address(this), 2);
 
-        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 500));
 
         assertEq(fnft.votingTokens(), 0);
     }
@@ -463,7 +463,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     function testFail_listPriceZeroNoAuction() public {
         token.mint(address(this), 2);
 
-        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 50));
+        fnft = FNFT(fnftFactory.mint("testName", "TEST", address(token), 2, 100e18, 0, 500));
 
         User userTemp = new User(address(fnft));
 
