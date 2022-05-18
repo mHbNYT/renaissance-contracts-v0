@@ -104,8 +104,8 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
         feeReceiver = payable(msg.sender);
-        minReserveFactor = 200; // 20%
-        maxReserveFactor = 5000; // 500%
+        minReserveFactor = 2000; // 20%
+        maxReserveFactor = 50000; // 500%
         minBidIncrease = 50; // 5%
         maxCuratorFee = 1000;
         minVotePercentage = 2500; // 25%

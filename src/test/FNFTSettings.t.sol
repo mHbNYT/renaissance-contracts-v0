@@ -80,21 +80,21 @@ contract FNFTSettingsTest is DSTest, SetupEnvironment {
     }
 
     function test_setMaxReserveFactor() public {
-        fnftSettings.setMaxReserveFactor(10000);
+        fnftSettings.setMaxReserveFactor(100000);
     }
 
     function testSetMaxReserveFactorTooLow() public {
         vm.expectRevert(FNFTSettings.MaxReserveFactorTooLow.selector);
-        fnftSettings.setMaxReserveFactor(200);
+        fnftSettings.setMaxReserveFactor(2000);
     }
 
     function test_setMinReserveFactor() public {
-        fnftSettings.setMinReserveFactor(400);
+        fnftSettings.setMinReserveFactor(4000);
     }
 
     function testSetMaxReserveFactorTooHigh() public {
         vm.expectRevert(FNFTSettings.MinReserveFactorTooHigh.selector);
-        fnftSettings.setMinReserveFactor(6000);
+        fnftSettings.setMinReserveFactor(60000);
     }
 
     function test_setFeeReceiver() public {

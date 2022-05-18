@@ -213,7 +213,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testChangeReserveBelowMinReserveFactor() public {
-        assertEq(fnftSettings.minReserveFactor(), 200);
+        assertEq(fnftSettings.minReserveFactor(), 2000);
 
         //initial reserve is 1,
         //minReserveFactor is 20%
@@ -233,7 +233,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testChangeReserveAboveMaxReserveFactor() public {
-        assertEq(fnftSettings.maxReserveFactor(), 5000);
+        assertEq(fnftSettings.maxReserveFactor(), 50000);
 
         //initial reserve is 1,
         //maxReserveFactor is 500%
