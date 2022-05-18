@@ -262,7 +262,7 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
         if (auctionState == State.Ended) revert AuctionEnded();
 
         // get how much in fees the curator would make in a year
-        uint256 currentAnnualFee = (fee * totalSupply()) / 1000;
+        uint256 currentAnnualFee = (fee * totalSupply()) / 10000;
         // get how much that is per second;
         uint256 feePerSecond = currentAnnualFee / 31536000;
         // get how many seconds they are eligible to claim
