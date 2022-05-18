@@ -26,7 +26,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
     address public immutable FACTORY;
 
     /**
-        EVENTS 
+        EVENTS
      */
     event UpdatePeriod(uint256 _old, uint256 _new);
     event UpdateMinimumPairInfoUpdate(uint256 _old, uint256 _new);
@@ -47,21 +47,21 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
 
     function initialize() external initializer {
         __Ownable_init();
-        
+
         period = 10 minutes;
         minimumPairInfoUpdate = 10;
     }
 
     // Set minimum period to wait for the next pair info update.
     function setPeriod(uint256 _newPeriod) external onlyOwner {
-        period = _newPeriod;
         emit UpdatePeriod(period, _newPeriod);
-    } 
+        period = _newPeriod;
+    }
 
     // Set minimum pair info info update required to get fNFT-WETH TWAP price.
     function setMinimumPairInfoUpdate(uint256 _newMinimumPairInfoUpdate) external onlyOwner {
-        minimumPairInfoUpdate = _newMinimumPairInfoUpdate;
         emit UpdateMinimumPairInfoUpdate(minimumPairInfoUpdate, _newMinimumPairInfoUpdate);
+        minimumPairInfoUpdate = _newMinimumPairInfoUpdate;
     }
 
     // Get pair address from factory. Returns address(0) if not found.
@@ -80,7 +80,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
         pairInfo = _getTwap[_pair];
     }
 
-    // Update pair info. 
+    // Update pair info.
     function updatePairInfo(address _token0, address _token1) external {
         _updatePairInfo(_token0, _token1);
     }
@@ -123,7 +123,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
         }
     }
 
-    // Update pair info of two token pair. 
+    // Update pair info of two token pair.
     function _updatePairInfo(address _token0, address _token1) internal {
         // Get predetermined pair address.
         address pairAddress = _getPairAddress(_token0, _token1);
