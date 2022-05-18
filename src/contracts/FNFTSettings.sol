@@ -109,7 +109,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
         minBidIncrease = 500; // 5%
         maxCuratorFee = 1000;
         minVotePercentage = 2500; // 25%
-        liquidityThreshold = 10e18; // ~$30,000 USD in ETH
+        liquidityThreshold = 15e18; // ~$30,000 USD in ETH
         instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
     }
 
