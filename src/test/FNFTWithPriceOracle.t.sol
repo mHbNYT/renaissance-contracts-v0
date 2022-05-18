@@ -66,7 +66,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
          */
         // Transfer fnft to user to reduce the voting tokens and move below quorum.
         // Transfer is required since voting quroum is set at 100% during mint.
-        uint256 tokenAmount = fnft.totalSupply() - ((fnftSettings.minVotePercentage() + 100) * fnft.totalSupply() / 1000);
+        uint256 tokenAmount = fnft.totalSupply() - ((fnftSettings.minVotePercentage() + 1000) * fnft.totalSupply() / 10000);
         fnft.transfer(address(user1), tokenAmount);
 
         // Transfer remaining of minted fnft to other user to seting the voting tokens to 0.
@@ -81,7 +81,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         VERIFY
          */
         // verify that the fnft votes are below quorum.
-        assertTrue(fnft.votingTokens() * 1000 <= fnftSettings.minVotePercentage() * fnft.totalSupply());
+        assertTrue(fnft.votingTokens() * 10000 <= fnftSettings.minVotePercentage() * fnft.totalSupply());
 
         // verify that the WETH reserves * 2 is lower than the liquidity threshold.
         (, uint256 wethReserve) = pair.getReserves();
@@ -96,7 +96,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         SETUP
          */
         // Transfer fnft to user so that the user holds more than the minium voting percentage.
-        fnft.transfer(address(user1), (fnftSettings.minVotePercentage() + 100) * fnft.totalSupply() / 1000);
+        fnft.transfer(address(user1), (fnftSettings.minVotePercentage() + 1000) * fnft.totalSupply() / 10000);
 
         // Transfer remaining of minted fnft to other user to seting the voting tokens to 0.
         fnft.transfer(address(user2), fnft.balanceOf(address(this)));
@@ -115,7 +115,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         VERIFY
          */
         // verify that the fnft votes are above quorum.
-        assertTrue(fnft.votingTokens() * 1000 > fnftSettings.minVotePercentage() * fnft.totalSupply());
+        assertTrue(fnft.votingTokens() * 10000 > fnftSettings.minVotePercentage() * fnft.totalSupply());
 
         // verify that the WETH reserves * 2 is lower than the liquidity threshold.
         (, uint256 wethReserve) = pair.getReserves();
@@ -136,7 +136,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         _updatePriceOracleMinimumTimes(address(priceOracle), address(pair.uPair()));
 
         // Transfer fnft to user so that the user holds less than the minimum voting percentage.
-        fnft.transfer(address(user1), fnftSettings.minVotePercentage() * fnft.totalSupply() / 1000 - 1 ether);
+        fnft.transfer(address(user1), fnftSettings.minVotePercentage() * fnft.totalSupply() / 10000 - 1 ether);
 
         // Transfer the remaining fnft to other user to reduce the initial quorum set to 100%.
         fnft.transfer(address(user2), fnft.balanceOf(address(this)));
@@ -157,7 +157,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         VERIFY
          */
         // Verify that the quorum has not been reached.
-        assertTrue(fnft.votingTokens() * 1000 < fnftSettings.minVotePercentage() * fnft.totalSupply());
+        assertTrue(fnft.votingTokens() * 10000 < fnftSettings.minVotePercentage() * fnft.totalSupply());
 
         // Verify that the WETH reserves * 2 is higher than the liquidity threshold.
         (, uint256 wethReserve) = pair.getReserves();
@@ -197,7 +197,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         VERIFY
         */
         // verify that voting is above quorum and liquidity is above threshold.
-        assertTrue(fnft.votingTokens() * 1000 > fnftSettings.minVotePercentage() * fnft.totalSupply());
+        assertTrue(fnft.votingTokens() * 10000 > fnftSettings.minVotePercentage() * fnft.totalSupply());
         (, uint256 wethReserve) = pair.getReserves();
         assertTrue(wethReserve * 2 > fnftSettings.liquidityThreshold());
 

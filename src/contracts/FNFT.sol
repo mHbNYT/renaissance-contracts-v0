@@ -376,9 +376,9 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     function _getQuorum() internal view returns (uint256) {
         IIFO ifo = IIFO(IIFOFactory(IFNFTSettings(settings).ifoFactory()).getIFO(address(this)));
         if (address(ifo) != address(0) && ifo.ended() && ifo.fnftLocked()) {
-            return votingTokens * 1000 / (totalSupply() - ifo.lockedSupply());
+            return votingTokens * 10000 / (totalSupply() - ifo.lockedSupply());
         } else {
-            return votingTokens * 1000 / totalSupply();
+            return votingTokens * 10000 / totalSupply();
         }
     }
 
