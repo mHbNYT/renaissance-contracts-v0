@@ -36,10 +36,10 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
     uint256 public override minBidIncrease;
 
     /// @notice 10% bid increase is max
-    uint256 public constant MAX_MIN_BID_INCREASE = 100;
+    uint256 public constant MAX_MIN_BID_INCREASE = 1000;
 
     /// @notice 1% bid increase is min
-    uint256 public constant MIN_MIN_BID_INCREASE = 10;
+    uint256 public constant MIN_MIN_BID_INCREASE = 100;
 
     /// @notice the % of tokens required to be voting for an auction to start
     uint256 public override minVotePercentage;
@@ -106,7 +106,7 @@ contract FNFTSettings is OwnableUpgradeable, IFNFTSettings {
         feeReceiver = payable(msg.sender);
         minReserveFactor = 2000; // 20%
         maxReserveFactor = 50000; // 500%
-        minBidIncrease = 50; // 5%
+        minBidIncrease = 500; // 5%
         maxCuratorFee = 1000;
         minVotePercentage = 2500; // 25%
         liquidityThreshold = 10e18; // ~$30,000 USD in ETH

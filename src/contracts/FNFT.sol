@@ -508,8 +508,8 @@ contract FNFT is ERC20Upgradeable, ERC721HolderUpgradeable {
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable {
         if (auctionState != State.Live) revert AuctionNotLive();
-        uint256 increase = IFNFTSettings(settings).minBidIncrease() + 1000;
-        if (msg.value * 1000 < livePrice * increase) revert BidTooLow();
+        uint256 increase = IFNFTSettings(settings).minBidIncrease() + 10000;
+        if (msg.value * 10000 < livePrice * increase) revert BidTooLow();
         if (block.timestamp >= auctionEnd) revert AuctionEnded();
 
         // If bid is within 15 minutes of auction end, extend auction
