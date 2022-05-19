@@ -311,6 +311,14 @@ contract IFO is Initializable {
         fnft.approve(creatorUtilityContract, fnft.totalSupply());
     }
 
+    function emergencyWithdrawFNFT() external onlyGov {
+        uint256 fNFTBalance = fnft.balanceOf(address(this));
+        lockedSupply = 0;
+        fnft.transfer(curator, fNFTBalance);
+
+        emit AdminFNFTWithdrawal(address(fnft), fNFTBalance);
+    }
+
     //Helper functions
 
     /** @notice transfer ETH using call
