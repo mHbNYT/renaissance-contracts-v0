@@ -48,6 +48,7 @@ contract IFO is Initializable {
     event Pause(bool paused);
     event AdminProfitWithdrawal(address FNFT, uint256 amount);
     event AdminFNFTWithdrawal(address FNFT, uint256 amount);
+    event EmergencyFNFTWithdrawal(address FNFT, uint256 amount);
 
     error NotGov();
     error NotCurator();
@@ -289,7 +290,7 @@ contract IFO is Initializable {
 
         emit AdminProfitWithdrawal(address(fnft), profit);
     }
-
+ 
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
@@ -316,7 +317,7 @@ contract IFO is Initializable {
         lockedSupply = 0;
         fnft.transfer(curator, fNFTBalance);
 
-        emit AdminFNFTWithdrawal(address(fnft), fNFTBalance);
+        emit EmergencyFNFTWithdrawal(address(fnft), fNFTBalance);
     }
 
     //Helper functions
