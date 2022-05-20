@@ -34,9 +34,6 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: +process.env.AURORA_LOCAL_CHAINID!,
-      accounts: {
-        mnemonic: process.env.AURORA_LOCAL_PRIVATE_KEY,
-      },
       saveDeployments: false,
       forking: {
         url: "https://eth-mainnet.alchemyapi.io/v2/7p4KzWgfAW2gU_4xOoPT5mpxDdOgFycO"
