@@ -10,6 +10,8 @@ import "../IFOFactory.sol";
 import "../PriceOracle.sol";
 import "../NFTXVaultFactoryUpgradeable.sol";
 import "../NFTXSimpleFeeDistributor.sol";
+import "../NFTXLPStaking.sol";
+import "../StakingTokenProvider.sol";
 import "./AdminUpgradeabilityProxy.sol";
 import "./IMultiProxyController.sol";
 import "../interfaces/IOwnable.sol";
@@ -52,6 +54,16 @@ contract Deployer is Ownable {
         address _creator
     );
 
+    event NftxLPStakingDeployed(
+        address indexed _logic,
+        address _creator
+    );
+
+    event StakingTokenProviderDeployed(
+        address indexed _logic,
+        address _creator
+    );
+
     error NoController();
 
     IMultiProxyController public proxyController;
@@ -63,6 +75,8 @@ contract Deployer is Ownable {
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
     bytes32 constant public NFTX_VAULT_FACTORY = bytes32(0x4e4654585661756c74466163746f72795570677261646561626c650000000000);
     bytes32 constant public NFTX_SIMPLE_FEE_DISTRIBUTOR = bytes32(0x4e46545853696d706c654665654469737472696275746f720000000000000000);
+    bytes32 constant public NFTX_LP_STAKING = bytes32(0x4e4654584c505374616b696e6700000000000000000000000000000000000000);
+    bytes32 constant public STAKING_TOKEN_PROVIDER = bytes32(0x5374616b696e67546f6b656e50726f7669646572000000000000000000000000);
 
     // Gov
 
@@ -179,12 +193,12 @@ contract Deployer is Ownable {
 
     /// @notice the function to deploy NFTXSimpleFeeDistributor
     /// @param _logic the implementation
-    function deployNFTXSimpleFeeDistributor(address _logic, address treasury) external onlyOwner returns (address nftxSimpleFeeDistributor) {
+    function deployNFTXSimpleFeeDistributor(address _logic, address nftxLPStaking, address treasury) external onlyOwner returns (address nftxSimpleFeeDistributor) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             NFTXSimpleFeeDistributor.__SimpleFeeDistributor__init__.selector,
-            address(0x000000000000000000000000000000000000dEaD), // TODO: LP staking
+            nftxLPStaking,
             treasury
         );
 
@@ -213,5 +227,43 @@ contract Deployer is Ownable {
         proxyController.deployerUpdateProxy(NFTX_VAULT_FACTORY, nftxVaultFactory);
 
         emit NftxVaultFactoryDeployed(nftxVaultFactory, msg.sender);
+    }
+
+    /// @notice the function to deploy NFTXLPStaking
+    /// @param _logic the implementation
+    function deployNFTXLPStaking(address _logic, address stakingTokenProvider) external onlyOwner returns (address nftxLPStaking) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            NFTXLPStaking.__NFTXLPStaking__init.selector,
+            stakingTokenProvider
+        );
+
+        nftxLPStaking = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(nftxLPStaking).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(NFTX_LP_STAKING, nftxLPStaking);
+
+        emit NftxLPStakingDeployed(nftxLPStaking, msg.sender);
+    }
+
+    /// @notice the function to deploy StakingTokenProvider
+    /// @param _logic the implementation
+    function deployStakingTokenProvider(address _logic, address uniswapV2Factory, address defaultPairedToken, string memory defaultPrefix) external onlyOwner returns (address stakingTokenProvider) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            StakingTokenProvider.__StakingTokenProvider_init.selector,
+            uniswapV2Factory,
+            defaultPairedToken,
+            defaultPrefix
+        );
+
+        stakingTokenProvider = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(stakingTokenProvider).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(STAKING_TOKEN_PROVIDER, stakingTokenProvider);
+
+        emit StakingTokenProviderDeployed(stakingTokenProvider, msg.sender);
     }
 }
