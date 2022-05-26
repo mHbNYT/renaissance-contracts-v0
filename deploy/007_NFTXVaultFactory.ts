@@ -1,5 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
+import { ethers } from 'ethers';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
@@ -14,7 +15,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  // TODO: fee distributor, staking
+  const nftxFeeDistributorImpl = await deploy('NFTXSimpleFeeDistributor', {
+    from: deployer,
+    log: true,
+  });
 
   // deploy implementation contract
   const nftxVaultFactoryImpl = await deploy('NFTXVaultFactoryUpgradeable', {
@@ -29,11 +33,21 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployerInfo.abi,
     signer
   );
+
+  const treasury = "0x511fefe374e9cb50baf1e3f2e076c94b3ef8b03b";
+  const nftxFeeDistributorTx = await deployerContract.deployNFTXSimpleFeeDistributor(
+    nftxFeeDistributorImpl.address,
+    treasury
+  );
+  const nftxFeeDistributorReceipt = await nftxFeeDistributorTx.wait();
+  const event = nftxFeeDistributorReceipt.events.find((event: ethers.Event) => event.event === "NftxSimpleFeeDistributorDeployed");
+  const [nftxFeeDistributorAddress,] = event.args;
+
   await deployerContract.deployNFTXVaultFactory(
     nftxVaultFactoryImpl.address,
-    nftxVaultImpl.address
+    nftxVaultImpl.address,
+    nftxFeeDistributorAddress
   );
-
 };
 
 func.tags = ['main', 'local', 'seed'];

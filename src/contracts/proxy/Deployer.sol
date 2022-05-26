@@ -9,6 +9,7 @@ import "../IFOSettings.sol";
 import "../IFOFactory.sol";
 import "../PriceOracle.sol";
 import "../NFTXVaultFactoryUpgradeable.sol";
+import "../NFTXSimpleFeeDistributor.sol";
 import "./AdminUpgradeabilityProxy.sol";
 import "./IMultiProxyController.sol";
 import "../interfaces/IOwnable.sol";
@@ -46,6 +47,11 @@ contract Deployer is Ownable {
         address _creator
     );
 
+    event NftxSimpleFeeDistributorDeployed(
+        address indexed _logic,
+        address _creator
+    );
+
     error NoController();
 
     IMultiProxyController public proxyController;
@@ -56,6 +62,7 @@ contract Deployer is Ownable {
     bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
     bytes32 constant public NFTX_VAULT_FACTORY = bytes32(0x4e4654585661756c74466163746f72795570677261646561626c650000000000);
+    bytes32 constant public NFTX_SIMPLE_FEE_DISTRIBUTOR = bytes32(0x4e46545853696d706c654665654469737472696275746f720000000000000000);
 
     // Gov
 
@@ -170,16 +177,34 @@ contract Deployer is Ownable {
         emit PriceOracleProxyDeployed(priceOracle, msg.sender);
     }
 
+    /// @notice the function to deploy NFTXSimpleFeeDistributor
+    /// @param _logic the implementation
+    function deployNFTXSimpleFeeDistributor(address _logic, address treasury) external onlyOwner returns (address nftxSimpleFeeDistributor) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            NFTXSimpleFeeDistributor.__SimpleFeeDistributor__init__.selector,
+            address(0x000000000000000000000000000000000000dEaD), // TODO: LP staking
+            treasury
+        );
+
+        nftxSimpleFeeDistributor = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(nftxSimpleFeeDistributor).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(NFTX_SIMPLE_FEE_DISTRIBUTOR, nftxSimpleFeeDistributor);
+
+        emit NftxSimpleFeeDistributorDeployed(nftxSimpleFeeDistributor, msg.sender);
+    }
+
     /// @notice the function to deploy NFTXVaultFactoryUpgradeable
     /// @param _logic the implementation
-    function deployNFTXVaultFactory(address _logic, address nftxVaultImpl) external onlyOwner returns (address nftxVaultFactory) {
+    function deployNFTXVaultFactory(address _logic, address nftxVaultImpl, address feeDistributor) external onlyOwner returns (address nftxVaultFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             NFTXVaultFactoryUpgradeable.__NFTXVaultFactory_init.selector,
             nftxVaultImpl,
-            // address _feeDistributor
-            address(0x000000000000000000000000000000000000dEaD)
+            feeDistributor
         );
 
         nftxVaultFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
