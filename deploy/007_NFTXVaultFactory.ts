@@ -62,7 +62,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   event = nftxLPStakingReceipt.events.find((event: ethers.Event) => event.event === "NftxLPStakingDeployed");
   const [nftxLPStakingAddress,] = event.args;
 
-  const treasury = "0x511fefe374e9cb50baf1e3f2e076c94b3ef8b03b";
+  const treasury = "0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b";
   const nftxFeeDistributorTx = await deployerContract.deployNFTXSimpleFeeDistributor(
     nftxFeeDistributorImpl.address,
     nftxLPStakingAddress,
