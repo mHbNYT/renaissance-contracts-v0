@@ -264,6 +264,39 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vault.mint(tokenIds, amounts);
   }
 
+  function testTargetRedeem() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    token.mint(address(this), 1);
+    token.mint(address(this), 2);
+    token.mint(address(this), 3);
+
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory tokenIds = new uint256[](3);
+    tokenIds[0] = 1;
+    tokenIds[1] = 2;
+    tokenIds[2] = 3;
+
+    uint256[] memory amounts = new uint256[](0);
+
+    vault.mint(tokenIds, amounts);
+
+    vault.transfer(address(1), 2.5 ether);
+
+    uint256[] memory redeemTokenIds = new uint256[](2);
+    redeemTokenIds[0] = 1;
+    redeemTokenIds[1] = 3;
+
+    vm.prank(address(1));
+    vault.redeem(2, redeemTokenIds);
+
+    assertEq(token.balanceOf(address(1)), 2);
+    // 2 ETH + 0.1 ETH per target redeem
+    assertEq(vault.balanceOf(address(1)), 0.3 ether);
+  }
+
   // TODO:
   // "not from vault" error
   // disable vault fees
