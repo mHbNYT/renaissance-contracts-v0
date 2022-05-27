@@ -44,16 +44,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(nftxVaultFactory.factoryTargetSwapFee(), 0.1 ether);
   }
 
-  function createVault() private {
-    nftxVaultFactory.createVault(
-      "Doodles",
-      "DOODLE",
-      address(token),
-      false,
-      true
-    );
-  }
-
   function testCreateVault() public {
     createVault();
 
@@ -265,25 +255,9 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetRedeem() public {
-    createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
 
-    token.mint(address(this), 1);
-    token.mint(address(this), 2);
-    token.mint(address(this), 3);
-
-    token.setApprovalForAll(address(vault), true);
-
-    uint256[] memory tokenIds = new uint256[](3);
-    tokenIds[0] = 1;
-    tokenIds[1] = 2;
-    tokenIds[2] = 3;
-
-    uint256[] memory amounts = new uint256[](0);
-
-    vault.mint(tokenIds, amounts);
-
-    vault.transfer(address(1), 2.5 ether);
+    vault.transfer(address(1), 2.2 ether);
 
     uint256[] memory redeemTokenIds = new uint256[](2);
     redeemTokenIds[0] = 1;
@@ -293,11 +267,56 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vault.redeem(2, redeemTokenIds);
 
     assertEq(token.balanceOf(address(1)), 2);
+    assertEq(token.ownerOf(1), address(1));
+    assertEq(token.ownerOf(2), address(vault));
+    assertEq(token.ownerOf(3), address(1));
     // 2 ETH + 0.1 ETH per target redeem
-    assertEq(vault.balanceOf(address(1)), 0.3 ether);
+    assertEq(vault.balanceOf(address(1)), 0);
+  }
+
+  function testRandomRedeem() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+
+    vault.transfer(address(1), 2.1 ether);
+
+    vm.prank(address(1));
+    vault.redeem(2, new uint256[](0));
+
+    assertEq(token.balanceOf(address(1)), 2);
+    assertEq(token.balanceOf(address(vault)), 1);
+    assertEq(vault.balanceOf(address(1)), 0);
   }
 
   // TODO:
   // "not from vault" error
   // disable vault fees
+
+  function createVault() private {
+    nftxVaultFactory.createVault(
+      "Doodles",
+      "DOODLE",
+      address(token),
+      false,
+      true
+    );
+  }
+
+  function mintVaultTokens(uint256 numberOfTokens) private returns (NFTXVaultUpgradeable vault) {
+    createVault();
+    vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    uint256[] memory tokenIds = new uint256[](numberOfTokens);
+
+    for (uint i; i < 3; i++) {
+      token.mint(address(this), i + 1);
+      tokenIds[i] = i + 1;
+    }
+
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory amounts = new uint256[](0);
+
+    vault.mint(tokenIds, amounts);
+  }
+
 }
