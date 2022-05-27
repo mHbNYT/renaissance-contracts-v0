@@ -77,6 +77,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     nftxVaultImpl.address,
     nftxFeeDistributorAddress
   );
+
+  const feeDistributorInfo = await get('NFTXSimpleFeeDistributor');
+  const feeDistributorContract = new ethers.Contract(
+    nftxFeeDistributorAddress,
+    feeDistributorInfo.abi,
+    signer
+  );
+  await feeDistributorContract.setNFTXVaultFactory(nftxVaultFactoryImpl.address);
+
+  const nftxLPStakingInfo = await get('NFTXLPStaking');
+  const nftxLPStakingContract = new ethers.Contract(
+    nftxLPStakingAddress,
+    nftxLPStakingInfo.abi,
+    signer
+  );
+  await nftxLPStakingContract.setNFTXVaultFactory(nftxVaultFactoryImpl.address);
 };
 
 func.tags = ['main', 'local', 'seed'];

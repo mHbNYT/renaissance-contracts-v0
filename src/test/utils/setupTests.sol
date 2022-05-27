@@ -170,5 +170,8 @@ contract SetupEnvironment {
         nftxLPStaking = setupNFTXLPStaking(address(stakingTokenProvider));
         nftxSimpleFeeDistributor = setupNFTXSimpleFeeDistributor(address(nftxLPStaking));
         nftxVaultFactory = setupNFTXVaultFactory(address(nftxSimpleFeeDistributor));
+
+        nftxSimpleFeeDistributor.setNFTXVaultFactory(address(nftxVaultFactory));
+        nftxLPStaking.setNFTXVaultFactory(address(nftxVaultFactory));
     }
 }
