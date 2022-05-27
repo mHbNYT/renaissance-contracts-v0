@@ -63,8 +63,15 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.assetAddress(), address(token));
     assertEq(vault.manager(), address(this));
     assertEq(vault.owner(), address(this));
+    assertEq(vault.vaultId(), 0);
+    assertEq(address(vault.vaultFactory()), address(nftxVaultFactory));
     assertTrue(!vault.is1155());
     assertTrue(vault.allowAllItems());
+    assertTrue(vault.enableMint());
+    assertTrue(vault.enableRandomRedeem());
+    assertTrue(vault.enableTargetRedeem());
+    assertTrue(vault.enableRandomSwap());
+    assertTrue(vault.enableTargetSwap());
 
     assertEq(nftxVaultFactory.numVaults(), 1);
     assertEq(nftxVaultFactory.allVaults().length, 1);
@@ -145,6 +152,116 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
       0.6 ether,
       0.6 ether
     );
+  }
+
+  function testSetVaultFeatures() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    vault.setVaultFeatures(false, false, false, false, false);
+
+    assertTrue(!vault.enableMint());
+    assertTrue(!vault.enableRandomRedeem());
+    assertTrue(!vault.enableTargetRedeem());
+    assertTrue(!vault.enableRandomSwap());
+    assertTrue(!vault.enableTargetSwap());
+  }
+
+  function testVaultMint() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    token.mint(address(this), 1);
+    token.mint(address(this), 2);
+
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory tokenIds = new uint256[](2);
+    tokenIds[0] = 1;
+    tokenIds[1] = 2;
+
+    uint256[] memory amounts = new uint256[](0);
+
+    vault.mint(tokenIds, amounts);
+
+    // given 2 NFTs, mint 2 vault tokens
+    // 10% fee goes to the fee distributor
+    // There are no stakers to distribute to, all fees go to treasury
+    assertEq(vault.balanceOf(address(this)), 1.8 ether);
+    assertEq(vault.balanceOf(0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b), 0.2 ether);
+
+    assertEq(token.balanceOf(address(vault)), 2);
+  }
+
+  function testVaultMintPaused() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    token.mint(address(1), 1);
+    token.mint(address(1), 2);
+
+    vm.prank(address(1));
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory tokenIds = new uint256[](2);
+    tokenIds[0] = 1;
+    tokenIds[1] = 2;
+
+    uint256[] memory amounts = new uint256[](0);
+
+    nftxVaultFactory.setIsGuardian(address(this), true);
+    nftxVaultFactory.pause(1);
+
+    vm.prank(address(1));
+    vm.expectRevert("Paused");
+    vault.mint(tokenIds, amounts);
+  }
+
+  function testVaultMintOwnerCanBypassPausedFactory() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    token.mint(address(this), 1);
+    token.mint(address(this), 2);
+
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory tokenIds = new uint256[](2);
+    tokenIds[0] = 1;
+    tokenIds[1] = 2;
+
+    uint256[] memory amounts = new uint256[](0);
+
+    nftxVaultFactory.setIsGuardian(address(this), true);
+    nftxVaultFactory.pause(1);
+
+    vault.mint(tokenIds, amounts);
+
+    assertEq(vault.balanceOf(address(this)), 1.8 ether);
+    assertEq(vault.balanceOf(0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b), 0.2 ether);
+
+    assertEq(token.balanceOf(address(vault)), 2);
+  }
+
+  function testVaultMintDisabled() public {
+    createVault();
+    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
+
+    token.mint(address(this), 1);
+    token.mint(address(this), 2);
+
+    token.setApprovalForAll(address(vault), true);
+
+    uint256[] memory tokenIds = new uint256[](2);
+    tokenIds[0] = 1;
+    tokenIds[1] = 2;
+
+    uint256[] memory amounts = new uint256[](0);
+
+    vault.setVaultFeatures(false, true, true, true, true);
+
+    vm.expectRevert("Minting not enabled");
+    vault.mint(tokenIds, amounts);
   }
 
   // TODO:
