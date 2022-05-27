@@ -274,6 +274,22 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(1)), 0);
   }
 
+  function testTargetRedeemDisabled() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+
+    vault.transfer(address(1), 2.2 ether);
+
+    uint256[] memory redeemTokenIds = new uint256[](2);
+    redeemTokenIds[0] = 1;
+    redeemTokenIds[1] = 3;
+
+    vault.setVaultFeatures(true, true, false, true, true);
+
+    vm.prank(address(1));
+    vm.expectRevert("NFTXVault: Target redeem not enabled");
+    vault.redeem(2, redeemTokenIds);
+  }
+
   function testRandomRedeem() public {
     NFTXVaultUpgradeable vault = mintVaultTokens(3);
 
@@ -285,6 +301,18 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(token.balanceOf(address(1)), 2);
     assertEq(token.balanceOf(address(vault)), 1);
     assertEq(vault.balanceOf(address(1)), 0);
+  }
+
+  function testRandomRedeemDisabled() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+
+    vault.transfer(address(1), 2.1 ether);
+
+    vault.setVaultFeatures(true, false, true, true, true);
+
+    vm.prank(address(1));
+    vm.expectRevert("NFTXVault: Random redeem not enabled");
+    vault.redeem(2, new uint256[](0));
   }
 
   // TODO:
