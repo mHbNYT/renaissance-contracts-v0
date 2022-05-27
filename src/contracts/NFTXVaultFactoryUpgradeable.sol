@@ -17,12 +17,10 @@ contract NFTXVaultFactoryUpgradeable is
     BeaconUpgradeable,
     INFTXVaultFactory
 {
-    uint256 private NOT_USED1; // Removed, no longer needed.
     address public override zapContract; // No longer needed, but keeping for compatibility.
     address public override feeDistributor;
     address public override eligibilityManager;
 
-    mapping(uint256 => address) private NOT_USED3; // Removed, no longer needed.
     mapping(address => address[]) _vaultsForAsset;
 
     address[] internal vaults;
