@@ -38,9 +38,6 @@ contract NFTXVaultUpgradeable is
     INFTXEligibility public override eligibilityStorage;
 
     uint256 randNonce;
-    uint256 private UNUSED_FEE1;
-    uint256 private UNUSED_FEE2;
-    uint256 private UNUSED_FEE3;
 
     bool public override is1155;
     bool public override allowAllItems;
