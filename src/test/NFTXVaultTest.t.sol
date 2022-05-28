@@ -388,6 +388,28 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vm.stopPrank();
   }
 
+  function testTargetSwapPaused() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.1 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    uint256[] memory specificIds = new uint256[](1);
+    specificIds[0] = 2;
+
+    nftxVaultFactory.setIsGuardian(address(this), true);
+    nftxVaultFactory.pause(3);
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("Paused");
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
+  }
+
   function testRandomSwap() public {
     NFTXVaultUpgradeable vault = mintVaultTokens(2);
 
@@ -421,6 +443,25 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vm.startPrank(address(1));
     token.setApprovalForAll(address(vault), true);
     vm.expectRevert("NFTXVault: Random swap disabled");
+    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
+    vm.stopPrank();
+  }
+
+  function testRandomSwapPaused() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.05 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    nftxVaultFactory.setIsGuardian(address(this), true);
+    nftxVaultFactory.pause(3);
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("Paused");
     vault.swap(tokenIds, new uint256[](0), new uint256[](0));
     vm.stopPrank();
   }
