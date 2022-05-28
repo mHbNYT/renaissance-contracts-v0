@@ -345,6 +345,28 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vault.redeem(2, new uint256[](0));
   }
 
+  function testTargetSwap() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.1 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    uint256[] memory specificIds = new uint256[](1);
+    specificIds[0] = 2;
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
+
+    assertEq(vault.balanceOf(address(1)), 0);
+    assertEq(token.ownerOf(2), address(1));
+    assertEq(token.ownerOf(3), address(vault));
+  }
+
   // TODO:
   // "not from vault" error
   // disable vault fees
@@ -365,7 +387,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     uint256[] memory tokenIds = new uint256[](numberOfTokens);
 
-    for (uint i; i < 3; i++) {
+    for (uint i; i < numberOfTokens; i++) {
       token.mint(address(this), i + 1);
       tokenIds[i] = i + 1;
     }
