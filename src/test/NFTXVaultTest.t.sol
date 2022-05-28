@@ -70,8 +70,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testCreateVaultFactoryIsPaused() public {
     assertTrue(!nftxVaultFactory.isLocked(0));
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(0);
+    pauseFeature(0);
     assertTrue(nftxVaultFactory.isLocked(0));
 
     vm.prank(address(1));
@@ -80,8 +79,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testCreateVaultOwnerCanBypassPausedFactory() public {
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(0);
+    pauseFeature(0);
     createVault();
 
     NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
@@ -199,8 +197,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     uint256[] memory amounts = new uint256[](0);
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(1);
+    pauseFeature(1);
 
     vm.prank(address(1));
     vm.expectRevert("Paused");
@@ -222,8 +219,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     uint256[] memory amounts = new uint256[](0);
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(1);
+    pauseFeature(1);
 
     vault.mint(tokenIds, amounts);
 
@@ -299,8 +295,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     redeemTokenIds[0] = 1;
     redeemTokenIds[1] = 3;
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(2);
+    pauseFeature(2);
 
     vm.prank(address(1));
     vm.expectRevert("Paused");
@@ -337,8 +332,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     vault.transfer(address(1), 2.1 ether);
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(2);
+    pauseFeature(2);
 
     vm.prank(address(1));
     vm.expectRevert("Paused");
@@ -400,8 +394,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     uint256[] memory specificIds = new uint256[](1);
     specificIds[0] = 2;
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(3);
+    pauseFeature(3);
 
     vm.startPrank(address(1));
     token.setApprovalForAll(address(vault), true);
@@ -456,8 +449,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     tokenIds[0] = 3;
     token.mint(address(1), 3);
 
-    nftxVaultFactory.setIsGuardian(address(this), true);
-    nftxVaultFactory.pause(3);
+    pauseFeature(3);
 
     vm.startPrank(address(1));
     token.setApprovalForAll(address(vault), true);
@@ -498,4 +490,8 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     vault.mint(tokenIds, amounts);
   }
 
+  function pauseFeature(uint256 lockId) private {
+    nftxVaultFactory.setIsGuardian(address(this), true);
+    nftxVaultFactory.pause(lockId);
+  }
 }
