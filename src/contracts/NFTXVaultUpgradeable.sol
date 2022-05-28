@@ -10,13 +10,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20FlashMintUpgradeable.sol";
 
 import "./interfaces/INFTXVault.sol";
 import "./interfaces/INFTXVaultFactory.sol";
 import "./interfaces/INFTXEligibility.sol";
 import "./interfaces/INFTXEligibilityManager.sol";
 import "./interfaces/INFTXFeeDistributor.sol";
-import "./token/ERC20FlashMintUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
@@ -294,7 +294,7 @@ contract NFTXVaultUpgradeable is
         IERC3156FlashBorrowerUpgradeable receiver,
         address token,
         uint256 amount,
-        bytes memory data
+        bytes calldata data
     ) public override virtual returns (bool) {
         onlyOwnerIfPaused(4);
         return super.flashLoan(receiver, token, amount, data);
