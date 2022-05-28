@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./IERC1155ReceiverUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155ReceiverUpgradeable.sol";
 import "../util/ERC165Upgradeable.sol";
 
 /**
