@@ -18,6 +18,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   NFTXLPStaking private nftxLPStaking;
   NFTXSimpleFeeDistributor private nftxSimpleFeeDistributor;
   NFTXVaultFactoryUpgradeable private nftxVaultFactory;
+  NFTXVaultUpgradeable private vault;
 
   MockNFT public token;
 
@@ -47,7 +48,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   function testCreateVault() public {
     createVault();
 
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
     assertEq(vault.name(), "Doodles");
     assertEq(vault.symbol(), "DOODLE");
     assertEq(vault.assetAddress(), address(token));
@@ -75,14 +75,13 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     vm.prank(address(1));
     vm.expectRevert("Paused");
-    createVault();
+    nftxVaultFactory.createVault("Doodles", "DOODLE", address(token), false, true);
   }
 
   function testCreateVaultOwnerCanBypassPausedFactory() public {
     pauseFeature(0);
     createVault();
 
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
     assertEq(vault.name(), "Doodles");
   }
 
@@ -144,7 +143,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testSetVaultFeatures() public {
     createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     vault.setVaultFeatures(false, false, false, false, false);
 
@@ -157,7 +155,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testVaultMint() public {
     createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     token.mint(address(this), 1);
     token.mint(address(this), 2);
@@ -183,7 +180,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testVaultMintPaused() public {
     createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     token.mint(address(1), 1);
     token.mint(address(1), 2);
@@ -206,7 +202,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testVaultMintOwnerCanBypassPausedFactory() public {
     createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     token.mint(address(this), 1);
     token.mint(address(this), 2);
@@ -231,7 +226,6 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
   function testVaultMintDisabled() public {
     createVault();
-    NFTXVaultUpgradeable vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     token.mint(address(this), 1);
     token.mint(address(this), 2);
@@ -251,7 +245,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetRedeem() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.2 ether);
 
@@ -271,7 +265,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetRedeemInsufficientBalance() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.19 ether);
 
@@ -285,7 +279,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetRedeemDisabled() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.2 ether);
 
@@ -301,7 +295,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetRedeemPaused() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.2 ether);
 
@@ -317,7 +311,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testRandomRedeem() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.1 ether);
 
@@ -330,7 +324,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testRandomRedeemInsufficientBalance() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.09 ether);
 
@@ -340,7 +334,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testRandomRedeemDisabled() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.1 ether);
 
@@ -352,7 +346,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testRandomRedeemPaused() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+    mintVaultTokens(3);
 
     vault.transfer(address(1), 2.1 ether);
 
@@ -364,7 +358,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetSwap() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.1 ether);
 
@@ -386,7 +380,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testTargetSwapInsufficientBalance() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.09 ether);
 
@@ -397,15 +391,11 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     uint256[] memory specificIds = new uint256[](1);
     specificIds[0] = 2;
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("ERC20: transfer amount exceeds balance");
-    vault.swap(tokenIds, new uint256[](0), specificIds);
-    vm.stopPrank();
+    failedSwap(tokenIds, specificIds, "ERC20: transfer amount exceeds balance");
   }
 
   function testTargetSwapDisabled() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.1 ether);
 
@@ -418,15 +408,11 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     vault.setVaultFeatures(true, true, true, true, false);
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("NFTXVault: Target swap disabled");
-    vault.swap(tokenIds, new uint256[](0), specificIds);
-    vm.stopPrank();
+    failedSwap(tokenIds, specificIds, "NFTXVault: Target swap disabled");
   }
 
   function testTargetSwapPaused() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.1 ether);
 
@@ -439,15 +425,11 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     pauseFeature(3);
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("Paused");
-    vault.swap(tokenIds, new uint256[](0), specificIds);
-    vm.stopPrank();
+    failedSwap(tokenIds, specificIds, "Paused");
   }
 
   function testRandomSwap() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.05 ether);
 
@@ -466,7 +448,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   }
 
   function testRandomSwapInsufficientBalance() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.04 ether);
 
@@ -474,15 +456,11 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     tokenIds[0] = 3;
     token.mint(address(1), 3);
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("ERC20: transfer amount exceeds balance");
-    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
-    vm.stopPrank();
+    failedSwap(tokenIds, new uint256[](0), "ERC20: transfer amount exceeds balance");
   }
 
   function testRandomSwapDisabled() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.05 ether);
 
@@ -492,15 +470,11 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     vault.setVaultFeatures(true, true, true, false, true);
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("NFTXVault: Random swap disabled");
-    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
-    vm.stopPrank();
+    failedSwap(tokenIds, new uint256[](0), "NFTXVault: Random swap disabled");
   }
 
   function testRandomSwapPaused() public {
-    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+    mintVaultTokens(2);
 
     vault.transfer(address(1), 0.05 ether);
 
@@ -510,11 +484,7 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
 
     pauseFeature(3);
 
-    vm.startPrank(address(1));
-    token.setApprovalForAll(address(vault), true);
-    vm.expectRevert("Paused");
-    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
-    vm.stopPrank();
+    failedSwap(tokenIds, new uint256[](0), "Paused");
   }
 
   // TODO:
@@ -522,18 +492,12 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   // disable vault fees
 
   function createVault() private {
-    nftxVaultFactory.createVault(
-      "Doodles",
-      "DOODLE",
-      address(token),
-      false,
-      true
-    );
+    nftxVaultFactory.createVault("Doodles", "DOODLE", address(token), false, true);
+    vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
   }
 
-  function mintVaultTokens(uint256 numberOfTokens) private returns (NFTXVaultUpgradeable vault) {
+  function mintVaultTokens(uint256 numberOfTokens) private {
     createVault();
-    vault = NFTXVaultUpgradeable(nftxVaultFactory.vault(0));
 
     uint256[] memory tokenIds = new uint256[](numberOfTokens);
 
@@ -552,5 +516,13 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
   function pauseFeature(uint256 lockId) private {
     nftxVaultFactory.setIsGuardian(address(this), true);
     nftxVaultFactory.pause(lockId);
+  }
+
+  function failedSwap(uint256[] memory tokenIds, uint256[] memory specificIds, string memory errorMessage) private {
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert(bytes(errorMessage));
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
   }
 }
