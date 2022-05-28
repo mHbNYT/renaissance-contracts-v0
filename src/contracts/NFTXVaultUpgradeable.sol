@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 
 import "./interfaces/INFTXVault.sol";
 import "./interfaces/INFTXVaultFactory.sol";
@@ -15,7 +16,6 @@ import "./interfaces/INFTXFeeDistributor.sol";
 import "./token/ERC20FlashMintUpgradeable.sol";
 import "./token/ERC721SafeHolderUpgradeable.sol";
 import "./token/ERC1155SafeHolderUpgradeable.sol";
-import "./token/IERC721Upgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
