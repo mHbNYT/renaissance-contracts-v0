@@ -270,6 +270,20 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(1)), 0);
   }
 
+  function testTargetRedeemInsufficientBalance() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+
+    vault.transfer(address(1), 2.19 ether);
+
+    uint256[] memory redeemTokenIds = new uint256[](2);
+    redeemTokenIds[0] = 1;
+    redeemTokenIds[1] = 3;
+
+    vm.prank(address(1));
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.redeem(2, redeemTokenIds);
+  }
+
   function testTargetRedeemDisabled() public {
     NFTXVaultUpgradeable vault = mintVaultTokens(3);
 
@@ -313,6 +327,16 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(token.balanceOf(address(1)), 2);
     assertEq(token.balanceOf(address(vault)), 1);
     assertEq(vault.balanceOf(address(1)), 0);
+  }
+
+  function testRandomRedeemInsufficientBalance() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(3);
+
+    vault.transfer(address(1), 2.09 ether);
+
+    vm.prank(address(1));
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.redeem(2, new uint256[](0));
   }
 
   function testRandomRedeemDisabled() public {
@@ -359,6 +383,25 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(1)), 0);
     assertEq(token.ownerOf(2), address(1));
     assertEq(token.ownerOf(3), address(vault));
+  }
+
+  function testTargetSwapInsufficientBalance() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.09 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    uint256[] memory specificIds = new uint256[](1);
+    specificIds[0] = 2;
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
   }
 
   function testTargetSwapDisabled() public {
@@ -420,6 +463,22 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(1)), 0);
     assertEq(token.balanceOf(address(1)), 1);
     assertEq(token.ownerOf(3), address(vault));
+  }
+
+  function testRandomSwapInsufficientBalance() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.04 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
+    vm.stopPrank();
   }
 
   function testRandomSwapDisabled() public {
