@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeab
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 
 import "./interfaces/INFTXVault.sol";
 import "./interfaces/INFTXVaultFactory.sol";
@@ -15,7 +16,6 @@ import "./interfaces/INFTXEligibility.sol";
 import "./interfaces/INFTXEligibilityManager.sol";
 import "./interfaces/INFTXFeeDistributor.sol";
 import "./token/ERC20FlashMintUpgradeable.sol";
-import "./token/ERC721SafeHolderUpgradeable.sol";
 import "./token/ERC1155SafeHolderUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
@@ -24,7 +24,7 @@ contract NFTXVaultUpgradeable is
     OwnableUpgradeable,
     ERC20FlashMintUpgradeable,
     ReentrancyGuardUpgradeable,
-    ERC721SafeHolderUpgradeable,
+    ERC721HolderUpgradeable,
     ERC1155SafeHolderUpgradeable,
     INFTXVault
 {
