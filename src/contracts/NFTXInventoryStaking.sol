@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
 import "./interfaces/INFTXVaultFactory.sol";
 import "./interfaces/INFTXVault.sol";
 import "./interfaces/INFTXInventoryStaking.sol";
-import "./token/IERC20Metadata.sol";
 import "./util/NFTXPausableUpgradeable.sol";
 import "./proxy/BeaconUpgradeable.sol";
 import "./proxy/Create2BeaconProxy.sol";
