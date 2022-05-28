@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.13;
 
-import "../interfaces/IERC165Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol";
 
 /**
  * @dev Required interface of an ERC721 compliant contract.
