@@ -34,23 +34,22 @@ contract NFTXVaultUpgradeable is
 
     uint256 public override vaultId;
     address public override manager;
-    address public override assetAddress;
     INFTXVaultFactory public override vaultFactory;
     INFTXEligibility public override eligibilityStorage;
 
     uint256 randNonce;
 
+    address public override assetAddress;
     bool public override is1155;
     bool public override allowAllItems;
     bool public override enableMint;
     bool public override enableRandomRedeem;
     bool public override enableTargetRedeem;
+    bool public override enableRandomSwap;
+    bool public override enableTargetSwap;
 
     EnumerableSetUpgradeable.UintSet holdings;
     mapping(uint256 => uint256) quantity1155;
-
-    bool public override enableRandomSwap;
-    bool public override enableTargetSwap;
 
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
