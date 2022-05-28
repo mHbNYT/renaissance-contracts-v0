@@ -367,6 +367,27 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(token.ownerOf(3), address(vault));
   }
 
+  function testTargetSwapDisabled() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.1 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    uint256[] memory specificIds = new uint256[](1);
+    specificIds[0] = 2;
+
+    vault.setVaultFeatures(true, true, true, true, false);
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("NFTXVault: Target swap disabled");
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
+  }
+
   function testRandomSwap() public {
     NFTXVaultUpgradeable vault = mintVaultTokens(2);
 
@@ -384,6 +405,24 @@ contract NFTXVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(1)), 0);
     assertEq(token.balanceOf(address(1)), 1);
     assertEq(token.ownerOf(3), address(vault));
+  }
+
+  function testRandomSwapDisabled() public {
+    NFTXVaultUpgradeable vault = mintVaultTokens(2);
+
+    vault.transfer(address(1), 0.05 ether);
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+    token.mint(address(1), 3);
+
+    vault.setVaultFeatures(true, true, true, false, true);
+
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("NFTXVault: Random swap disabled");
+    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
+    vm.stopPrank();
   }
 
   // TODO:
