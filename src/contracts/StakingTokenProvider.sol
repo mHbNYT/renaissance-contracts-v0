@@ -84,7 +84,7 @@ contract StakingTokenProvider is OwnableUpgradeable {
               hex'ff',
               factory,
               keccak256(abi.encodePacked(token0, token1)),
-              hex'e18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303' // init code hash
+              hex'754e1d90e536e4c1df81b7f030f47b4ca80c87120e145c294f098c83a6cb5ace' // init code hash
       )))));
   }
 }
