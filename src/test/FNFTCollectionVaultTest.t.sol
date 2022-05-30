@@ -173,7 +173,7 @@ contract FNFTCollectionVaultTest is DSTest, SetupEnvironment {
     // 10% fee goes to the fee distributor
     // There are no stakers to distribute to, all fees go to treasury
     assertEq(vault.balanceOf(address(this)), 1.8 ether);
-    assertEq(vault.balanceOf(0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b), 0.2 ether);
+    assertEq(vault.balanceOf(TREASURY_ADDRESS), 0.2 ether);
 
     assertEq(token.balanceOf(address(vault)), 2);
   }
@@ -219,7 +219,7 @@ contract FNFTCollectionVaultTest is DSTest, SetupEnvironment {
     vault.mint(tokenIds, amounts);
 
     assertEq(vault.balanceOf(address(this)), 1.8 ether);
-    assertEq(vault.balanceOf(0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b), 0.2 ether);
+    assertEq(vault.balanceOf(TREASURY_ADDRESS), 0.2 ether);
 
     assertEq(token.balanceOf(address(vault)), 2);
   }

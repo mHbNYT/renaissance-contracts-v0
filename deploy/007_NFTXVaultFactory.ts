@@ -1,6 +1,7 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import { ethers } from 'ethers';
+import {TREASURY, TRISOLARIS_FACTORY} from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
@@ -46,7 +47,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const stakingTokenProviderTx = await deployerContract.deployStakingTokenProvider(
     stakingTokenProviderImpl.address,
-    "0xc66F594268041dB60507F00703b152492fb176E7", // Trisolaris factory
+    TRISOLARIS_FACTORY,
     "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB", // WETH
     "x" // default prefix
   );
@@ -62,11 +63,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   event = lpStakingReceipt.events.find((event: ethers.Event) => event.event === "LPStakingDeployed");
   const [lpStakingAddress,] = event.args;
 
-  const treasury = "0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b";
   const feeDistributorTx = await deployerContract.deployFeeDistributor(
     feeDistributorImpl.address,
     lpStakingAddress,
-    treasury
+    TREASURY
   );
   const feeDistributorReceipt = await feeDistributorTx.wait();
   event = feeDistributorReceipt.events.find((event: ethers.Event) => event.event === "FeeDistributorDeployed");

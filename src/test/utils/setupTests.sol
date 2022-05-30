@@ -28,6 +28,8 @@ contract SetupEnvironment {
     CheatCodes public vm;
     MultiProxyController public proxyController;
     WETH public weth;
+    address constant internal TRISOLARIS_FACTORY_ADDRESS = 0xc66F594268041dB60507F00703b152492fb176E7;
+    address constant internal TREASURY_ADDRESS = 0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b;
 
     function setupDeployerAndProxyController() public {
         deployer = new Deployer();
@@ -42,7 +44,7 @@ contract SetupEnvironment {
     }
 
     function setupPairFactory() public pure returns (IUniswapV2Factory v2Factory) {
-        v2Factory = IUniswapV2Factory(0xc66F594268041dB60507F00703b152492fb176E7);
+        v2Factory = IUniswapV2Factory(TRISOLARIS_FACTORY_ADDRESS);
     }
 
     function setupPriceOracle(address v2Factory) public returns (PriceOracle priceOracle) {
@@ -93,7 +95,7 @@ contract SetupEnvironment {
         stakingTokenProvider = StakingTokenProvider(
             deployer.deployStakingTokenProvider(
                 address(new StakingTokenProvider()),
-                0xc66F594268041dB60507F00703b152492fb176E7,
+                TRISOLARIS_FACTORY_ADDRESS,
                 0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB,
                 string("x")
             )
