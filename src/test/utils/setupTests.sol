@@ -30,6 +30,7 @@ contract SetupEnvironment {
     WETH public weth;
     address constant internal TRISOLARIS_FACTORY_ADDRESS = 0xc66F594268041dB60507F00703b152492fb176E7;
     address constant internal TREASURY_ADDRESS = 0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b;
+    address constant internal WETH_ADDRESS = 0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB;
 
     function setupDeployerAndProxyController() public {
         deployer = new Deployer();
@@ -96,7 +97,7 @@ contract SetupEnvironment {
             deployer.deployStakingTokenProvider(
                 address(new StakingTokenProvider()),
                 TRISOLARIS_FACTORY_ADDRESS,
-                0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB,
+                WETH_ADDRESS,
                 string("x")
             )
         );
@@ -116,7 +117,7 @@ contract SetupEnvironment {
             deployer.deployFeeDistributor(
                 address(new FeeDistributor()),
                 lpStaking,
-                0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b
+                TREASURY_ADDRESS
             )
         );
     }

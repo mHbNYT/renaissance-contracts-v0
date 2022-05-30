@@ -66,13 +66,16 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     WETH: {
-      aurora_mainnet: process.env.AURORA_MAIN_WETH || null
+      aurora_mainnet: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
     },
-    DAO: {
-      hardhat: 2,
-      aurora_testnet: 2,
-      aurora_mainnet: process.env.AURORA_MAIN_DAO || null,
-    }
+    TREASURY: {
+      default: '0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b',
+    },
+    UNISWAP_V2_FACTORY: {
+      hardhat: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      aurora_testnet: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      aurora_mainnet: '0xc66F594268041dB60507F00703b152492fb176E7',
+    },
   },
 };
 

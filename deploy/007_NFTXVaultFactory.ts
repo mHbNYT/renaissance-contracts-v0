@@ -1,13 +1,18 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types';
 import { ethers } from 'ethers';
-import {TREASURY, TRISOLARIS_FACTORY} from '../utils/constants';
+import { testnets } from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const {deployments, getNamedAccounts, ethers} = hre;
+  const {deployments, getNamedAccounts, ethers, getChainId} = hre;
 
   const {deploy, get} = deployments;
-  const {deployer} = await getNamedAccounts();
+  const chainId = await getChainId();
+  let { WETH, deployer, TREASURY, UNISWAP_V2_FACTORY } = await getNamedAccounts();
+  if (testnets.includes(chainId)) {
+    const mockWETH = await get('WETH');
+    WETH = mockWETH.address;
+  }
 
   const signer = await ethers.getSigner(deployer);
 
@@ -47,8 +52,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const stakingTokenProviderTx = await deployerContract.deployStakingTokenProvider(
     stakingTokenProviderImpl.address,
-    TRISOLARIS_FACTORY,
-    "0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB", // WETH
+    UNISWAP_V2_FACTORY,
+    WETH,
     "x" // default prefix
   );
   const stakingTokenProviderReceipt = await stakingTokenProviderTx.wait();

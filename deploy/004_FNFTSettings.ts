@@ -4,12 +4,12 @@ import {testnets} from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers} = hre;
-  
+
   const {deploy, get} = deployments;
   const {deployer} = await getNamedAccounts();
   const chainId = await hre.getChainId();
 
-  const signer = await ethers.getSigner(deployer);  
+  const signer = await ethers.getSigner(deployer);
 
   // get WETH address
   let { WETH } = await getNamedAccounts();
@@ -44,8 +44,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     signer
   );
   const fnftSettingsProxy = await deployerContract.deployFNFTSettings(
-    fnftSettingsImpl.address, 
-    WETH, 
+    fnftSettingsImpl.address,
+    WETH,
     ifoFactoryAddress
   );
 };
