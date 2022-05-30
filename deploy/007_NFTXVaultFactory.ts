@@ -52,16 +52,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     "x" // default prefix
   );
   const stakingTokenProviderReceipt = await stakingTokenProviderTx.wait();
-  let event = stakingTokenProviderReceipt.events.find((event: ethers.Event) => event.event === "StakingTokenProviderDeployed");
-  const [stakingTokenProviderAddress,] = event.args;
+  let event = stakingTokenProviderReceipt.events.find((event: ethers.Event) => event.event === "ProxyDeployed");
+  const [,stakingTokenProviderAddress,] = event.args;
 
   const lpStakingTx = await deployerContract.deployLPStaking(
     lpStakingImpl.address,
     stakingTokenProviderAddress
   );
   const lpStakingReceipt = await lpStakingTx.wait();
-  event = lpStakingReceipt.events.find((event: ethers.Event) => event.event === "LPStakingDeployed");
-  const [lpStakingAddress,] = event.args;
+  event = lpStakingReceipt.events.find((event: ethers.Event) => event.event === "ProxyDeployed");
+  const [,lpStakingAddress,] = event.args;
 
   const feeDistributorTx = await deployerContract.deployFeeDistributor(
     feeDistributorImpl.address,
@@ -69,8 +69,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     TREASURY
   );
   const feeDistributorReceipt = await feeDistributorTx.wait();
-  event = feeDistributorReceipt.events.find((event: ethers.Event) => event.event === "FeeDistributorDeployed");
-  const [feeDistributorAddress,] = event.args;
+  event = feeDistributorReceipt.events.find((event: ethers.Event) => event.event === "ProxyDeployed");
+  const [,feeDistributorAddress,] = event.args;
 
   await deployerContract.deployFNFTCollectionVaultFactory(
     vaultFactoryImpl.address,

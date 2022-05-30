@@ -18,50 +18,9 @@ import "../interfaces/IOwnable.sol";
 import "../interfaces/IIFOSettings.sol";
 
 contract Deployer is Ownable {
-    // TODO: merge all events into 1.
-    event FNFTSettingsProxyDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event IFOSettingsProxyDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-
-    event FNFTFactoryProxyDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event IFOFactoryProxyDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event PriceOracleProxyDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event FNFTCollectionVaultFactoryDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event FeeDistributorDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event LPStakingDeployed(
-        address indexed _logic,
-        address _creator
-    );
-
-    event StakingTokenProviderDeployed(
-        address indexed _logic,
+    event ProxyDeployed(
+        bytes32 indexed _identifier,
+        address _logic,
         address _creator
     );
 
@@ -102,7 +61,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(IFO_SETTINGS, ifoSettings);
 
-        emit IFOSettingsProxyDeployed(ifoSettings, msg.sender);
+        emit ProxyDeployed(IFO_SETTINGS, ifoSettings, msg.sender);
     }
 
     /// @notice the function to deploy FNFTSettings
@@ -128,7 +87,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(FNFT_SETTINGS, fnftSettings);
 
-        emit FNFTSettingsProxyDeployed(fnftSettings, msg.sender);
+        emit ProxyDeployed(FNFT_SETTINGS, fnftSettings, msg.sender);
     }
 
     /// @notice the function to deploy FNFTFactory
@@ -150,7 +109,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(FNFT_FACTORY, fnftFactory);
 
-        emit FNFTFactoryProxyDeployed(fnftFactory, msg.sender);
+        emit ProxyDeployed(FNFT_FACTORY, fnftFactory, msg.sender);
     }
 
     /// @notice the function to deploy IFOFactory
@@ -172,7 +131,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(IFO_FACTORY, ifoFactory);
 
-        emit IFOFactoryProxyDeployed(ifoFactory, msg.sender);
+        emit ProxyDeployed(IFO_FACTORY, ifoFactory, msg.sender);
     }
 
     /// @notice the function to deploy PriceOracle
@@ -189,7 +148,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(PRICE_ORACLE, priceOracle);
 
-        emit PriceOracleProxyDeployed(priceOracle, msg.sender);
+        emit ProxyDeployed(PRICE_ORACLE, priceOracle, msg.sender);
     }
 
     /// @notice the function to deploy FeeDistributor
@@ -208,7 +167,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(FEE_DISTRIBUTOR, feeDistributor);
 
-        emit FeeDistributorDeployed(feeDistributor, msg.sender);
+        emit ProxyDeployed(FEE_DISTRIBUTOR, feeDistributor, msg.sender);
     }
 
     /// @notice the function to deploy FNFTCollectionVaultFactory
@@ -227,7 +186,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(FNFT_COLLECTION_VAULT_FACTORY, vaultFactory);
 
-        emit FNFTCollectionVaultFactoryDeployed(vaultFactory, msg.sender);
+        emit ProxyDeployed(FNFT_COLLECTION_VAULT_FACTORY, vaultFactory, msg.sender);
     }
 
     /// @notice the function to deploy LPStaking
@@ -245,7 +204,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(LP_STAKING, lpStaking);
 
-        emit LPStakingDeployed(lpStaking, msg.sender);
+        emit ProxyDeployed(LP_STAKING, lpStaking, msg.sender);
     }
 
     /// @notice the function to deploy StakingTokenProvider
@@ -265,6 +224,6 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(STAKING_TOKEN_PROVIDER, stakingTokenProvider);
 
-        emit StakingTokenProviderDeployed(stakingTokenProvider, msg.sender);
+        emit ProxyDeployed(STAKING_TOKEN_PROVIDER, stakingTokenProvider, msg.sender);
     }
 }
