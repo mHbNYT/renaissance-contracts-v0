@@ -13,10 +13,10 @@ import {IFOFactory} from "../../contracts/IFOFactory.sol";
 import {FNFTSettings} from "../../contracts/FNFTSettings.sol";
 import {FNFTFactory} from "../../contracts/FNFTFactory.sol";
 import {StakingTokenProvider} from "../../contracts/StakingTokenProvider.sol";
-import {NFTXVaultFactoryUpgradeable} from "../../contracts/NFTXVaultFactoryUpgradeable.sol";
-import {NFTXVaultUpgradeable} from "../../contracts/NFTXVaultUpgradeable.sol";
-import {NFTXLPStaking} from "../../contracts/NFTXLPStaking.sol";
-import {NFTXSimpleFeeDistributor} from "../../contracts/NFTXSimpleFeeDistributor.sol";
+import {FNFTCollectionVaultFactory} from "../../contracts/FNFTCollectionVaultFactory.sol";
+import {FNFTCollectionVault} from "../../contracts/FNFTCollectionVault.sol";
+import {LPStaking} from "../../contracts/LPStaking.sol";
+import {FeeDistributor} from "../../contracts/FeeDistributor.sol";
 import {IUniswapV2Factory} from "../../contracts/interfaces/IUniswapV2Factory.sol";
 import {IFNFT} from "../../contracts/interfaces/IFNFT.sol";
 import {FNFTFactory} from "../../contracts/FNFTFactory.sol";
@@ -100,31 +100,31 @@ contract SetupEnvironment {
         );
     }
 
-    function setupNFTXLPStaking(address stakingTokenProvider) public returns (NFTXLPStaking nftxLPStaking) {
-        nftxLPStaking = NFTXLPStaking(
-            deployer.deployNFTXLPStaking(
-                address(new NFTXLPStaking()),
+    function setupLPStaking(address stakingTokenProvider) public returns (LPStaking lpStaking) {
+        lpStaking = LPStaking(
+            deployer.deployLPStaking(
+                address(new LPStaking()),
                 stakingTokenProvider
             )
         );
     }
 
-    function setupNFTXSimpleFeeDistributor(address nftxLPStaking) public returns (NFTXSimpleFeeDistributor nftxSimpleFeeDistributor) {
-        nftxSimpleFeeDistributor = NFTXSimpleFeeDistributor(
-            deployer.deployNFTXSimpleFeeDistributor(
-                address(new NFTXSimpleFeeDistributor()),
-                nftxLPStaking,
+    function setupFeeDistributor(address lpStaking) public returns (FeeDistributor feeDistributor) {
+        feeDistributor = FeeDistributor(
+            deployer.deployFeeDistributor(
+                address(new FeeDistributor()),
+                lpStaking,
                 0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b
             )
         );
     }
 
-    function setupNFTXVaultFactory(address nftxFeeDistributor) public returns (NFTXVaultFactoryUpgradeable nftxVaultFactory) {
-        nftxVaultFactory = NFTXVaultFactoryUpgradeable(
-            deployer.deployNFTXVaultFactory(
-                address(new NFTXVaultFactoryUpgradeable()),
-                address(new NFTXVaultUpgradeable()),
-                nftxFeeDistributor
+    function setupFNFTCollectionVaultFactory(address feeDistributor) public returns (FNFTCollectionVaultFactory fnftCollectionVaultFactory) {
+        fnftCollectionVaultFactory = FNFTCollectionVaultFactory(
+            deployer.deployFNFTCollectionVaultFactory(
+                address(new FNFTCollectionVaultFactory()),
+                address(new FNFTCollectionVault()),
+                feeDistributor
             )
         );
     }
@@ -157,21 +157,21 @@ contract SetupEnvironment {
         fnft = setupFNFT(address(fnftFactory), _fnftAmount);
     }
 
-    function setupNFTXContracts()
+    function setupCollectionVaultContracts()
         public
         returns (
             StakingTokenProvider stakingTokenProvider,
-            NFTXLPStaking nftxLPStaking,
-            NFTXSimpleFeeDistributor nftxSimpleFeeDistributor,
-            NFTXVaultFactoryUpgradeable nftxVaultFactory
+            LPStaking lpStaking,
+            FeeDistributor feeDistributor,
+            FNFTCollectionVaultFactory fnftCollectionVaultFactory
         )
     {
         stakingTokenProvider = setupStakingTokenProvider();
-        nftxLPStaking = setupNFTXLPStaking(address(stakingTokenProvider));
-        nftxSimpleFeeDistributor = setupNFTXSimpleFeeDistributor(address(nftxLPStaking));
-        nftxVaultFactory = setupNFTXVaultFactory(address(nftxSimpleFeeDistributor));
+        lpStaking = setupLPStaking(address(stakingTokenProvider));
+        feeDistributor = setupFeeDistributor(address(lpStaking));
+        fnftCollectionVaultFactory = setupFNFTCollectionVaultFactory(address(feeDistributor));
 
-        nftxSimpleFeeDistributor.setNFTXVaultFactory(address(nftxVaultFactory));
-        nftxLPStaking.setNFTXVaultFactory(address(nftxVaultFactory));
+        feeDistributor.setFNFTCollectionVaultFactory(address(fnftCollectionVaultFactory));
+        lpStaking.setFNFTCollectionVaultFactory(address(fnftCollectionVaultFactory));
     }
 }

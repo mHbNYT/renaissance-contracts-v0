@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.13;
 
-interface INFTXSimpleFeeDistributor {
+interface IFeeDistributor {
 
   struct FeeReceiver {
     uint256 allocPoint;
@@ -10,14 +10,14 @@ interface INFTXSimpleFeeDistributor {
     bool isContract;
   }
 
-  function nftxVaultFactory() external view returns (address);
-  function lpStaking() external view returns (address);
-  function inventoryStaking() external view returns (address);
-  function treasury() external view returns (address);
-  function allocTotal() external view returns (uint256);
+  function fnftCollectionVaultFactory() external returns (address);
+  function lpStaking() external returns (address);
+  function inventoryStaking() external returns (address);
+  function treasury() external returns (address);
+  function allocTotal() external returns (uint256);
 
   // Write functions.
-  function __SimpleFeeDistributor__init__(address _lpStaking, address _treasury) external;
+  function __FeeDistributor__init__(address _lpStaking, address _treasury) external;
   function rescueTokens(address token) external;
   function distribute(uint256 vaultId) external;
   function addReceiver(uint256 _allocPoint, address _receiver, bool _isContract) external;
@@ -31,5 +31,5 @@ interface INFTXSimpleFeeDistributor {
   function setTreasuryAddress(address _treasury) external;
   function setLPStakingAddress(address _lpStaking) external;
   function setInventoryStakingAddress(address _inventoryStaking) external;
-  function setNFTXVaultFactory(address _factory) external;
+  function setFNFTCollectionVaultFactory(address _factory) external;
 }

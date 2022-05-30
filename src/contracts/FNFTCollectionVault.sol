@@ -12,21 +12,21 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgra
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20FlashMintUpgradeable.sol";
 
-import "./interfaces/INFTXVault.sol";
-import "./interfaces/INFTXVaultFactory.sol";
-import "./interfaces/INFTXEligibility.sol";
-import "./interfaces/INFTXEligibilityManager.sol";
-import "./interfaces/INFTXFeeDistributor.sol";
+import "./interfaces/IFNFTCollectionVault.sol";
+import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IEligibility.sol";
+import "./interfaces/IEligibilityManager.sol";
+import "./interfaces/IFeeDistributor.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
-contract NFTXVaultUpgradeable is
+contract FNFTCollectionVault is
     OwnableUpgradeable,
     ERC20FlashMintUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
-    INFTXVault
+    IFNFTCollectionVault
 {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
 
@@ -34,8 +34,8 @@ contract NFTXVaultUpgradeable is
 
     uint256 public override vaultId;
     address public override manager;
-    INFTXVaultFactory public override vaultFactory;
-    INFTXEligibility public override eligibilityStorage;
+    IFNFTCollectionVaultFactory public override vaultFactory;
+    IEligibility public override eligibilityStorage;
 
     uint256 randNonce;
 
@@ -53,7 +53,7 @@ contract NFTXVaultUpgradeable is
 
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
-    function __NFTXVault_init(
+    function __FNFTCollectionVault_init(
         string memory _name,
         string memory _symbol,
         address _assetAddress,
@@ -64,7 +64,7 @@ contract NFTXVaultUpgradeable is
         __ERC20_init(_name, _symbol);
         require(_assetAddress != address(0), "Asset != address(0)");
         assetAddress = _assetAddress;
-        vaultFactory = INFTXVaultFactory(msg.sender);
+        vaultFactory = IFNFTCollectionVaultFactory(msg.sender);
         vaultId = vaultFactory.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
@@ -133,16 +133,16 @@ contract NFTXVaultUpgradeable is
         onlyPrivileged();
         require(
             address(eligibilityStorage) == address(0),
-            "NFTXVault: eligibility already set"
+            "FNFTCollectionVault: eligibility already set"
         );
-        INFTXEligibilityManager eligManager = INFTXEligibilityManager(
+        IEligibilityManager eligManager = IEligibilityManager(
             vaultFactory.eligibilityManager()
         );
         address _eligibility = eligManager.deployEligibility(
             moduleIndex,
             initData
         );
-        eligibilityStorage = INFTXEligibility(_eligibility);
+        eligibilityStorage = IEligibility(_eligibility);
         // Toggle this to let the contract know to check eligibility now.
         allowAllItems = false;
         emit EligibilityDeployed(moduleIndex, _eligibility);
@@ -156,9 +156,9 @@ contract NFTXVaultUpgradeable is
     //     onlyPrivileged();
     //     require(
     //         address(eligibilityStorage) == address(0),
-    //         "NFTXVault: eligibility already set"
+    //         "FNFTCollectionVault: eligibility already set"
     //     );
-    //     eligibilityStorage = INFTXEligibility(_newEligibility);
+    //     eligibilityStorage = IEligibility(_newEligibility);
     //     // Toggle this to let the contract know to check eligibility now.
     //     allowAllItems = false;
     //     emit CustomEligibilityDeployed(address(_newEligibility));
@@ -216,11 +216,11 @@ contract NFTXVaultUpgradeable is
         onlyOwnerIfPaused(2);
         require(
             amount == specificIds.length || enableRandomRedeem,
-            "NFTXVault: Random redeem not enabled"
+            "FNFTCollectionVault: Random redeem not enabled"
         );
         require(
             specificIds.length == 0 || enableTargetRedeem,
-            "NFTXVault: Target redeem not enabled"
+            "FNFTCollectionVault: Target redeem not enabled"
         );
 
         // We burn all from sender and mint to fee receiver to reduce costs.
@@ -258,7 +258,7 @@ contract NFTXVaultUpgradeable is
         if (is1155) {
             for (uint256 i; i < tokenIds.length; ++i) {
                 uint256 amount = amounts[i];
-                require(amount != 0, "NFTXVault: transferring < 1");
+                require(amount != 0, "FNFTCollectionVault: transferring < 1");
                 count += amount;
             }
         } else {
@@ -267,11 +267,11 @@ contract NFTXVaultUpgradeable is
 
         require(
             count == specificIds.length || enableRandomSwap,
-            "NFTXVault: Random swap disabled"
+            "FNFTCollectionVault: Random swap disabled"
         );
         require(
             specificIds.length == 0 || enableTargetSwap,
-            "NFTXVault: Target swap disabled"
+            "FNFTCollectionVault: Target swap disabled"
         );
 
         (, , ,uint256 _randomSwapFee, uint256 _targetSwapFee) = vaultFees();
@@ -339,7 +339,7 @@ contract NFTXVaultUpgradeable is
             return true;
         }
 
-        INFTXEligibility _eligibilityStorage = eligibilityStorage;
+        IEligibility _eligibilityStorage = eligibilityStorage;
         if (address(_eligibilityStorage) == address(0)) {
             return false;
         }
@@ -372,7 +372,7 @@ contract NFTXVaultUpgradeable is
 
     // We set a hook to the eligibility module (if it exists) after redeems in case anything needs to be modified.
     function afterRedeemHook(uint256[] memory tokenIds) internal virtual {
-        INFTXEligibility _eligibilityStorage = eligibilityStorage;
+        IEligibility _eligibilityStorage = eligibilityStorage;
         if (address(_eligibilityStorage) == address(0)) {
             return;
         }
@@ -384,7 +384,7 @@ contract NFTXVaultUpgradeable is
         virtual
         returns (uint256)
     {
-        require(allValidNFTs(tokenIds), "NFTXVault: not eligible");
+        require(allValidNFTs(tokenIds), "FNFTCollectionVault: not eligible");
         uint256 length = tokenIds.length;
         if (is1155) {
             // This is technically a check, so placing it before the effect.
@@ -400,7 +400,7 @@ contract NFTXVaultUpgradeable is
             for (uint256 i; i < length; ++i) {
                 uint256 tokenId = tokenIds[i];
                 uint256 amount = amounts[i];
-                require(amount != 0, "NFTXVault: transferring < 1");
+                require(amount != 0, "FNFTCollectionVault: transferring < 1");
                 if (quantity1155[tokenId] == 0) {
                     holdings.add(tokenId);
                 }
@@ -466,7 +466,7 @@ contract NFTXVaultUpgradeable is
         // Do not charge fees if the zap contract is calling
         // Added in v1.0.3. Changed to mapping in v1.0.5.
 
-        INFTXVaultFactory _vaultFactory = vaultFactory;
+        IFNFTCollectionVaultFactory _vaultFactory = vaultFactory;
 
         if (_vaultFactory.excludedFromFees(msg.sender)) {
             return;
@@ -477,7 +477,7 @@ contract NFTXVaultUpgradeable is
             address feeDistributor = _vaultFactory.feeDistributor();
             // Changed to a _transfer() in v1.0.3.
             _transfer(user, feeDistributor, amount);
-            INFTXFeeDistributor(feeDistributor).distribute(vaultId);
+            IFeeDistributor(feeDistributor).distribute(vaultId);
         }
     }
 

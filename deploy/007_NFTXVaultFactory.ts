@@ -11,22 +11,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const signer = await ethers.getSigner(deployer);
 
   // deploy implementation contract
-  const nftxVaultImpl = await deploy('NFTXVaultUpgradeable', {
+  const vaultImpl = await deploy('FNFTCollectionVault', {
     from: deployer,
     log: true,
   });
 
-  const nftxLPStakingImpl = await deploy('NFTXLPStaking', {
+  const lpStakingImpl = await deploy('LPStaking', {
     from: deployer,
     log: true,
   });
 
-  const nftxFeeDistributorImpl = await deploy('NFTXSimpleFeeDistributor', {
+  const feeDistributorImpl = await deploy('FeeDistributor', {
     from: deployer,
     log: true,
   });
 
-  const nftxVaultFactoryImpl = await deploy('NFTXVaultFactoryUpgradeable', {
+  const vaultFactoryImpl = await deploy('FNFTCollectionVaultFactory', {
     from: deployer,
     log: true,
   });
@@ -54,45 +54,45 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let event = stakingTokenProviderReceipt.events.find((event: ethers.Event) => event.event === "StakingTokenProviderDeployed");
   const [stakingTokenProviderAddress,] = event.args;
 
-  const nftxLPStakingTx = await deployerContract.deployNFTXLPStaking(
-    nftxLPStakingImpl.address,
+  const lpStakingTx = await deployerContract.deployLPStaking(
+    lpStakingImpl.address,
     stakingTokenProviderAddress
   );
-  const nftxLPStakingReceipt = await nftxLPStakingTx.wait();
-  event = nftxLPStakingReceipt.events.find((event: ethers.Event) => event.event === "NftxLPStakingDeployed");
-  const [nftxLPStakingAddress,] = event.args;
+  const lpStakingReceipt = await lpStakingTx.wait();
+  event = lpStakingReceipt.events.find((event: ethers.Event) => event.event === "LPStakingDeployed");
+  const [lpStakingAddress,] = event.args;
 
   const treasury = "0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b";
-  const nftxFeeDistributorTx = await deployerContract.deployNFTXSimpleFeeDistributor(
-    nftxFeeDistributorImpl.address,
-    nftxLPStakingAddress,
+  const feeDistributorTx = await deployerContract.deployFeeDistributor(
+    feeDistributorImpl.address,
+    lpStakingAddress,
     treasury
   );
-  const nftxFeeDistributorReceipt = await nftxFeeDistributorTx.wait();
-  event = nftxFeeDistributorReceipt.events.find((event: ethers.Event) => event.event === "NftxSimpleFeeDistributorDeployed");
-  const [nftxFeeDistributorAddress,] = event.args;
+  const feeDistributorReceipt = await feeDistributorTx.wait();
+  event = feeDistributorReceipt.events.find((event: ethers.Event) => event.event === "FeeDistributorDeployed");
+  const [feeDistributorAddress,] = event.args;
 
-  await deployerContract.deployNFTXVaultFactory(
-    nftxVaultFactoryImpl.address,
-    nftxVaultImpl.address,
-    nftxFeeDistributorAddress
+  await deployerContract.deployFNFTCollectionVaultFactory(
+    vaultFactoryImpl.address,
+    vaultImpl.address,
+    feeDistributorAddress
   );
 
-  const feeDistributorInfo = await get('NFTXSimpleFeeDistributor');
+  const feeDistributorInfo = await get('FeeDistributor');
   const feeDistributorContract = new ethers.Contract(
-    nftxFeeDistributorAddress,
+    feeDistributorAddress,
     feeDistributorInfo.abi,
     signer
   );
-  await feeDistributorContract.setNFTXVaultFactory(nftxVaultFactoryImpl.address);
+  await feeDistributorContract.setFNFTCollectionVaultFactory(vaultFactoryImpl.address);
 
-  const nftxLPStakingInfo = await get('NFTXLPStaking');
-  const nftxLPStakingContract = new ethers.Contract(
-    nftxLPStakingAddress,
-    nftxLPStakingInfo.abi,
+  const lpStakingInfo = await get('LPStaking');
+  const lpStakingContract = new ethers.Contract(
+    lpStakingAddress,
+    lpStakingInfo.abi,
     signer
   );
-  await nftxLPStakingContract.setNFTXVaultFactory(nftxVaultFactoryImpl.address);
+  await lpStakingContract.setFNFTCollectionVaultFactory(vaultFactoryImpl.address);
 };
 
 func.tags = ['main', 'local', 'seed'];

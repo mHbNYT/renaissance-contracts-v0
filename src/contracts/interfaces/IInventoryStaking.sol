@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.13;
 
-import "./INFTXVaultFactory.sol";
+import "./IFNFTCollectionVaultFactory.sol";
 
-interface INFTXInventoryStaking {
-    function nftxVaultFactory() external view returns (INFTXVaultFactory);
+interface IInventoryStaking {
+    function fnftCollectionVaultFactory() external view returns (IFNFTCollectionVaultFactory);
     function vaultXToken(uint256 vaultId) external view returns (address);
     function xTokenAddr(address baseToken) external view returns (address);
     function xTokenShareValue(uint256 vaultId) external view returns (uint256);
 
-    function __NFTXInventoryStaking_init(address nftxFactory) external;
+    function __InventoryStaking_init(address fnftCollectionVaultFactory) external;
 
     function deployXTokenForVault(uint256 vaultId) external;
     function receiveRewards(uint256 vaultId, uint256 amount) external returns (bool);

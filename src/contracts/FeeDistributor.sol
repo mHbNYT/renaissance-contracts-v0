@@ -6,18 +6,18 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
-import "./interfaces/INFTXLPStaking.sol";
-import "./interfaces/INFTXSimpleFeeDistributor.sol";
-import "./interfaces/INFTXInventoryStaking.sol";
-import "./interfaces/INFTXVaultFactory.sol";
-import "./util/NFTXPausableUpgradeable.sol";
+import "./interfaces/ILPStaking.sol";
+import "./interfaces/IFeeDistributor.sol";
+import "./interfaces/IInventoryStaking.sol";
+import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./util/Pausable.sol";
 
-contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardUpgradeable, NFTXPausableUpgradeable {
+contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
   bool public distributionPaused;
 
-  address public override nftxVaultFactory;
+  address public override fnftCollectionVaultFactory;
   address public override lpStaking;
   address public override treasury;
 
@@ -30,7 +30,7 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
   event UpdateTreasuryAddress(address newTreasury);
   event UpdateLPStakingAddress(address newLPStaking);
   event UpdateInventoryStakingAddress(address newInventoryStaking);
-  event UpdateNFTXVaultFactory(address factory);
+  event UpdateFNFTCollectionVaultFactory(address factory);
   event PauseDistribution(bool paused);
 
   event AddFeeReceiver(address receiver, uint256 allocPoint);
@@ -38,7 +38,7 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
   event UpdateFeeReceiverAddress(address oldReceiver, address newReceiver);
   event RemoveFeeReceiver(address receiver);
 
-  function __SimpleFeeDistributor__init__(address _lpStaking, address _treasury) public override initializer {
+  function __FeeDistributor__init__(address _lpStaking, address _treasury) public override initializer {
     __Pausable_init();
     setTreasuryAddress(_treasury);
     setLPStakingAddress(_lpStaking);
@@ -47,8 +47,8 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
   }
 
   function distribute(uint256 vaultId) external override virtual nonReentrant {
-    require(nftxVaultFactory != address(0));
-    address _vault = INFTXVaultFactory(nftxVaultFactory).vault(vaultId);
+    require(fnftCollectionVaultFactory != address(0));
+    address _vault = IFNFTCollectionVaultFactory(fnftCollectionVaultFactory).vault(vaultId);
 
     uint256 tokenBalance = IERC20Upgradeable(_vault).balanceOf(address(this));
 
@@ -85,10 +85,10 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
   }
 
   function initializeVaultReceivers(uint256 _vaultId) external override {
-    require(msg.sender == nftxVaultFactory, "FeeReceiver: not factory");
-    INFTXLPStaking(lpStaking).addPoolForVault(_vaultId);
+    require(msg.sender == fnftCollectionVaultFactory, "FeeReceiver: not factory");
+    ILPStaking(lpStaking).addPoolForVault(_vaultId);
     if (inventoryStaking != address(0))
-      INFTXInventoryStaking(inventoryStaking).deployXTokenForVault(_vaultId);
+      IInventoryStaking(inventoryStaking).deployXTokenForVault(_vaultId);
   }
 
   function changeReceiverAlloc(uint256 _receiverIdx, uint256 _allocPoint) public override virtual onlyOwner {
@@ -135,10 +135,10 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
     emit UpdateInventoryStakingAddress(_inventoryStaking);
   }
 
-  function setNFTXVaultFactory(address _factory) external override onlyOwner {
-    require(address(nftxVaultFactory) == address(0), "nftxVaultFactory is immutable");
-    nftxVaultFactory = _factory;
-    emit UpdateNFTXVaultFactory(_factory);
+  function setFNFTCollectionVaultFactory(address _factory) external override onlyOwner {
+    require(address(fnftCollectionVaultFactory) == address(0), "fnftCollectionVaultFactory is immutable");
+    fnftCollectionVaultFactory = _factory;
+    emit UpdateFNFTCollectionVaultFactory(_factory);
   }
 
   function pauseFeeDistribution(bool _pause) external onlyOwner {
@@ -162,7 +162,7 @@ contract NFTXSimpleFeeDistributor is INFTXSimpleFeeDistributor, ReentrancyGuardU
     if (_receiver.isContract) {
       IERC20Upgradeable(_vault).safeIncreaseAllowance(_receiver.receiver, amountToSend);
 
-      bytes memory payload = abi.encodeWithSelector(INFTXLPStaking.receiveRewards.selector, _vaultId, amountToSend);
+      bytes memory payload = abi.encodeWithSelector(ILPStaking.receiveRewards.selector, _vaultId, amountToSend);
       (bool success, ) = address(_receiver.receiver).call(payload);
 
       // If the allowance has not been spent, it means we can pass it forward to next.

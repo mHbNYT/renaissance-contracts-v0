@@ -2,20 +2,20 @@
 
 pragma solidity 0.8.13;
 
-import "./util/NFTXPausableUpgradeable.sol";
+import "./util/Pausable.sol";
 
-import "./interfaces/INFTXVaultFactory.sol";
-import "./interfaces/INFTXFeeDistributor.sol";
-import "./NFTXVaultUpgradeable.sol";
+import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IFeeDistributor.sol";
+import "./FNFTCollectionVault.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
-contract NFTXVaultFactoryUpgradeable is
-    NFTXPausableUpgradeable,
+contract FNFTCollectionVaultFactory is
+    Pausable,
     BeaconUpgradeable,
-    INFTXVaultFactory
+    IFNFTCollectionVaultFactory
 {
     address public override zapContract; // No longer needed, but keeping for compatibility.
     address public override feeDistributor;
@@ -44,7 +44,7 @@ contract NFTXVaultFactoryUpgradeable is
     uint64 public override factoryRandomSwapFee;
     uint64 public override factoryTargetSwapFee;
 
-    function __NFTXVaultFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
+    function __FNFTCollectionVaultFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
         __BeaconUpgradeable__init(_vaultImpl);
@@ -60,13 +60,13 @@ contract NFTXVaultFactoryUpgradeable is
         bool allowAllItems
     ) external virtual override returns (uint256) {
         onlyOwnerIfPaused(0);
-        require(feeDistributor != address(0), "NFTX: Fee receiver unset");
-        require(childImplementation() != address(0), "NFTX: Vault implementation unset");
+        require(feeDistributor != address(0), "FNFTCollectionVaultFactory: Fee receiver unset");
+        require(childImplementation() != address(0), "FNFTCollectionVaultFactory: Vault implementation unset");
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint256 _vaultId = vaults.length;
         _vaultsForAsset[_assetAddress].push(vaultAddr);
         vaults.push(vaultAddr);
-        INFTXFeeDistributor(feeDistributor).initializeVaultReceivers(_vaultId);
+        IFeeDistributor(feeDistributor).initializeVaultReceivers(_vaultId);
         emit NewVault(_vaultId, vaultAddr, _assetAddress);
         return _vaultId;
     }
@@ -195,11 +195,11 @@ contract NFTXVaultFactoryUpgradeable is
         bool allowAllItems
     ) internal returns (address) {
         address newBeaconProxy = address(new BeaconProxy(address(this), ""));
-        NFTXVaultUpgradeable(newBeaconProxy).__NFTXVault_init(name, symbol, _assetAddress, is1155, allowAllItems);
+        FNFTCollectionVault(newBeaconProxy).__FNFTCollectionVault_init(name, symbol, _assetAddress, is1155, allowAllItems);
         // Manager for configuration.
-        NFTXVaultUpgradeable(newBeaconProxy).setManager(msg.sender);
+        FNFTCollectionVault(newBeaconProxy).setManager(msg.sender);
         // Owner for administrative functions.
-        NFTXVaultUpgradeable(newBeaconProxy).transferOwnership(owner());
+        FNFTCollectionVault(newBeaconProxy).transferOwnership(owner());
         return newBeaconProxy;
     }
 }

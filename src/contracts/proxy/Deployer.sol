@@ -8,9 +8,9 @@ import "../FNFTFactory.sol";
 import "../IFOSettings.sol";
 import "../IFOFactory.sol";
 import "../PriceOracle.sol";
-import "../NFTXVaultFactoryUpgradeable.sol";
-import "../NFTXSimpleFeeDistributor.sol";
-import "../NFTXLPStaking.sol";
+import "../FNFTCollectionVaultFactory.sol";
+import "../FeeDistributor.sol";
+import "../LPStaking.sol";
 import "../StakingTokenProvider.sol";
 import "./AdminUpgradeabilityProxy.sol";
 import "./IMultiProxyController.sol";
@@ -18,6 +18,7 @@ import "../interfaces/IOwnable.sol";
 import "../interfaces/IIFOSettings.sol";
 
 contract Deployer is Ownable {
+    // TODO: merge all events into 1.
     event FNFTSettingsProxyDeployed(
         address indexed _logic,
         address _creator
@@ -44,17 +45,17 @@ contract Deployer is Ownable {
         address _creator
     );
 
-    event NftxVaultFactoryDeployed(
+    event FNFTCollectionVaultFactoryDeployed(
         address indexed _logic,
         address _creator
     );
 
-    event NftxSimpleFeeDistributorDeployed(
+    event FeeDistributorDeployed(
         address indexed _logic,
         address _creator
     );
 
-    event NftxLPStakingDeployed(
+    event LPStakingDeployed(
         address indexed _logic,
         address _creator
     );
@@ -73,9 +74,9 @@ contract Deployer is Ownable {
     bytes32 constant public FNFT_FACTORY = bytes32(0x464e4654466163746f7279000000000000000000000000000000000000000000);
     bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
-    bytes32 constant public NFTX_VAULT_FACTORY = bytes32(0x4e4654585661756c74466163746f72795570677261646561626c650000000000);
-    bytes32 constant public NFTX_SIMPLE_FEE_DISTRIBUTOR = bytes32(0x4e46545853696d706c654665654469737472696275746f720000000000000000);
-    bytes32 constant public NFTX_LP_STAKING = bytes32(0x4e4654584c505374616b696e6700000000000000000000000000000000000000);
+    bytes32 constant public FNFT_COLLECTION_VAULT_FACTORY = bytes32(0x464e4654436f6c6c656374696f6e5661756c74466163746f7279000000000000);
+    bytes32 constant public FEE_DISTRIBUTOR = bytes32(0x4665654469737472696275746f72000000000000000000000000000000000000);
+    bytes32 constant public LP_STAKING = bytes32(0x4c505374616b696e670000000000000000000000000000000000000000000000);
     bytes32 constant public STAKING_TOKEN_PROVIDER = bytes32(0x5374616b696e67546f6b656e50726f7669646572000000000000000000000000);
 
     // Gov
@@ -191,60 +192,60 @@ contract Deployer is Ownable {
         emit PriceOracleProxyDeployed(priceOracle, msg.sender);
     }
 
-    /// @notice the function to deploy NFTXSimpleFeeDistributor
+    /// @notice the function to deploy FeeDistributor
     /// @param _logic the implementation
-    function deployNFTXSimpleFeeDistributor(address _logic, address nftxLPStaking, address treasury) external onlyOwner returns (address nftxSimpleFeeDistributor) {
+    function deployFeeDistributor(address _logic, address lpStaking, address treasury) external onlyOwner returns (address feeDistributor) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            NFTXSimpleFeeDistributor.__SimpleFeeDistributor__init__.selector,
-            nftxLPStaking,
+            FeeDistributor.__FeeDistributor__init__.selector,
+            lpStaking,
             treasury
         );
 
-        nftxSimpleFeeDistributor = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        IOwnable(nftxSimpleFeeDistributor).transferOwnership(msg.sender);
+        feeDistributor = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(feeDistributor).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy(NFTX_SIMPLE_FEE_DISTRIBUTOR, nftxSimpleFeeDistributor);
+        proxyController.deployerUpdateProxy(FEE_DISTRIBUTOR, feeDistributor);
 
-        emit NftxSimpleFeeDistributorDeployed(nftxSimpleFeeDistributor, msg.sender);
+        emit FeeDistributorDeployed(feeDistributor, msg.sender);
     }
 
-    /// @notice the function to deploy NFTXVaultFactoryUpgradeable
+    /// @notice the function to deploy FNFTCollectionVaultFactory
     /// @param _logic the implementation
-    function deployNFTXVaultFactory(address _logic, address nftxVaultImpl, address feeDistributor) external onlyOwner returns (address nftxVaultFactory) {
+    function deployFNFTCollectionVaultFactory(address _logic, address vaultImpl, address feeDistributor) external onlyOwner returns (address vaultFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            NFTXVaultFactoryUpgradeable.__NFTXVaultFactory_init.selector,
-            nftxVaultImpl,
+            FNFTCollectionVaultFactory.__FNFTCollectionVaultFactory_init.selector,
+            vaultImpl,
             feeDistributor
         );
 
-        nftxVaultFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        IOwnable(nftxVaultFactory).transferOwnership(msg.sender);
+        vaultFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(vaultFactory).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy(NFTX_VAULT_FACTORY, nftxVaultFactory);
+        proxyController.deployerUpdateProxy(FNFT_COLLECTION_VAULT_FACTORY, vaultFactory);
 
-        emit NftxVaultFactoryDeployed(nftxVaultFactory, msg.sender);
+        emit FNFTCollectionVaultFactoryDeployed(vaultFactory, msg.sender);
     }
 
-    /// @notice the function to deploy NFTXLPStaking
+    /// @notice the function to deploy LPStaking
     /// @param _logic the implementation
-    function deployNFTXLPStaking(address _logic, address stakingTokenProvider) external onlyOwner returns (address nftxLPStaking) {
+    function deployLPStaking(address _logic, address stakingTokenProvider) external onlyOwner returns (address lpStaking) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            NFTXLPStaking.__NFTXLPStaking__init.selector,
+            LPStaking.__LPStaking__init.selector,
             stakingTokenProvider
         );
 
-        nftxLPStaking = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        IOwnable(nftxLPStaking).transferOwnership(msg.sender);
+        lpStaking = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(lpStaking).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy(NFTX_LP_STAKING, nftxLPStaking);
+        proxyController.deployerUpdateProxy(LP_STAKING, lpStaking);
 
-        emit NftxLPStakingDeployed(nftxLPStaking, msg.sender);
+        emit LPStakingDeployed(lpStaking, msg.sender);
     }
 
     /// @notice the function to deploy StakingTokenProvider

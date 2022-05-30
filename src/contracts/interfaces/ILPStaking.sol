@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.13;
 
-interface INFTXLPStaking {
-    function nftxVaultFactory() external view returns (address);
+interface ILPStaking {
+    function fnftCollectionVaultFactory() external view returns (address);
     function rewardDistTokenImpl() external view returns (address);
     function stakingTokenProvider() external view returns (address);
     function vaultToken(address _stakingToken) external view returns (address);
@@ -15,8 +15,8 @@ interface INFTXLPStaking {
     function rewardDistributionTokenAddr(address stakedToken, address rewardToken) external view returns (address);
 
     // Write functions.
-    function __NFTXLPStaking__init(address _stakingTokenProvider) external;
-    function setNFTXVaultFactory(address newFactory) external;
+    function __LPStaking__init(address _stakingTokenProvider) external;
+    function setFNFTCollectionVaultFactory(address newFactory) external;
     function setStakingTokenProvider(address newProvider) external;
     function addPoolForVault(uint256 vaultId) external;
     function updatePoolForVault(uint256 vaultId) external;

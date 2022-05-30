@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.13;
 
-import "./INFTXEligibility.sol";
-import "./INFTXVaultFactory.sol";
+import "./IEligibility.sol";
+import "./IFNFTCollectionVaultFactory.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-interface INFTXVault is IERC20Upgradeable {
+interface IFNFTCollectionVault is IERC20Upgradeable {
     function manager() external view returns (address);
     function assetAddress() external view returns (address);
-    function vaultFactory() external view returns (INFTXVaultFactory);
-    function eligibilityStorage() external view returns (INFTXEligibility);
+    function vaultFactory() external view returns (IFNFTCollectionVaultFactory);
+    function eligibilityStorage() external view returns (IEligibility);
 
     function is1155() external view returns (bool);
     function allowAllItems() external view returns (bool);
@@ -58,7 +58,7 @@ interface INFTXVault is IERC20Upgradeable {
         address to
     );
 
-    function __NFTXVault_init(
+    function __FNFTCollectionVault_init(
         string calldata _name,
         string calldata _symbol,
         address _assetAddress,

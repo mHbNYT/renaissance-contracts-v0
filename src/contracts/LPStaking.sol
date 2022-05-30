@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 
-import "./interfaces/INFTXVaultFactory.sol";
+import "./interfaces/IFNFTCollectionVaultFactory.sol";
 import "./interfaces/IRewardDistributionToken.sol";
-import "./util/NFTXPausableUpgradeable.sol";
+import "./util/Pausable.sol";
 import "./StakingTokenProvider.sol";
 import "./token/TimelockRewardDistributionTokenImpl.sol";
 
@@ -19,10 +19,10 @@ import "./token/TimelockRewardDistributionTokenImpl.sol";
 // Pausing codes for LP staking are:
 // 10: Deposit
 
-contract NFTXLPStaking is NFTXPausableUpgradeable {
+contract LPStaking is Pausable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    INFTXVaultFactory public nftxVaultFactory;
+    IFNFTCollectionVaultFactory public fnftCollectionVaultFactory;
     IRewardDistributionToken public rewardDistTokenImpl;
     StakingTokenProvider public stakingTokenProvider;
 
@@ -38,7 +38,7 @@ contract NFTXLPStaking is NFTXPausableUpgradeable {
 
     TimelockRewardDistributionTokenImpl public newTimelockRewardDistTokenImpl;
 
-    function __NFTXLPStaking__init(address _stakingTokenProvider) external initializer {
+    function __LPStaking__init(address _stakingTokenProvider) external initializer {
         __Ownable_init();
         require(_stakingTokenProvider != address(0), "Provider != address(0)");
         require(address(newTimelockRewardDistTokenImpl) == address(0), "Already assigned");
@@ -48,13 +48,13 @@ contract NFTXLPStaking is NFTXPausableUpgradeable {
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == nftxVaultFactory.feeDistributor(), "LPStaking: Not authorized");
+        require(msg.sender == owner() || msg.sender == fnftCollectionVaultFactory.feeDistributor(), "LPStaking: Not authorized");
         _;
     }
 
-    function setNFTXVaultFactory(address newFactory) external onlyOwner {
-        require(address(nftxVaultFactory) == address(0), "nftxVaultFactory is immutable");
-        nftxVaultFactory = INFTXVaultFactory(newFactory);
+    function setFNFTCollectionVaultFactory(address newFactory) external onlyOwner {
+        require(address(fnftCollectionVaultFactory) == address(0), "fnftCollectionVaultFactory is immutable");
+        fnftCollectionVaultFactory = IFNFTCollectionVaultFactory(newFactory);
     }
 
     function setStakingTokenProvider(address newProvider) external onlyOwner {
@@ -63,9 +63,9 @@ contract NFTXLPStaking is NFTXPausableUpgradeable {
     }
 
     function addPoolForVault(uint256 vaultId) external onlyAdmin {
-        require(address(nftxVaultFactory) != address(0), "LPStaking: Factory not set");
+        require(address(fnftCollectionVaultFactory) != address(0), "LPStaking: Factory not set");
         require(vaultStakingInfo[vaultId].stakingToken == address(0), "LPStaking: Pool already exists");
-        address _rewardToken = nftxVaultFactory.vault(vaultId);
+        address _rewardToken = fnftCollectionVaultFactory.vault(vaultId);
         address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_rewardToken);
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
         vaultStakingInfo[vaultId] = pool;
@@ -143,7 +143,7 @@ contract NFTXLPStaking is NFTXPausableUpgradeable {
 
     function timelockDepositFor(uint256 vaultId, address account, uint256 amount, uint256 timelockLength) external {
         require(timelockLength < 2592000, "Timelock too long");
-        require(nftxVaultFactory.excludedFromFees(msg.sender), "Not zap");
+        require(fnftCollectionVaultFactory.excludedFromFees(msg.sender), "Not zap");
         onlyOwnerIfPaused(10);
         // Check the pool in case its been updated.
         updatePoolForVault(vaultId);
