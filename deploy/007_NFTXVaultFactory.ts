@@ -5,6 +5,7 @@ import { testnets } from '../utils/constants';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts, ethers, getChainId} = hre;
+  const {Contract, getSigner} = ethers;
 
   const {deploy, get} = deployments;
   const chainId = await getChainId();
@@ -14,7 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     WETH = mockWETH.address;
   }
 
-  const signer = await ethers.getSigner(deployer);
+  const signer = await getSigner(deployer);
 
   // deploy implementation contract
   const vaultImpl = await deploy('FNFTCollectionVault', {
@@ -44,7 +45,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // deploy proxy contract
   const deployerInfo = await get('Deployer')
-  const deployerContract = new ethers.Contract(
+  const deployerContract = new Contract(
     deployerInfo.address,
     deployerInfo.abi,
     signer
@@ -84,7 +85,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   const feeDistributorInfo = await get('FeeDistributor');
-  const feeDistributorContract = new ethers.Contract(
+  const feeDistributorContract = new Contract(
     feeDistributorAddress,
     feeDistributorInfo.abi,
     signer
@@ -92,7 +93,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await feeDistributorContract.setFNFTCollectionVaultFactory(vaultFactoryImpl.address);
 
   const lpStakingInfo = await get('LPStaking');
-  const lpStakingContract = new ethers.Contract(
+  const lpStakingContract = new Contract(
     lpStakingAddress,
     lpStakingInfo.abi,
     signer
