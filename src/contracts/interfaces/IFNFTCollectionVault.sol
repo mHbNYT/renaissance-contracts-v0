@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 
 import "./IEligibility.sol";
 import "./IFNFTCollectionVaultFactory.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "../token/ERC20Upgradeable.sol";
 
 interface IFNFTCollectionVault is IERC20Upgradeable {
     function manager() external view returns (address);
@@ -68,10 +68,10 @@ interface IFNFTCollectionVault is IERC20Upgradeable {
 
     function finalizeVault() external;
 
-    // function setVaultMetadata(
-    //     string memory name_,
-    //     string memory symbol_
-    // ) external;
+    function setVaultMetadata(
+        string calldata name_,
+        string calldata symbol_
+    ) external;
 
     function setVaultFeatures(
         bool _enableMint,

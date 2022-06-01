@@ -10,13 +10,13 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol"
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20FlashMintUpgradeable.sol";
 
 import "./interfaces/IFNFTCollectionVault.sol";
 import "./interfaces/IFNFTCollectionVaultFactory.sol";
 import "./interfaces/IEligibility.sol";
 import "./interfaces/IEligibilityManager.sol";
 import "./interfaces/IFeeDistributor.sol";
+import "./token/ERC20FlashMintUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
@@ -76,15 +76,13 @@ contract FNFTCollectionVault is
         setManager(address(0));
     }
 
-    // Added in v1.0.3.
-    // TODO: NFTX uses a customized ERC20Upgradeable contract that has a function called _setMetadata
-    // function setVaultMetadata(
-    //     string calldata name_,
-    //     string calldata symbol_
-    // ) external override virtual {
-    //     onlyPrivileged();
-    //     _setMetadata(name_, symbol_);
-    // }
+    function setVaultMetadata(
+        string calldata name_,
+        string calldata symbol_
+    ) external override virtual {
+        onlyPrivileged();
+        _setMetadata(name_, symbol_);
+    }
 
     function setVaultFeatures(
         bool _enableMint,
