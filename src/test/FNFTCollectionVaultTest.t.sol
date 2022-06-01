@@ -85,15 +85,6 @@ contract FNFTCollectionVaultTest is DSTest, SetupEnvironment {
     assertEq(vault.name(), "Doodles");
   }
 
-  function testSetVaultMetadata() public {
-    createVault();
-
-    vault.setVaultMetadata("Wassiverse", "WASSI");
-
-    assertEq(vault.name(), "Wassiverse");
-    assertEq(vault.symbol(), "WASSI");
-  }
-
   function testSetVaultFees() public {
     vaultFactory.setVaultFees(
       0,

@@ -76,44 +76,15 @@ contract FNFTCollectionVault is
         setManager(address(0));
     }
 
-    // https://ethereum.stackexchange.com/questions/126269/how-to-store-and-retrieve-string-which-is-more-than-32-bytesor-could-be-less-th/126284#126284
-    function setVaultMetadata(
-        string memory _name,
-        string memory _symbol
-    ) external {
-        onlyPrivileged();
-
-        bytes32 nameStorageLocation = keccak256(abi.encodePacked("0x68"));
-        bytes32 symbolStorageLocation = keccak256(abi.encodePacked("0x69"));
-
-        assembly {
-            let nameLength := mload(_name)
-            let symbolLength := mload(_symbol)
-
-            // switch gt(nameLength, 0x19)
-            switch gt(nameLength, 0x1F)
-            case 0x00 {
-                sstore(0x68, or(mload(add(_name, 0x20)), mul(nameLength, 2)))
-            }
-            case 0x01 {
-                sstore(0x68, add(mul(nameLength, 2), 1))
-                for {let i := 0} lt(mul(i, 0x20), nameLength) {i := add(i, 0x01)} {
-                    sstore(add(nameStorageLocation, i), mload(add(_name, mul(add(i, 1), 0x20))))
-                }
-            }
-
-            switch gt(symbolLength, 0x19)
-            case 0x00 {
-                sstore(0x69, or(mload(add(_symbol, 0x20)), mul(symbolLength, 2)))
-            }
-            case 0x01 {
-                sstore(0x69, add(mul(symbolLength, 2), 1))
-                for {let i := 0} lt(mul(i, 0x20), symbolLength) {i := add(i, 0x01)} {
-                    sstore(add(symbolStorageLocation, i), mload(add(_symbol, mul(add(i, 1), 0x20))))
-                }
-            }
-        }
-    }
+    // Added in v1.0.3.
+    // TODO: NFTX uses a customized ERC20Upgradeable contract that has a function called _setMetadata
+    // function setVaultMetadata(
+    //     string calldata name_,
+    //     string calldata symbol_
+    // ) external override virtual {
+    //     onlyPrivileged();
+    //     _setMetadata(name_, symbol_);
+    // }
 
     function setVaultFeatures(
         bool _enableMint,
