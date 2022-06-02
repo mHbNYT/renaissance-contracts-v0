@@ -22,7 +22,7 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
 
     function __XToken_init(address _baseToken, string memory name, string memory symbol) public initializer {
         __Ownable_init();
-        // string memory _name = IInventoryStaking(msg.sender).fnftCollectionVaultFactory().vault();
+        // string memory _name = IInventoryStaking(msg.sender).fnftCollectionFactory().vault();
         __ERC20_init(name, symbol);
         baseToken = IERC20Upgradeable(_baseToken);
     }

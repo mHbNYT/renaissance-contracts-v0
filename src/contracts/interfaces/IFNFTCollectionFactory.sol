@@ -4,7 +4,7 @@ pragma solidity 0.8.13;
 
 import "../proxy/IBeacon.sol";
 
-interface IFNFTCollectionVaultFactory is IBeacon {
+interface IFNFTCollectionFactory is IBeacon {
   // Read functions.
   function numVaults() external view returns (uint256);
   function zapContract() external view returns (address);
@@ -32,7 +32,7 @@ interface IFNFTCollectionVaultFactory is IBeacon {
   event UpdateFactoryFees(uint256 mintFee, uint256 randomRedeemFee, uint256 targetRedeemFee, uint256 randomSwapFee, uint256 targetSwapFee);
 
   // Write functions.
-  function __FNFTCollectionVaultFactory_init(address _vaultImpl, address _feeDistributor) external;
+  function __FNFTCollectionFactory_init(address _vaultImpl, address _feeDistributor) external;
   function createVault(
       string calldata name,
       string calldata symbol,

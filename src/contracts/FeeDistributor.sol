@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/ILPStaking.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IInventoryStaking.sol";
-import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IFNFTCollectionFactory.sol";
 import "./util/Pausable.sol";
 
 contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable {
@@ -17,7 +17,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
 
   bool public distributionPaused;
 
-  address public override fnftCollectionVaultFactory;
+  address public override fnftCollectionFactory;
   address public override lpStaking;
   address public override treasury;
 
@@ -30,7 +30,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   event UpdateTreasuryAddress(address newTreasury);
   event UpdateLPStakingAddress(address newLPStaking);
   event UpdateInventoryStakingAddress(address newInventoryStaking);
-  event UpdateFNFTCollectionVaultFactory(address factory);
+  event UpdateFNFTCollectionFactory(address factory);
   event PauseDistribution(bool paused);
 
   event AddFeeReceiver(address receiver, uint256 allocPoint);
@@ -47,8 +47,8 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function distribute(uint256 vaultId) external override virtual nonReentrant {
-    require(fnftCollectionVaultFactory != address(0));
-    address _vault = IFNFTCollectionVaultFactory(fnftCollectionVaultFactory).vault(vaultId);
+    require(fnftCollectionFactory != address(0));
+    address _vault = IFNFTCollectionFactory(fnftCollectionFactory).vault(vaultId);
 
     uint256 tokenBalance = IERC20Upgradeable(_vault).balanceOf(address(this));
 
@@ -85,7 +85,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function initializeVaultReceivers(uint256 _vaultId) external override {
-    require(msg.sender == fnftCollectionVaultFactory, "FeeReceiver: not factory");
+    require(msg.sender == fnftCollectionFactory, "FeeReceiver: not factory");
     ILPStaking(lpStaking).addPoolForVault(_vaultId);
     if (inventoryStaking != address(0))
       IInventoryStaking(inventoryStaking).deployXTokenForVault(_vaultId);
@@ -135,10 +135,10 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
     emit UpdateInventoryStakingAddress(_inventoryStaking);
   }
 
-  function setFNFTCollectionVaultFactory(address _factory) external override onlyOwner {
-    require(address(fnftCollectionVaultFactory) == address(0), "fnftCollectionVaultFactory is immutable");
-    fnftCollectionVaultFactory = _factory;
-    emit UpdateFNFTCollectionVaultFactory(_factory);
+  function setFNFTCollectionFactory(address _factory) external override onlyOwner {
+    require(address(fnftCollectionFactory) == address(0), "fnftCollectionFactory is immutable");
+    fnftCollectionFactory = _factory;
+    emit UpdateFNFTCollectionFactory(_factory);
   }
 
   function pauseFeeDistribution(bool _pause) external onlyOwner {

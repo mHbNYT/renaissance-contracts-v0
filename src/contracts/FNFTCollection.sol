@@ -11,8 +11,8 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgr
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 
-import "./interfaces/IFNFTCollectionVault.sol";
-import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IFNFTCollection.sol";
+import "./interfaces/IFNFTCollectionFactory.sol";
 import "./interfaces/IEligibility.sol";
 import "./interfaces/IEligibilityManager.sol";
 import "./interfaces/IFeeDistributor.sol";
@@ -20,13 +20,13 @@ import "./token/ERC20FlashMintUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
-contract FNFTCollectionVault is
+contract FNFTCollection is
     OwnableUpgradeable,
     ERC20FlashMintUpgradeable,
     ReentrancyGuardUpgradeable,
     ERC721HolderUpgradeable,
     ERC1155HolderUpgradeable,
-    IFNFTCollectionVault
+    IFNFTCollection
 {
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
 
@@ -34,7 +34,7 @@ contract FNFTCollectionVault is
 
     uint256 public override vaultId;
     address public override manager;
-    IFNFTCollectionVaultFactory public override vaultFactory;
+    IFNFTCollectionFactory public override factory;
     IEligibility public override eligibilityStorage;
 
     uint256 randNonce;
@@ -53,7 +53,7 @@ contract FNFTCollectionVault is
 
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
-    function __FNFTCollectionVault_init(
+    function __FNFTCollection_init(
         string memory _name,
         string memory _symbol,
         address _assetAddress,
@@ -64,8 +64,8 @@ contract FNFTCollectionVault is
         __ERC20_init(_name, _symbol);
         require(_assetAddress != address(0), "Asset != address(0)");
         assetAddress = _assetAddress;
-        vaultFactory = IFNFTCollectionVaultFactory(msg.sender);
-        vaultId = vaultFactory.numVaults();
+        factory = IFNFTCollectionFactory(msg.sender);
+        vaultId = factory.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
@@ -113,12 +113,12 @@ contract FNFTCollectionVault is
         uint256 _targetSwapFee
     ) public override virtual {
         onlyPrivileged();
-        vaultFactory.setVaultFees(vaultId, _mintFee, _randomRedeemFee, _targetRedeemFee, _randomSwapFee, _targetSwapFee);
+        factory.setVaultFees(vaultId, _mintFee, _randomRedeemFee, _targetRedeemFee, _randomSwapFee, _targetSwapFee);
     }
 
     function disableVaultFees() public override virtual {
         onlyPrivileged();
-        vaultFactory.disableVaultFees(vaultId);
+        factory.disableVaultFees(vaultId);
     }
 
     // This function allows for an easy setup of any eligibility module contract from the EligibilityManager.
@@ -131,10 +131,10 @@ contract FNFTCollectionVault is
         onlyPrivileged();
         require(
             address(eligibilityStorage) == address(0),
-            "FNFTCollectionVault: eligibility already set"
+            "FNFTCollection: eligibility already set"
         );
         IEligibilityManager eligManager = IEligibilityManager(
-            vaultFactory.eligibilityManager()
+            factory.eligibilityManager()
         );
         address _eligibility = eligManager.deployEligibility(
             moduleIndex,
@@ -154,7 +154,7 @@ contract FNFTCollectionVault is
     //     onlyPrivileged();
     //     require(
     //         address(eligibilityStorage) == address(0),
-    //         "FNFTCollectionVault: eligibility already set"
+    //         "FNFTCollection: eligibility already set"
     //     );
     //     eligibilityStorage = IEligibility(_newEligibility);
     //     // Toggle this to let the contract know to check eligibility now.
@@ -214,11 +214,11 @@ contract FNFTCollectionVault is
         onlyOwnerIfPaused(2);
         require(
             amount == specificIds.length || enableRandomRedeem,
-            "FNFTCollectionVault: Random redeem not enabled"
+            "FNFTCollection: Random redeem not enabled"
         );
         require(
             specificIds.length == 0 || enableTargetRedeem,
-            "FNFTCollectionVault: Target redeem not enabled"
+            "FNFTCollection: Target redeem not enabled"
         );
 
         // We burn all from sender and mint to fee receiver to reduce costs.
@@ -256,7 +256,7 @@ contract FNFTCollectionVault is
         if (is1155) {
             for (uint256 i; i < tokenIds.length; ++i) {
                 uint256 amount = amounts[i];
-                require(amount != 0, "FNFTCollectionVault: transferring < 1");
+                require(amount != 0, "FNFTCollection: transferring < 1");
                 count += amount;
             }
         } else {
@@ -265,11 +265,11 @@ contract FNFTCollectionVault is
 
         require(
             count == specificIds.length || enableRandomSwap,
-            "FNFTCollectionVault: Random swap disabled"
+            "FNFTCollection: Random swap disabled"
         );
         require(
             specificIds.length == 0 || enableTargetSwap,
-            "FNFTCollectionVault: Target swap disabled"
+            "FNFTCollection: Target swap disabled"
         );
 
         (, , ,uint256 _randomSwapFee, uint256 _targetSwapFee) = vaultFees();
@@ -298,32 +298,32 @@ contract FNFTCollectionVault is
     }
 
     function mintFee() public view override virtual returns (uint256) {
-        (uint256 _mintFee, , , ,) = vaultFactory.vaultFees(vaultId);
+        (uint256 _mintFee, , , ,) = factory.vaultFees(vaultId);
         return _mintFee;
     }
 
     function randomRedeemFee() public view override virtual returns (uint256) {
-        (, uint256 _randomRedeemFee, , ,) = vaultFactory.vaultFees(vaultId);
+        (, uint256 _randomRedeemFee, , ,) = factory.vaultFees(vaultId);
         return _randomRedeemFee;
     }
 
     function targetRedeemFee() public view override virtual returns (uint256) {
-        (, , uint256 _targetRedeemFee, ,) = vaultFactory.vaultFees(vaultId);
+        (, , uint256 _targetRedeemFee, ,) = factory.vaultFees(vaultId);
         return _targetRedeemFee;
     }
 
     function randomSwapFee() public view override virtual returns (uint256) {
-        (, , , uint256 _randomSwapFee, ) = vaultFactory.vaultFees(vaultId);
+        (, , , uint256 _randomSwapFee, ) = factory.vaultFees(vaultId);
         return _randomSwapFee;
     }
 
     function targetSwapFee() public view override virtual returns (uint256) {
-        (, , , ,uint256 _targetSwapFee) = vaultFactory.vaultFees(vaultId);
+        (, , , ,uint256 _targetSwapFee) = factory.vaultFees(vaultId);
         return _targetSwapFee;
     }
 
     function vaultFees() public view override virtual returns (uint256, uint256, uint256, uint256, uint256) {
-        return vaultFactory.vaultFees(vaultId);
+        return factory.vaultFees(vaultId);
     }
 
     function allValidNFTs(uint256[] memory tokenIds)
@@ -382,7 +382,7 @@ contract FNFTCollectionVault is
         virtual
         returns (uint256)
     {
-        require(allValidNFTs(tokenIds), "FNFTCollectionVault: not eligible");
+        require(allValidNFTs(tokenIds), "FNFTCollection: not eligible");
         uint256 length = tokenIds.length;
         if (is1155) {
             // This is technically a check, so placing it before the effect.
@@ -398,7 +398,7 @@ contract FNFTCollectionVault is
             for (uint256 i; i < length; ++i) {
                 uint256 tokenId = tokenIds[i];
                 uint256 amount = amounts[i];
-                require(amount != 0, "FNFTCollectionVault: transferring < 1");
+                require(amount != 0, "FNFTCollection: transferring < 1");
                 if (quantity1155[tokenId] == 0) {
                     holdings.add(tokenId);
                 }
@@ -464,15 +464,15 @@ contract FNFTCollectionVault is
         // Do not charge fees if the zap contract is calling
         // Added in v1.0.3. Changed to mapping in v1.0.5.
 
-        IFNFTCollectionVaultFactory _vaultFactory = vaultFactory;
+        IFNFTCollectionFactory _factory = factory;
 
-        if (_vaultFactory.excludedFromFees(msg.sender)) {
+        if (_factory.excludedFromFees(msg.sender)) {
             return;
         }
 
         // Mint fees directly to the distributor and distribute.
         if (amount > 0) {
-            address feeDistributor = _vaultFactory.feeDistributor();
+            address feeDistributor = _factory.feeDistributor();
             // Changed to a _transfer() in v1.0.3.
             _transfer(user, feeDistributor, amount);
             IFeeDistributor(feeDistributor).distribute(vaultId);
@@ -552,7 +552,7 @@ contract FNFTCollectionVault is
     }
 
     function onlyOwnerIfPaused(uint256 lockId) internal view {
-        require(!vaultFactory.isLocked(lockId) || msg.sender == owner(), "Paused");
+        require(!factory.isLocked(lockId) || msg.sender == owner(), "Paused");
     }
 
     function retrieveTokens(uint256 amount, address from, address to) public onlyOwner {

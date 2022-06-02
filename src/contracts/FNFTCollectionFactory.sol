@@ -4,18 +4,18 @@ pragma solidity 0.8.13;
 
 import "./util/Pausable.sol";
 
-import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IFNFTCollectionFactory.sol";
 import "./interfaces/IFeeDistributor.sol";
-import "./FNFTCollectionVault.sol";
+import "./FNFTCollection.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
-contract FNFTCollectionVaultFactory is
+contract FNFTCollectionFactory is
     Pausable,
     BeaconUpgradeable,
-    IFNFTCollectionVaultFactory
+    IFNFTCollectionFactory
 {
     address public override zapContract; // No longer needed, but keeping for compatibility.
     address public override feeDistributor;
@@ -44,7 +44,7 @@ contract FNFTCollectionVaultFactory is
     uint64 public override factoryRandomSwapFee;
     uint64 public override factoryTargetSwapFee;
 
-    function __FNFTCollectionVaultFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
+    function __FNFTCollectionFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
         __BeaconUpgradeable__init(_vaultImpl);
@@ -60,8 +60,8 @@ contract FNFTCollectionVaultFactory is
         bool allowAllItems
     ) external virtual override returns (uint256) {
         onlyOwnerIfPaused(0);
-        require(feeDistributor != address(0), "FNFTCollectionVaultFactory: Fee receiver unset");
-        require(childImplementation() != address(0), "FNFTCollectionVaultFactory: Vault implementation unset");
+        require(feeDistributor != address(0), "FNFTCollectionFactory: Fee receiver unset");
+        require(childImplementation() != address(0), "FNFTCollectionFactory: Vault implementation unset");
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint256 _vaultId = vaults.length;
         _vaultsForAsset[_assetAddress].push(vaultAddr);
@@ -195,11 +195,11 @@ contract FNFTCollectionVaultFactory is
         bool allowAllItems
     ) internal returns (address) {
         address newBeaconProxy = address(new BeaconProxy(address(this), ""));
-        FNFTCollectionVault(newBeaconProxy).__FNFTCollectionVault_init(name, symbol, _assetAddress, is1155, allowAllItems);
+        FNFTCollection(newBeaconProxy).__FNFTCollection_init(name, symbol, _assetAddress, is1155, allowAllItems);
         // Manager for configuration.
-        FNFTCollectionVault(newBeaconProxy).setManager(msg.sender);
+        FNFTCollection(newBeaconProxy).setManager(msg.sender);
         // Owner for administrative functions.
-        FNFTCollectionVault(newBeaconProxy).transferOwnership(owner());
+        FNFTCollection(newBeaconProxy).transferOwnership(owner());
         return newBeaconProxy;
     }
 }

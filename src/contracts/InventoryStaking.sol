@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
-import "./interfaces/IFNFTCollectionVaultFactory.sol";
-import "./interfaces/IFNFTCollectionVault.sol";
+import "./interfaces/IFNFTCollectionFactory.sol";
+import "./interfaces/IFNFTCollection.sol";
 import "./interfaces/IInventoryStaking.sol";
 import "./util/Pausable.sol";
 import "./proxy/BeaconUpgradeable.sol";
@@ -29,7 +29,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     uint256 internal constant DEFAULT_LOCKTIME = 2;
     bytes internal constant beaconCode = type(Create2BeaconProxy).creationCode;
 
-    IFNFTCollectionVaultFactory public override fnftCollectionVaultFactory;
+    IFNFTCollectionFactory public override fnftCollectionFactory;
 
     uint256 public inventoryLockTimeErc20;
     ITimelockExcludeList public timelockExcludeList;
@@ -39,15 +39,15 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     event Withdraw(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, address sender);
     event FeesReceived(uint256 vaultId, uint256 amount);
 
-    function __InventoryStaking_init(address _fnftCollectionVaultFactory) external virtual override initializer {
+    function __InventoryStaking_init(address _fnftCollectionFactory) external virtual override initializer {
         __Ownable_init();
-        fnftCollectionVaultFactory = IFNFTCollectionVaultFactory(_fnftCollectionVaultFactory);
+        fnftCollectionFactory = IFNFTCollectionFactory(_fnftCollectionFactory);
         address xTokenImpl = address(new XTokenUpgradeable());
         __BeaconUpgradeable__init(xTokenImpl);
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == fnftCollectionVaultFactory.feeDistributor(), "LPStaking: Not authorized");
+        require(msg.sender == owner() || msg.sender == fnftCollectionFactory.feeDistributor(), "LPStaking: Not authorized");
         _;
     }
 
@@ -69,7 +69,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
     function deployXTokenForVault(uint256 vaultId) public virtual override {
-        address baseToken = fnftCollectionVaultFactory.vault(vaultId);
+        address baseToken = fnftCollectionFactory.vault(vaultId);
         address deployedXToken = xTokenAddr(address(baseToken));
 
         if (isContract(deployedXToken)) {
@@ -81,7 +81,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
     function receiveRewards(uint256 vaultId, uint256 amount) external virtual override onlyAdmin returns (bool) {
-        address baseToken = fnftCollectionVaultFactory.vault(vaultId);
+        address baseToken = fnftCollectionFactory.vault(vaultId);
         address deployedXToken = xTokenAddr(address(baseToken));
 
         // Don't distribute rewards unless there are people to distribute to.
@@ -110,8 +110,8 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
 
     function timelockMintFor(uint256 vaultId, uint256 amount, address to, uint256 timelockLength) external virtual override returns (uint256) {
         onlyOwnerIfPaused(10);
-        require(msg.sender == fnftCollectionVaultFactory.zapContract(), "Not staking zap");
-        require(fnftCollectionVaultFactory.excludedFromFees(msg.sender), "Not fee excluded"); // important for math that staking zap is excluded from fees
+        require(msg.sender == fnftCollectionFactory.zapContract(), "Not staking zap");
+        require(fnftCollectionFactory.excludedFromFees(msg.sender), "Not fee excluded"); // important for math that staking zap is excluded from fees
 
         (, , uint256 xTokensMinted) = _timelockMintFor(vaultId, to, amount, timelockLength);
         emit Deposit(vaultId, amount, xTokensMinted, timelockLength, to);
@@ -121,7 +121,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     // Leave the bar. Claim back your tokens.
     // Unlocks the staked + gained tokens and burns xTokens.
     function withdraw(uint256 vaultId, uint256 _share) external virtual override {
-        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionVaultFactory.vault(vaultId));
+        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionFactory.vault(vaultId));
         XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
 
         uint256 baseTokensRedeemed = xToken.burnXTokens(msg.sender, _share);
@@ -129,7 +129,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
    function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
-        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionVaultFactory.vault(vaultId));
+        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionFactory.vault(vaultId));
         XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
         require(address(xToken) != address(0), "XToken not deployed");
 
@@ -157,7 +157,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
     function vaultXToken(uint256 vaultId) public view virtual override returns (address) {
-        address baseToken = fnftCollectionVaultFactory.vault(vaultId);
+        address baseToken = fnftCollectionFactory.vault(vaultId);
         address xToken = xTokenAddr(baseToken);
         require(isContract(xToken), "XToken not deployed");
         return xToken;
@@ -165,7 +165,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
 
     function _timelockMintFor(uint256 vaultId, address account, uint256 _amount, uint256 timelockLength) internal returns (IERC20Upgradeable, XTokenUpgradeable, uint256) {
         deployXTokenForVault(vaultId);
-        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionVaultFactory.vault(vaultId));
+        IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionFactory.vault(vaultId));
         XTokenUpgradeable xToken = XTokenUpgradeable((xTokenAddr(address(baseToken))));
 
         uint256 xTokensMinted = xToken.mintXTokens(account, _amount, timelockLength);

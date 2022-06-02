@@ -3,13 +3,13 @@
 pragma solidity 0.8.13;
 
 import "./IEligibility.sol";
-import "./IFNFTCollectionVaultFactory.sol";
+import "./IFNFTCollectionFactory.sol";
 import "../token/ERC20Upgradeable.sol";
 
-interface IFNFTCollectionVault is IERC20Upgradeable {
+interface IFNFTCollection is IERC20Upgradeable {
     function manager() external view returns (address);
     function assetAddress() external view returns (address);
-    function vaultFactory() external view returns (IFNFTCollectionVaultFactory);
+    function factory() external view returns (IFNFTCollectionFactory);
     function eligibilityStorage() external view returns (IEligibility);
 
     function is1155() external view returns (bool);
@@ -58,7 +58,7 @@ interface IFNFTCollectionVault is IERC20Upgradeable {
         address to
     );
 
-    function __FNFTCollectionVault_init(
+    function __FNFTCollection_init(
         string calldata _name,
         string calldata _symbol,
         address _assetAddress,

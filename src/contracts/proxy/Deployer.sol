@@ -8,7 +8,7 @@ import "../FNFTFactory.sol";
 import "../IFOSettings.sol";
 import "../IFOFactory.sol";
 import "../PriceOracle.sol";
-import "../FNFTCollectionVaultFactory.sol";
+import "../FNFTCollectionFactory.sol";
 import "../FeeDistributor.sol";
 import "../LPStaking.sol";
 import "../StakingTokenProvider.sol";
@@ -33,7 +33,7 @@ contract Deployer is Ownable {
     bytes32 constant public FNFT_FACTORY = bytes32(0x464e4654466163746f7279000000000000000000000000000000000000000000);
     bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
-    bytes32 constant public FNFT_COLLECTION_VAULT_FACTORY = bytes32(0x464e4654436f6c6c656374696f6e5661756c74466163746f7279000000000000);
+    bytes32 constant public FNFT_COLLECTION_FACTORY = bytes32(0x464e4654436f6c6c656374696f6e466163746f72790000000000000000000000);
     bytes32 constant public FEE_DISTRIBUTOR = bytes32(0x4665654469737472696275746f72000000000000000000000000000000000000);
     bytes32 constant public LP_STAKING = bytes32(0x4c505374616b696e670000000000000000000000000000000000000000000000);
     bytes32 constant public STAKING_TOKEN_PROVIDER = bytes32(0x5374616b696e67546f6b656e50726f7669646572000000000000000000000000);
@@ -170,23 +170,23 @@ contract Deployer is Ownable {
         emit ProxyDeployed(FEE_DISTRIBUTOR, feeDistributor, msg.sender);
     }
 
-    /// @notice the function to deploy FNFTCollectionVaultFactory
+    /// @notice the function to deploy FNFTCollectionFactory
     /// @param _logic the implementation
-    function deployFNFTCollectionVaultFactory(address _logic, address vaultImpl, address feeDistributor) external onlyOwner returns (address vaultFactory) {
+    function deployFNFTCollectionFactory(address _logic, address vaultImpl, address feeDistributor) external onlyOwner returns (address factory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTCollectionVaultFactory.__FNFTCollectionVaultFactory_init.selector,
+            FNFTCollectionFactory.__FNFTCollectionFactory_init.selector,
             vaultImpl,
             feeDistributor
         );
 
-        vaultFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        IOwnable(vaultFactory).transferOwnership(msg.sender);
+        factory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(factory).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy(FNFT_COLLECTION_VAULT_FACTORY, vaultFactory);
+        proxyController.deployerUpdateProxy(FNFT_COLLECTION_FACTORY, factory);
 
-        emit ProxyDeployed(FNFT_COLLECTION_VAULT_FACTORY, vaultFactory, msg.sender);
+        emit ProxyDeployed(FNFT_COLLECTION_FACTORY, factory, msg.sender);
     }
 
     /// @notice the function to deploy LPStaking

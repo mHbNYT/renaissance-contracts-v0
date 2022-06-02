@@ -18,7 +18,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const signer = await getSigner(deployer);
 
   // deploy implementation contract
-  const vaultImpl = await deploy('FNFTCollectionVault', {
+  const vaultImpl = await deploy('FNFTCollection', {
     from: deployer,
     log: true,
   });
@@ -33,7 +33,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
-  const vaultFactoryImpl = await deploy('FNFTCollectionVaultFactory', {
+  const factoryImpl = await deploy('FNFTCollectionFactory', {
     from: deployer,
     log: true,
   });
@@ -78,8 +78,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   event = feeDistributorReceipt.events.find((event: ethers.Event) => event.event === "ProxyDeployed");
   const [,feeDistributorAddress,] = event.args;
 
-  await deployerContract.deployFNFTCollectionVaultFactory(
-    vaultFactoryImpl.address,
+  await deployerContract.deployFNFTCollectionFactory(
+    factoryImpl.address,
     vaultImpl.address,
     feeDistributorAddress
   );
@@ -90,7 +90,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     feeDistributorInfo.abi,
     signer
   );
-  await feeDistributorContract.setFNFTCollectionVaultFactory(vaultFactoryImpl.address);
+  await feeDistributorContract.setFNFTCollectionFactory(factoryImpl.address);
 
   const lpStakingInfo = await get('LPStaking');
   const lpStakingContract = new Contract(
@@ -98,7 +98,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     lpStakingInfo.abi,
     signer
   );
-  await lpStakingContract.setFNFTCollectionVaultFactory(vaultFactoryImpl.address);
+  await lpStakingContract.setFNFTCollectionFactory(factoryImpl.address);
 };
 
 func.tags = ['main', 'local', 'seed'];

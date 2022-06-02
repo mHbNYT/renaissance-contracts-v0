@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 
-import "./interfaces/IFNFTCollectionVaultFactory.sol";
+import "./interfaces/IFNFTCollectionFactory.sol";
 import "./interfaces/IRewardDistributionToken.sol";
 import "./util/Pausable.sol";
 import "./StakingTokenProvider.sol";
@@ -22,7 +22,7 @@ import "./token/TimelockRewardDistributionTokenImpl.sol";
 contract LPStaking is Pausable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    IFNFTCollectionVaultFactory public fnftCollectionVaultFactory;
+    IFNFTCollectionFactory public fnftCollectionFactory;
     IRewardDistributionToken public rewardDistTokenImpl;
     StakingTokenProvider public stakingTokenProvider;
 
@@ -48,13 +48,13 @@ contract LPStaking is Pausable {
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == fnftCollectionVaultFactory.feeDistributor(), "LPStaking: Not authorized");
+        require(msg.sender == owner() || msg.sender == fnftCollectionFactory.feeDistributor(), "LPStaking: Not authorized");
         _;
     }
 
-    function setFNFTCollectionVaultFactory(address newFactory) external onlyOwner {
-        require(address(fnftCollectionVaultFactory) == address(0), "fnftCollectionVaultFactory is immutable");
-        fnftCollectionVaultFactory = IFNFTCollectionVaultFactory(newFactory);
+    function setFNFTCollectionFactory(address newFactory) external onlyOwner {
+        require(address(fnftCollectionFactory) == address(0), "fnftCollectionFactory is immutable");
+        fnftCollectionFactory = IFNFTCollectionFactory(newFactory);
     }
 
     function setStakingTokenProvider(address newProvider) external onlyOwner {
@@ -63,9 +63,9 @@ contract LPStaking is Pausable {
     }
 
     function addPoolForVault(uint256 vaultId) external onlyAdmin {
-        require(address(fnftCollectionVaultFactory) != address(0), "LPStaking: Factory not set");
+        require(address(fnftCollectionFactory) != address(0), "LPStaking: Factory not set");
         require(vaultStakingInfo[vaultId].stakingToken == address(0), "LPStaking: Pool already exists");
-        address _rewardToken = fnftCollectionVaultFactory.vault(vaultId);
+        address _rewardToken = fnftCollectionFactory.vault(vaultId);
         address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_rewardToken);
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
         vaultStakingInfo[vaultId] = pool;
@@ -143,7 +143,7 @@ contract LPStaking is Pausable {
 
     function timelockDepositFor(uint256 vaultId, address account, uint256 amount, uint256 timelockLength) external {
         require(timelockLength < 2592000, "Timelock too long");
-        require(fnftCollectionVaultFactory.excludedFromFees(msg.sender), "Not zap");
+        require(fnftCollectionFactory.excludedFromFees(msg.sender), "Not zap");
         onlyOwnerIfPaused(10);
         // Check the pool in case its been updated.
         updatePoolForVault(vaultId);
