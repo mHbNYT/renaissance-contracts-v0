@@ -5,7 +5,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "./IFO.sol";
 import "./interfaces/IFNFT.sol";
-import "./interfaces/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./proxy/BeaconUpgradeable.sol";
 import "./proxy/BeaconProxy.sol";
 
@@ -23,7 +23,7 @@ contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeabl
         bool allowWhitelisting
     );
 
-    error IFOExists(address nft);    
+    error IFOExists(address nft);
 
     function initialize(
         address _ifoSettings

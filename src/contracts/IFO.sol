@@ -290,7 +290,7 @@ contract IFO is Initializable {
 
         emit AdminProfitWithdrawal(address(fnft), profit);
     }
- 
+
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();

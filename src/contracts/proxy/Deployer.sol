@@ -8,35 +8,19 @@ import "../FNFTFactory.sol";
 import "../IFOSettings.sol";
 import "../IFOFactory.sol";
 import "../PriceOracle.sol";
+import "../FNFTCollectionFactory.sol";
+import "../FeeDistributor.sol";
+import "../LPStaking.sol";
+import "../StakingTokenProvider.sol";
 import "./AdminUpgradeabilityProxy.sol";
 import "./IMultiProxyController.sol";
 import "../interfaces/IOwnable.sol";
 import "../interfaces/IIFOSettings.sol";
 
 contract Deployer is Ownable {
-    event FNFTSettingsProxyDeployed(
-        address indexed _logic, 
-        address _creator
-    );
-
-    event IFOSettingsProxyDeployed(
-        address indexed _logic, 
-        address _creator
-    );
-
-
-    event FNFTFactoryProxyDeployed(
-        address indexed _logic, 
-        address _creator
-    );
-
-    event IFOFactoryProxyDeployed(
-        address indexed _logic, 
-        address _creator
-    );
-
-    event PriceOracleProxyDeployed(
-        address indexed _logic, 
+    event ProxyDeployed(
+        bytes32 indexed _identifier,
+        address _logic,
         address _creator
     );
 
@@ -49,6 +33,10 @@ contract Deployer is Ownable {
     bytes32 constant public FNFT_FACTORY = bytes32(0x464e4654466163746f7279000000000000000000000000000000000000000000);
     bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
+    bytes32 constant public FNFT_COLLECTION_FACTORY = bytes32(0x464e4654436f6c6c656374696f6e466163746f72790000000000000000000000);
+    bytes32 constant public FEE_DISTRIBUTOR = bytes32(0x4665654469737472696275746f72000000000000000000000000000000000000);
+    bytes32 constant public LP_STAKING = bytes32(0x4c505374616b696e670000000000000000000000000000000000000000000000);
+    bytes32 constant public STAKING_TOKEN_PROVIDER = bytes32(0x5374616b696e67546f6b656e50726f7669646572000000000000000000000000);
 
     // Gov
 
@@ -58,7 +46,7 @@ contract Deployer is Ownable {
 
     // Logic
 
-    /// @notice the function to deploy IFOSettings    
+    /// @notice the function to deploy IFOSettings
     /// @param _logic the implementation
     function deployIFOSettings(address _logic) external onlyOwner returns (address ifoSettings) {
         if (address(proxyController) == address(0)) revert NoController();
@@ -69,11 +57,11 @@ contract Deployer is Ownable {
 
         ifoSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IIFOSettings(ifoSettings).setFeeReceiver(payable(msg.sender));
-        IOwnable(ifoSettings).transferOwnership(msg.sender);        
+        IOwnable(ifoSettings).transferOwnership(msg.sender);
 
         proxyController.deployerUpdateProxy(IFO_SETTINGS, ifoSettings);
 
-        emit IFOSettingsProxyDeployed(ifoSettings, msg.sender);
+        emit ProxyDeployed(IFO_SETTINGS, ifoSettings, msg.sender);
     }
 
     /// @notice the function to deploy FNFTSettings
@@ -95,11 +83,11 @@ contract Deployer is Ownable {
 
         fnftSettings = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IFNFTSettings(fnftSettings).setFeeReceiver(payable(msg.sender));
-        IOwnable(fnftSettings).transferOwnership(msg.sender);        
+        IOwnable(fnftSettings).transferOwnership(msg.sender);
 
         proxyController.deployerUpdateProxy(FNFT_SETTINGS, fnftSettings);
 
-        emit FNFTSettingsProxyDeployed(fnftSettings, msg.sender);
+        emit ProxyDeployed(FNFT_SETTINGS, fnftSettings, msg.sender);
     }
 
     /// @notice the function to deploy FNFTFactory
@@ -121,7 +109,7 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(FNFT_FACTORY, fnftFactory);
 
-        emit FNFTFactoryProxyDeployed(fnftFactory, msg.sender);                
+        emit ProxyDeployed(FNFT_FACTORY, fnftFactory, msg.sender);
     }
 
     /// @notice the function to deploy IFOFactory
@@ -143,16 +131,16 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(IFO_FACTORY, ifoFactory);
 
-        emit IFOFactoryProxyDeployed(ifoFactory, msg.sender);
+        emit ProxyDeployed(IFO_FACTORY, ifoFactory, msg.sender);
     }
 
     /// @notice the function to deploy PriceOracle
-    /// @param _logic the implementation    
+    /// @param _logic the implementation
     function deployPriceOracle(address _logic) external onlyOwner returns (address priceOracle) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            PriceOracle.initialize.selector            
+            PriceOracle.initialize.selector
         );
 
         priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
@@ -160,6 +148,82 @@ contract Deployer is Ownable {
 
         proxyController.deployerUpdateProxy(PRICE_ORACLE, priceOracle);
 
-        emit PriceOracleProxyDeployed(priceOracle, msg.sender);
+        emit ProxyDeployed(PRICE_ORACLE, priceOracle, msg.sender);
+    }
+
+    /// @notice the function to deploy FeeDistributor
+    /// @param _logic the implementation
+    function deployFeeDistributor(address _logic, address lpStaking, address treasury) external onlyOwner returns (address feeDistributor) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            FeeDistributor.__FeeDistributor__init__.selector,
+            lpStaking,
+            treasury
+        );
+
+        feeDistributor = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(feeDistributor).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(FEE_DISTRIBUTOR, feeDistributor);
+
+        emit ProxyDeployed(FEE_DISTRIBUTOR, feeDistributor, msg.sender);
+    }
+
+    /// @notice the function to deploy FNFTCollectionFactory
+    /// @param _logic the implementation
+    function deployFNFTCollectionFactory(address _logic, address vaultImpl, address feeDistributor) external onlyOwner returns (address factory) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            FNFTCollectionFactory.__FNFTCollectionFactory_init.selector,
+            vaultImpl,
+            feeDistributor
+        );
+
+        factory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(factory).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(FNFT_COLLECTION_FACTORY, factory);
+
+        emit ProxyDeployed(FNFT_COLLECTION_FACTORY, factory, msg.sender);
+    }
+
+    /// @notice the function to deploy LPStaking
+    /// @param _logic the implementation
+    function deployLPStaking(address _logic, address stakingTokenProvider) external onlyOwner returns (address lpStaking) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            LPStaking.__LPStaking__init.selector,
+            stakingTokenProvider
+        );
+
+        lpStaking = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(lpStaking).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(LP_STAKING, lpStaking);
+
+        emit ProxyDeployed(LP_STAKING, lpStaking, msg.sender);
+    }
+
+    /// @notice the function to deploy StakingTokenProvider
+    /// @param _logic the implementation
+    function deployStakingTokenProvider(address _logic, address uniswapV2Factory, address defaultPairedToken, string memory defaultPrefix) external onlyOwner returns (address stakingTokenProvider) {
+        if (address(proxyController) == address(0)) revert NoController();
+
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            StakingTokenProvider.__StakingTokenProvider_init.selector,
+            uniswapV2Factory,
+            defaultPairedToken,
+            defaultPrefix
+        );
+
+        stakingTokenProvider = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(stakingTokenProvider).transferOwnership(msg.sender);
+
+        proxyController.deployerUpdateProxy(STAKING_TOKEN_PROVIDER, stakingTokenProvider);
+
+        emit ProxyDeployed(STAKING_TOKEN_PROVIDER, stakingTokenProvider, msg.sender);
     }
 }
