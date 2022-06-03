@@ -87,14 +87,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
       returns (bool)
   {
       _transfer(sender, recipient, amount);
-      _approve(
-          sender,
-          _msgSender(),
-          allowance(sender, _msgSender()).sub(
-              amount,
-              "ERC20: transfer amount exceeds allowance"
-          )
-      );
+      _approve(sender, _msgSender(), allowance(sender, _msgSender()) - amount);
       return true;
   }
 
