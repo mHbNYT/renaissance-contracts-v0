@@ -67,6 +67,7 @@ contract FNFTCollection is
     error RandomSwapDisabled();
     error TargetSwapDisabled();
     error NFTAlreadyInCollection();
+    error NotNFTOwner();
 
     function __FNFTCollection_init(
         string memory _name,
@@ -495,7 +496,7 @@ contract FNFTCollection is
             bytes memory punkIndexToAddress = abi.encodeWithSignature("punkIndexToAddress(uint256)", tokenId);
             (bool checkSuccess, bytes memory result) = address(assetAddr).staticcall(punkIndexToAddress);
             (address nftOwner) = abi.decode(result, (address));
-            require(checkSuccess && nftOwner == msg.sender, "Not the NFT owner");
+            if (!checkSuccess || nftOwner != msg.sender) revert NotNFTOwner();
             data = abi.encodeWithSignature("buyPunk(uint256)", tokenId);
         } else {
             // Default.
