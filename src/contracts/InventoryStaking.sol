@@ -39,6 +39,11 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     event Withdraw(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, address sender);
     event FeesReceived(uint256 vaultId, uint256 amount);
 
+    error LockTooLong();
+    error NotZapContract();
+    error NotExcludedFromFee();
+    error XTokenNotDeployed();
+
     function __InventoryStaking_init(address _fnftCollectionFactory) external virtual override initializer {
         __Ownable_init();
         fnftCollectionFactory = IFNFTCollectionFactory(_fnftCollectionFactory);
@@ -47,7 +52,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == fnftCollectionFactory.feeDistributor(), "LPStaking: Not authorized");
+        if (msg.sender != owner() && msg.sender != fnftCollectionFactory.feeDistributor()) revert Unauthorized();
         _;
     }
 
@@ -56,7 +61,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     }
 
     function setInventoryLockTimeErc20(uint256 time) external onlyOwner {
-        require(time <= 14 days, "Lock too long");
+        if (time > 14 days) revert LockTooLong();
         inventoryLockTimeErc20 = time;
     }
 
@@ -110,8 +115,9 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
 
     function timelockMintFor(uint256 vaultId, uint256 amount, address to, uint256 timelockLength) external virtual override returns (uint256) {
         onlyOwnerIfPaused(10);
-        require(msg.sender == fnftCollectionFactory.zapContract(), "Not staking zap");
-        require(fnftCollectionFactory.excludedFromFees(msg.sender), "Not fee excluded"); // important for math that staking zap is excluded from fees
+        if (msg.sender != fnftCollectionFactory.zapContract()) revert NotZapContract();
+        // important for math that staking zap is excluded from fees
+        if (!fnftCollectionFactory.excludedFromFees(msg.sender)) revert NotExcludedFromFee();
 
         (, , uint256 xTokensMinted) = _timelockMintFor(vaultId, to, amount, timelockLength);
         emit Deposit(vaultId, amount, xTokensMinted, timelockLength, to);
@@ -131,7 +137,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
    function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
         IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionFactory.vault(vaultId));
         XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
-        require(address(xToken) != address(0), "XToken not deployed");
+        if (address(xToken) == address(0)) revert XTokenNotDeployed();
 
         uint256 multiplier = 10 ** 18;
         return xToken.totalSupply() > 0
@@ -159,7 +165,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
     function vaultXToken(uint256 vaultId) public view virtual override returns (address) {
         address baseToken = fnftCollectionFactory.vault(vaultId);
         address xToken = xTokenAddr(baseToken);
-        require(isContract(xToken), "XToken not deployed");
+        if (!isContract(xToken)) revert XTokenNotDeployed();
         return xToken;
     }
 
