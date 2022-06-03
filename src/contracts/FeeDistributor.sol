@@ -38,9 +38,10 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   event UpdateFeeReceiverAddress(address oldReceiver, address newReceiver);
   event RemoveFeeReceiver(address receiver);
 
-  error ZeroAddress();
   error CallerIsNotFactory();
+  error FactoryIsImmutable();
   error OutOfBounds();
+  error ZeroAddress();
 
   function __FeeDistributor__init__(address _lpStaking, address _treasury) public override initializer {
     __Pausable_init();
@@ -140,7 +141,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function setFNFTCollectionFactory(address _factory) external override onlyOwner {
-    require(address(fnftCollectionFactory) == address(0), "fnftCollectionFactory is immutable");
+    if (address(fnftCollectionFactory) != address(0)) revert FactoryIsImmutable();
     fnftCollectionFactory = _factory;
     emit UpdateFNFTCollectionFactory(_factory);
   }
