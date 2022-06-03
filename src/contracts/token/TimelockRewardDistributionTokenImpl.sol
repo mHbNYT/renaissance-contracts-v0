@@ -5,10 +5,10 @@ import "./ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "../interfaces/IRewardDistributionToken.sol";
 import "../util/SafeMathInt.sol";
-import "../util/SafeMathUpgradeable.sol";
 
 /// @title Reward-Paying Token (renamed from Dividend)
 /// @author Roger Wu (https://github.com/roger-wu)
@@ -16,8 +16,8 @@ import "../util/SafeMathUpgradeable.sol";
 ///  to token holders as dividends and allows token holders to withdraw their dividends.
 ///  Reference: the source code of PoWH3D: https://etherscan.io/address/0xB3775fB83F7D12A36E0475aBdD1FCA35c091efBe#code
 contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgradeable {
-  using SafeMathUpgradeable for uint256;
-  using SafeMathInt for int256;
+  using SafeCast for uint256;
+  using SafeCast for int256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
   IERC20Upgradeable public target;
@@ -185,8 +185,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   /// @param _owner The address of a token holder.
   /// @return The amount of dividend in wei that `_owner` has earned in total.
   function accumulativeRewardOf(address _owner) public view returns(uint256) {
-    return magnifiedRewardPerShare.mul(balanceOf(_owner)).toInt256()
-      .add(magnifiedRewardCorrections[_owner]).toUint256Safe() / magnitude;
+    return ((magnifiedRewardPerShare * balanceOf(_owner)).toInt256() + magnifiedRewardCorrections[_owner]).toUint256() / magnitude;
   }
 
   /// @dev Internal function that transfer tokens from one address to another.
@@ -198,9 +197,9 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
     if (timelock[from] >= block.timestamp) revert UserIsLocked();
     super._transfer(from, to, value);
 
-    int256 _magCorrection = magnifiedRewardPerShare.mul(value).toInt256();
-    magnifiedRewardCorrections[from] = magnifiedRewardCorrections[from].add(_magCorrection);
-    magnifiedRewardCorrections[to] = magnifiedRewardCorrections[to].sub(_magCorrection);
+    int256 _magCorrection = (magnifiedRewardPerShare * value).toInt256();
+    magnifiedRewardCorrections[from] = magnifiedRewardCorrections[from] + _magCorrection;
+    magnifiedRewardCorrections[to] = magnifiedRewardCorrections[to] - _magCorrection;
   }
 
   /// @dev Internal function that mints tokens to an account.
@@ -210,8 +209,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   function _mint(address account, uint256 value) internal override {
     super._mint(account, value);
 
-    magnifiedRewardCorrections[account] = magnifiedRewardCorrections[account]
-      .sub( (magnifiedRewardPerShare.mul(value)).toInt256() );
+    magnifiedRewardCorrections[account] = magnifiedRewardCorrections[account] - (magnifiedRewardPerShare * value).toInt256();
   }
 
   /// @dev Internal function that burns an amount of the token of a given account.
@@ -222,8 +220,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
     if (timelock[account] >= block.timestamp) revert UserIsLocked();
     super._burn(account, value);
 
-    magnifiedRewardCorrections[account] = magnifiedRewardCorrections[account]
-      .add( (magnifiedRewardPerShare.mul(value)).toInt256() );
+    magnifiedRewardCorrections[account] = magnifiedRewardCorrections[account] + (magnifiedRewardPerShare * value).toInt256();
   }
 
 
