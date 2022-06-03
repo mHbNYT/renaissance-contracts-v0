@@ -151,7 +151,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   function withdrawReward(address user) external onlyOwner {
     uint256 _withdrawableReward = withdrawableRewardOf(user);
     if (_withdrawableReward > 0) {
-      withdrawnRewards[user] = withdrawnRewards[user].add(_withdrawableReward);
+      withdrawnRewards[user] = withdrawnRewards[user] + _withdrawableReward;
       target.safeTransfer(user, _withdrawableReward);
       emit RewardWithdrawn(user, _withdrawableReward);
     }
