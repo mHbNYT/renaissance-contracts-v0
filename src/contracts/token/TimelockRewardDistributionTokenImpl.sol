@@ -168,7 +168,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   /// @param _owner The address of a token holder.
   /// @return The amount of dividend in wei that `_owner` can withdraw.
   function withdrawableRewardOf(address _owner) internal view returns(uint256) {
-    return accumulativeRewardOf(_owner).sub(withdrawnRewards[_owner]);
+    return accumulativeRewardOf(_owner) - withdrawnRewards[_owner];
   }
 
   /// @notice View the amount of dividend in wei that an address has withdrawn.
