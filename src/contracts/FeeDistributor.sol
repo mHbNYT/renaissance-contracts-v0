@@ -38,6 +38,11 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   event UpdateFeeReceiverAddress(address oldReceiver, address newReceiver);
   event RemoveFeeReceiver(address receiver);
 
+  error CallerIsNotFactory();
+  error FactoryIsImmutable();
+  error OutOfBounds();
+  error ZeroAddress();
+
   function __FeeDistributor__init__(address _lpStaking, address _treasury) public override initializer {
     __Pausable_init();
     setTreasuryAddress(_treasury);
@@ -47,7 +52,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function distribute(uint256 vaultId) external override virtual nonReentrant {
-    require(fnftCollectionFactory != address(0));
+    if (fnftCollectionFactory == address(0)) revert ZeroAddress();
     address _vault = IFNFTCollectionFactory(fnftCollectionFactory).vault(vaultId);
 
     uint256 tokenBalance = IERC20Upgradeable(_vault).balanceOf(address(this));
@@ -85,14 +90,14 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function initializeVaultReceivers(uint256 _vaultId) external override {
-    require(msg.sender == fnftCollectionFactory, "FeeReceiver: not factory");
+    if (msg.sender != fnftCollectionFactory) revert CallerIsNotFactory();
     ILPStaking(lpStaking).addPoolForVault(_vaultId);
     if (inventoryStaking != address(0))
       IInventoryStaking(inventoryStaking).deployXTokenForVault(_vaultId);
   }
 
   function changeReceiverAlloc(uint256 _receiverIdx, uint256 _allocPoint) public override virtual onlyOwner {
-    require(_receiverIdx < feeReceivers.length, "FeeDistributor: Out of bounds");
+    if(_receiverIdx >= feeReceivers.length) revert OutOfBounds();
     FeeReceiver storage feeReceiver = feeReceivers[_receiverIdx];
     allocTotal -= feeReceiver.allocPoint;
     feeReceiver.allocPoint = _allocPoint;
@@ -110,7 +115,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
 
   function removeReceiver(uint256 _receiverIdx) external override virtual onlyOwner {
     uint256 arrLength = feeReceivers.length;
-    require(_receiverIdx < arrLength, "FeeDistributor: Out of bounds");
+    if (_receiverIdx >= arrLength) revert OutOfBounds();
     emit RemoveFeeReceiver(feeReceivers[_receiverIdx].receiver);
     allocTotal -= feeReceivers[_receiverIdx].allocPoint;
     // Copy the last element to what is being removed and remove the last element.
@@ -119,13 +124,13 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function setTreasuryAddress(address _treasury) public override onlyOwner {
-    require(_treasury != address(0), "Treasury != address(0)");
+    if (_treasury == address(0)) revert ZeroAddress();
     treasury = _treasury;
     emit UpdateTreasuryAddress(_treasury);
   }
 
   function setLPStakingAddress(address _lpStaking) public override onlyOwner {
-    require(_lpStaking != address(0), "LPStaking != address(0)");
+    if (_lpStaking == address(0)) revert ZeroAddress();
     lpStaking = _lpStaking;
     emit UpdateLPStakingAddress(_lpStaking);
   }
@@ -136,7 +141,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   }
 
   function setFNFTCollectionFactory(address _factory) external override onlyOwner {
-    require(address(fnftCollectionFactory) == address(0), "fnftCollectionFactory is immutable");
+    if (address(fnftCollectionFactory) != address(0)) revert FactoryIsImmutable();
     fnftCollectionFactory = _factory;
     emit UpdateFNFTCollectionFactory(_factory);
   }

@@ -28,12 +28,16 @@ contract EligibilityManager is OwnableUpgradeable {
         bool finalizedOnDeploy
     );
 
+    error OutOfBounds();
+    error NoImplementation();
+
     function __EligibilityManager_init() public initializer {
         __Ownable_init();
     }
 
     function addModule(address implementation) external onlyOwner {
-        require(implementation != address(0), "Impl != address(0)");
+        if (implementation == address(0)) revert NoImplementation();
+
         IEligibility elig = IEligibility(implementation);
         string memory name = elig.name();
         EligibilityModule memory module = EligibilityModule(
@@ -54,8 +58,8 @@ contract EligibilityManager is OwnableUpgradeable {
         external
         onlyOwner
     {
-        require(moduleIndex < modules.length, "Out of bounds");
-        require(implementation != address(0), "Impl != address(0)");
+        if (moduleIndex >= modules.length) revert OutOfBounds();
+        if (implementation == address(0)) revert NoImplementation();
         modules[moduleIndex].implementation = implementation;
         IEligibility elig = IEligibility(implementation);
         emit ModuleUpdated(implementation, elig.name(), elig.finalized());
@@ -66,7 +70,7 @@ contract EligibilityManager is OwnableUpgradeable {
         virtual
         returns (address)
     {
-        require(moduleIndex < modules.length, "Out of bounds");
+        if (moduleIndex >= modules.length) revert OutOfBounds();
         address eligImpl = modules[moduleIndex].implementation;
         address eligibilityClone = ClonesUpgradeable.clone(eligImpl);
         IEligibility(eligibilityClone).__Eligibility_init_bytes(

@@ -19,19 +19,22 @@ contract StakingTokenProvider is OwnableUpgradeable {
   event NewDefaultPaired(address oldPaired, address newPaired);
   event NewPairedTokenForVault(address vaultToken, address oldPairedtoken, address newPairedToken);
 
+  error IdenticalAddress();
+  error ZeroAddress();
+
   // This is an address provder to allow us to abstract out what liquidity
   // our vault tokens should be paired with.
   function __StakingTokenProvider_init(address _uniLikeExchange, address _defaultPairedtoken, string memory _defaultPrefix) public initializer {
     __Ownable_init();
-    require(_uniLikeExchange != address(0), "Cannot be address(0)");
-    require(_defaultPairedtoken != address(0), "Cannot be address(0)");
+    if (_uniLikeExchange == address(0)) revert ZeroAddress();
+    if (_defaultPairedtoken == address(0)) revert ZeroAddress();
     uniLikeExchange = _uniLikeExchange;
     defaultPairedToken = _defaultPairedtoken;
     defaultPrefix = _defaultPrefix;
   }
 
   function setPairedTokenForVaultToken(address _vaultToken, address _newPairedToken, string calldata _newPrefix) external onlyOwner {
-    require(_newPairedToken != address(0), "Cannot be address(0)");
+    if (_newPairedToken == address(0)) revert ZeroAddress();
     emit NewPairedTokenForVault(_vaultToken, pairedToken[_vaultToken], _newPairedToken);
     pairedToken[_vaultToken] = _newPairedToken;
     pairedPrefix[_vaultToken] = _newPrefix;
@@ -70,11 +73,13 @@ contract StakingTokenProvider is OwnableUpgradeable {
     return pairFor(uniLikeExchange, _vaultToken, _pairedToken);
   }
 
+  // TODO: should we use UniswapV2Library instead?
+
   // returns sorted token addresses, used to handle return values from pairs sorted in this order
   function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-      require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
+      if (tokenA == tokenB) revert IdenticalAddress();
       (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-      require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');
+      if (token0 == address(0)) revert ZeroAddress();
   }
 
   // calculates the CREATE2 address for a pair without making any external calls

@@ -21,8 +21,11 @@ contract Pausable is OwnableUpgradeable {
     // 3 : swap
     // 4 : flashloan
 
+    error Paused();
+    error Unauthorized();
+
     function onlyOwnerIfPaused(uint256 lockId) public view virtual {
-        require(!isPaused[lockId] || msg.sender == owner(), "Paused");
+        if (isPaused[lockId] && msg.sender != owner()) revert Paused();
     }
 
     function unpause(uint256 lockId)
@@ -35,7 +38,7 @@ contract Pausable is OwnableUpgradeable {
     }
 
     function pause(uint256 lockId) public virtual {
-        require(isGuardian[msg.sender], "Can't pause");
+        if (!isGuardian[msg.sender]) revert Unauthorized();
         isPaused[lockId] = true;
         emit SetPaused(lockId, true);
     }

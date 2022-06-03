@@ -53,6 +53,22 @@ contract FNFTCollection is
 
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
+    error ZeroAddress();
+    error IneligibleNFTs();
+    error ZeroTransferAmount();
+    error NotOwner();
+    error NotManager();
+    error Paused();
+    error TooManyNFTs();
+    error EligibilityAlreadySet();
+    error MintDisabled();
+    error RandomRedeemDisabled();
+    error TargetRedeemDisabled();
+    error RandomSwapDisabled();
+    error TargetSwapDisabled();
+    error NFTAlreadyInCollection();
+    error NotNFTOwner();
+
     function __FNFTCollection_init(
         string memory _name,
         string memory _symbol,
@@ -62,7 +78,7 @@ contract FNFTCollection is
     ) public override virtual initializer {
         __Ownable_init();
         __ERC20_init(_name, _symbol);
-        require(_assetAddress != address(0), "Asset != address(0)");
+        if (_assetAddress == address(0)) revert ZeroAddress();
         assetAddress = _assetAddress;
         factory = IFNFTCollectionFactory(msg.sender);
         vaultId = factory.numVaults();
@@ -129,10 +145,7 @@ contract FNFTCollection is
         bytes calldata initData
     ) external override virtual returns (address) {
         onlyPrivileged();
-        require(
-            address(eligibilityStorage) == address(0),
-            "FNFTCollection: eligibility already set"
-        );
+        if (address(eligibilityStorage) != address(0)) revert EligibilityAlreadySet();
         IEligibilityManager eligManager = IEligibilityManager(
             factory.eligibilityManager()
         );
@@ -146,21 +159,6 @@ contract FNFTCollection is
         emit EligibilityDeployed(moduleIndex, _eligibility);
         return _eligibility;
     }
-
-    // // This function allows for the manager to set their own arbitrary eligibility contract.
-    // // Once eligiblity is set, it cannot be unset or changed.
-    // Disabled for launch.
-    // function setEligibilityStorage(address _newEligibility) public virtual {
-    //     onlyPrivileged();
-    //     require(
-    //         address(eligibilityStorage) == address(0),
-    //         "FNFTCollection: eligibility already set"
-    //     );
-    //     eligibilityStorage = IEligibility(_newEligibility);
-    //     // Toggle this to let the contract know to check eligibility now.
-    //     allowAllItems = false;
-    //     emit CustomEligibilityDeployed(address(_newEligibility));
-    // }
 
     // The manager has control over options like fees and features
     function setManager(address _manager) public override virtual {
@@ -182,7 +180,7 @@ contract FNFTCollection is
         address to
     ) public override virtual nonReentrant returns (uint256) {
         onlyOwnerIfPaused(1);
-        require(enableMint, "Minting not enabled");
+        if (!enableMint) revert MintDisabled();
         // Take the NFTs.
         uint256 count = receiveNFTs(tokenIds, amounts);
 
@@ -212,14 +210,8 @@ contract FNFTCollection is
         returns (uint256[] memory)
     {
         onlyOwnerIfPaused(2);
-        require(
-            amount == specificIds.length || enableRandomRedeem,
-            "FNFTCollection: Random redeem not enabled"
-        );
-        require(
-            specificIds.length == 0 || enableTargetRedeem,
-            "FNFTCollection: Target redeem not enabled"
-        );
+        if (amount != specificIds.length && !enableRandomRedeem) revert RandomRedeemDisabled();
+        if (specificIds.length != 0 && !enableTargetRedeem) revert TargetRedeemDisabled();
 
         // We burn all from sender and mint to fee receiver to reduce costs.
         _burn(msg.sender, base * amount);
@@ -256,21 +248,15 @@ contract FNFTCollection is
         if (is1155) {
             for (uint256 i; i < tokenIds.length; ++i) {
                 uint256 amount = amounts[i];
-                require(amount != 0, "FNFTCollection: transferring < 1");
+                if (amount == 0) revert ZeroTransferAmount();
                 count += amount;
             }
         } else {
             count = tokenIds.length;
         }
 
-        require(
-            count == specificIds.length || enableRandomSwap,
-            "FNFTCollection: Random swap disabled"
-        );
-        require(
-            specificIds.length == 0 || enableTargetSwap,
-            "FNFTCollection: Target swap disabled"
-        );
+        if (count != specificIds.length && !enableRandomSwap) revert RandomSwapDisabled();
+        if (specificIds.length != 0 && !enableTargetSwap) revert TargetSwapDisabled();
 
         (, , ,uint256 _randomSwapFee, uint256 _targetSwapFee) = vaultFees();
         uint256 totalFee = (_targetSwapFee * specificIds.length) + (
@@ -382,7 +368,7 @@ contract FNFTCollection is
         virtual
         returns (uint256)
     {
-        require(allValidNFTs(tokenIds), "FNFTCollection: not eligible");
+        if (!allValidNFTs(tokenIds)) revert IneligibleNFTs();
         uint256 length = tokenIds.length;
         if (is1155) {
             // This is technically a check, so placing it before the effect.
@@ -398,7 +384,7 @@ contract FNFTCollection is
             for (uint256 i; i < length; ++i) {
                 uint256 tokenId = tokenIds[i];
                 uint256 amount = amounts[i];
-                require(amount != 0, "FNFTCollection: transferring < 1");
+                if (amount == 0) revert ZeroTransferAmount();
                 if (quantity1155[tokenId] == 0) {
                     holdings.add(tokenId);
                 }
@@ -510,14 +496,14 @@ contract FNFTCollection is
             bytes memory punkIndexToAddress = abi.encodeWithSignature("punkIndexToAddress(uint256)", tokenId);
             (bool checkSuccess, bytes memory result) = address(assetAddr).staticcall(punkIndexToAddress);
             (address nftOwner) = abi.decode(result, (address));
-            require(checkSuccess && nftOwner == msg.sender, "Not the NFT owner");
+            if (!checkSuccess || nftOwner != msg.sender) revert NotNFTOwner();
             data = abi.encodeWithSignature("buyPunk(uint256)", tokenId);
         } else {
             // Default.
             // Allow other contracts to "push" into the vault, safely.
             // If we already have the token requested, make sure we don't have it in the list to prevent duplicate minting.
             if (IERC721Upgradeable(assetAddress).ownerOf(tokenId) == address(this)) {
-                require(!holdings.contains(tokenId), "Trying to use an owned NFT");
+                if (holdings.contains(tokenId)) revert NFTAlreadyInCollection();
                 return;
             } else {
                 data = abi.encodeWithSignature("safeTransferFrom(address,address,uint256)", msg.sender, address(this), tokenId);
@@ -545,14 +531,15 @@ contract FNFTCollection is
 
     function onlyPrivileged() internal view {
         if (manager == address(0)) {
-            require(msg.sender == owner(), "Not owner");
+            if (msg.sender != owner()) revert NotOwner();
         } else {
-            require(msg.sender == manager, "Not manager");
+            if (msg.sender != manager) revert NotManager();
         }
     }
 
     function onlyOwnerIfPaused(uint256 lockId) internal view {
-        require(!factory.isLocked(lockId) || msg.sender == owner(), "Paused");
+        // TODO: compare gas usage on the order of logic
+        if (msg.sender != owner() && factory.isLocked(lockId)) revert Paused();
     }
 
     function retrieveTokens(uint256 amount, address from, address to) public onlyOwner {
@@ -562,7 +549,7 @@ contract FNFTCollection is
 
     function shutdown(address recipient) public onlyOwner {
         uint256 numItems = totalSupply() / base;
-        require(numItems < 4, "too many items");
+        if (numItems >= 4) revert TooManyNFTs();
         uint256[] memory specificIds = new uint256[](0);
         withdrawNFTsTo(numItems, specificIds, recipient);
         emit VaultShutdown(assetAddress, numItems, recipient);

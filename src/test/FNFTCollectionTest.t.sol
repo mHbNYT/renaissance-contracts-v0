@@ -74,7 +74,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     assertTrue(factory.isLocked(0));
 
     vm.prank(address(1));
-    vm.expectRevert("Paused");
+    vm.expectRevert(FNFTCollection.Paused.selector);
     factory.createVault("Doodles", "DOODLE", address(token), false, true);
   }
 
@@ -139,7 +139,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
   function testSetVaultFeesTooHigh() public {
     createVault();
-    vm.expectRevert("Cannot > 0.5 ether");
+    vm.expectRevert(FNFTCollectionFactory.FeeTooHigh.selector);
     factory.setVaultFees(
       0,
       0.6 ether,
@@ -205,7 +205,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     pauseFeature(1);
 
     vm.prank(address(1));
-    vm.expectRevert("Paused");
+    vm.expectRevert(FNFTCollection.Paused.selector);
     vault.mint(tokenIds, amounts);
   }
 
@@ -249,7 +249,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     vault.setVaultFeatures(false, true, true, true, true);
 
-    vm.expectRevert("Minting not enabled");
+    vm.expectRevert(FNFTCollection.MintDisabled.selector);
     vault.mint(tokenIds, amounts);
   }
 
@@ -299,7 +299,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     vault.setVaultFeatures(true, true, false, true, true);
 
     vm.prank(address(1));
-    vm.expectRevert("FNFTCollection: Target redeem not enabled");
+    vm.expectRevert(FNFTCollection.TargetRedeemDisabled.selector);
     vault.redeem(2, redeemTokenIds);
   }
 
@@ -315,7 +315,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     pauseFeature(2);
 
     vm.prank(address(1));
-    vm.expectRevert("Paused");
+    vm.expectRevert(FNFTCollection.Paused.selector);
     vault.redeem(2, redeemTokenIds);
   }
 
@@ -350,7 +350,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     vault.setVaultFeatures(true, false, true, true, true);
 
     vm.prank(address(1));
-    vm.expectRevert("FNFTCollection: Random redeem not enabled");
+    vm.expectRevert(FNFTCollection.RandomRedeemDisabled.selector);
     vault.redeem(2, new uint256[](0));
   }
 
@@ -362,7 +362,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     pauseFeature(2);
 
     vm.prank(address(1));
-    vm.expectRevert("Paused");
+    vm.expectRevert(FNFTCollection.Paused.selector);
     vault.redeem(2, new uint256[](0));
   }
 
@@ -400,7 +400,11 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     uint256[] memory specificIds = new uint256[](1);
     specificIds[0] = 2;
 
-    failedSwap(tokenIds, specificIds, "ERC20: transfer amount exceeds balance");
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.swap(tokenIds, new uint256[](0), specificIds);
+    vm.stopPrank();
   }
 
   function testTargetSwapDisabled() public {
@@ -417,7 +421,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     vault.setVaultFeatures(true, true, true, true, false);
 
-    failedSwap(tokenIds, specificIds, "FNFTCollection: Target swap disabled");
+    failedSwap(tokenIds, specificIds, FNFTCollection.TargetSwapDisabled.selector);
   }
 
   function testTargetSwapPaused() public {
@@ -434,7 +438,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     pauseFeature(3);
 
-    failedSwap(tokenIds, specificIds, "Paused");
+    failedSwap(tokenIds, specificIds, FNFTCollection.Paused.selector);
   }
 
   function testRandomSwap() public {
@@ -465,7 +469,11 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     tokenIds[0] = 3;
     token.mint(address(1), 3);
 
-    failedSwap(tokenIds, new uint256[](0), "ERC20: transfer amount exceeds balance");
+    vm.startPrank(address(1));
+    token.setApprovalForAll(address(vault), true);
+    vm.expectRevert("ERC20: transfer amount exceeds balance");
+    vault.swap(tokenIds, new uint256[](0), new uint256[](0));
+    vm.stopPrank();
   }
 
   function testRandomSwapDisabled() public {
@@ -479,7 +487,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     vault.setVaultFeatures(true, true, true, false, true);
 
-    failedSwap(tokenIds, new uint256[](0), "FNFTCollection: Random swap disabled");
+    failedSwap(tokenIds, new uint256[](0), FNFTCollection.RandomSwapDisabled.selector);
   }
 
   function testRandomSwapPaused() public {
@@ -493,7 +501,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     pauseFeature(3);
 
-    failedSwap(tokenIds, new uint256[](0), "Paused");
+    failedSwap(tokenIds, new uint256[](0), FNFTCollection.Paused.selector);
   }
 
   // TODO:
@@ -527,10 +535,10 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     factory.pause(lockId);
   }
 
-  function failedSwap(uint256[] memory tokenIds, uint256[] memory specificIds, string memory errorMessage) private {
+  function failedSwap(uint256[] memory tokenIds, uint256[] memory specificIds, bytes4 errorSelector) private {
     vm.startPrank(address(1));
     token.setApprovalForAll(address(vault), true);
-    vm.expectRevert(bytes(errorMessage));
+    vm.expectRevert(errorSelector);
     vault.swap(tokenIds, new uint256[](0), specificIds);
     vm.stopPrank();
   }

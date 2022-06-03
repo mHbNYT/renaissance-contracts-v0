@@ -20,6 +20,9 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
 
     event Timelocked(address user, uint256 until);
 
+    error LockTooLong();
+    error UserIsLocked();
+
     function __XToken_init(address _baseToken, string memory name, string memory symbol) public initializer {
         __Ownable_init();
         // string memory _name = IInventoryStaking(msg.sender).fnftCollectionFactory().vault();
@@ -57,7 +60,7 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
     }
 
     function timelockAccount(address account, uint256 timelockLength) public onlyOwner virtual {
-        require(timelockLength < MAX_TIMELOCK, "Too long lock");
+        if (timelockLength >= MAX_TIMELOCK) revert LockTooLong();
         uint256 timelockFinish = block.timestamp + timelockLength;
         if(timelockFinish > timelock[account]){
             timelock[account] = timelockFinish;
@@ -66,7 +69,7 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
     }
 
     function _burn(address who, uint256 amount) internal override {
-        require(block.timestamp > timelock[who], "User locked");
+        if (timelock[who] >= block.timestamp) revert UserIsLocked();
         super._burn(who, amount);
     }
 
@@ -80,7 +83,7 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
     }
 
     function _transfer(address from, address to, uint256 value) internal override {
-        require(block.timestamp > timelock[from], "User locked");
+        if (timelock[from] >= block.timestamp) revert UserIsLocked();
         super._transfer(from, to, value);
     }
 }
