@@ -141,9 +141,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
     if (amount == 0) revert ZeroAmount();
 
     // Because we receive the tokens from the staking contract, we assume the tokens have been received.
-    magnifiedRewardPerShare = magnifiedRewardPerShare.add(
-      (amount).mul(magnitude) / totalSupply()
-    );
+    magnifiedRewardPerShare = magnifiedRewardPerShare + (amount * magnitude / totalSupply());
 
     emit RewardsDistributed(msg.sender, amount);
   }
