@@ -41,7 +41,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
 
     error LockTooLong();
     error NotZapContract();
-    error NotExcludedFromFee();
+    error NotExcludedFromFees();
     error XTokenNotDeployed();
 
     function __InventoryStaking_init(address _fnftCollectionFactory) external virtual override initializer {
@@ -117,7 +117,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
         onlyOwnerIfPaused(10);
         if (msg.sender != fnftCollectionFactory.zapContract()) revert NotZapContract();
         // important for math that staking zap is excluded from fees
-        if (!fnftCollectionFactory.excludedFromFees(msg.sender)) revert NotExcludedFromFee();
+        if (!fnftCollectionFactory.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
 
         (, , uint256 xTokensMinted) = _timelockMintFor(vaultId, to, amount, timelockLength);
         emit Deposit(vaultId, amount, xTokensMinted, timelockLength, to);

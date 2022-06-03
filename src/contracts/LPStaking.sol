@@ -38,33 +38,45 @@ contract LPStaking is Pausable {
 
     TimelockRewardDistributionTokenImpl public newTimelockRewardDistTokenImpl;
 
+    error FactoryAlreadySet();
+    error FactoryNotSet();
+    error NotAPool();
+    error NotDeployingProperDistro();
+    error NotExcludedFromFees();
+    error NothingToMigrate();
+    error PoolAlreadyExists();
+    error PoolDoesNotExist();
+    error TimelockTooLong();
+    error TimelockRewardDistTokenImplAlreadySet();
+    error ZeroAddress();
+
     function __LPStaking__init(address _stakingTokenProvider) external initializer {
         __Ownable_init();
-        require(_stakingTokenProvider != address(0), "Provider != address(0)");
-        require(address(newTimelockRewardDistTokenImpl) == address(0), "Already assigned");
+        if (_stakingTokenProvider == address(0)) revert ZeroAddress();
+        if (address(newTimelockRewardDistTokenImpl) != address(0)) revert TimelockRewardDistTokenImplAlreadySet();
         stakingTokenProvider = StakingTokenProvider(_stakingTokenProvider);
         newTimelockRewardDistTokenImpl = new TimelockRewardDistributionTokenImpl();
         newTimelockRewardDistTokenImpl.__TimelockRewardDistributionToken_init(IERC20Upgradeable(address(0)), "", "");
     }
 
     modifier onlyAdmin() {
-        require(msg.sender == owner() || msg.sender == fnftCollectionFactory.feeDistributor(), "LPStaking: Not authorized");
+        if (msg.sender != owner() && msg.sender != fnftCollectionFactory.feeDistributor()) revert Unauthorized();
         _;
     }
 
     function setFNFTCollectionFactory(address newFactory) external onlyOwner {
-        require(address(fnftCollectionFactory) == address(0), "fnftCollectionFactory is immutable");
+        if (address(fnftCollectionFactory) != address(0)) revert FactoryAlreadySet();
         fnftCollectionFactory = IFNFTCollectionFactory(newFactory);
     }
 
     function setStakingTokenProvider(address newProvider) external onlyOwner {
-        require(newProvider != address(0));
+        if (newProvider == address(0)) revert ZeroAddress();
         stakingTokenProvider = StakingTokenProvider(newProvider);
     }
 
     function addPoolForVault(uint256 vaultId) external onlyAdmin {
-        require(address(fnftCollectionFactory) != address(0), "LPStaking: Factory not set");
-        require(vaultStakingInfo[vaultId].stakingToken == address(0), "LPStaking: Pool already exists");
+        if (address(fnftCollectionFactory) == address(0)) revert FactoryNotSet();
+        if (vaultStakingInfo[vaultId].stakingToken != address(0)) revert PoolDoesNotExist();
         address _rewardToken = fnftCollectionFactory.vault(vaultId);
         address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_rewardToken);
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
@@ -84,7 +96,7 @@ contract LPStaking is Pausable {
     function updatePoolForVault(uint256 vaultId) public {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         // Not letting people use this function to create new pools.
-        require(pool.stakingToken != address(0), "LPStaking: Pool doesn't exist");
+        if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(pool.rewardToken);
         StakingPool memory newPool = StakingPool(_stakingToken, pool.rewardToken);
         vaultStakingInfo[vaultId] = newPool;
@@ -124,7 +136,7 @@ contract LPStaking is Pausable {
         updatePoolForVault(vaultId);
 
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        require(pool.stakingToken != address(0), "LPStaking: Nonexistent pool");
+        if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         IERC20Upgradeable(pool.stakingToken).safeTransferFrom(msg.sender, address(this), amount);
         TimelockRewardDistributionTokenImpl xSLPToken = _rewardDistributionTokenAddr(pool);
 
@@ -142,13 +154,13 @@ contract LPStaking is Pausable {
     }
 
     function timelockDepositFor(uint256 vaultId, address account, uint256 amount, uint256 timelockLength) external {
-        require(timelockLength < 2592000, "Timelock too long");
-        require(fnftCollectionFactory.excludedFromFees(msg.sender), "Not zap");
+        if (timelockLength >= 2592000) revert TimelockTooLong();
+        if (!fnftCollectionFactory.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
         onlyOwnerIfPaused(10);
         // Check the pool in case its been updated.
         updatePoolForVault(vaultId);
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        require(pool.stakingToken != address(0), "LPStaking: Nonexistent pool");
+        if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         IERC20Upgradeable(pool.stakingToken).safeTransferFrom(msg.sender, address(this), amount);
         _rewardDistributionTokenAddr(pool).timelockMint(account, amount, timelockLength);
     }
@@ -162,7 +174,7 @@ contract LPStaking is Pausable {
     function emergencyExitAndClaim(address _stakingToken, address _rewardToken) external {
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
         TimelockRewardDistributionTokenImpl dist = _rewardDistributionTokenAddr(pool);
-        require(isContract(address(dist)), "Not a pool");
+        if (!isContract(address(dist))) revert NotAPool();
         _claimRewards(pool, msg.sender);
         _withdraw(pool, dist.balanceOf(msg.sender), msg.sender);
     }
@@ -170,7 +182,7 @@ contract LPStaking is Pausable {
     function emergencyExit(address _stakingToken, address _rewardToken) external {
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
         TimelockRewardDistributionTokenImpl dist = _rewardDistributionTokenAddr(pool);
-        require(isContract(address(dist)), "Not a pool");
+        if (!isContract(address(dist))) revert NotAPool();
         _withdraw(pool, dist.balanceOf(msg.sender), msg.sender);
     }
 
@@ -198,10 +210,10 @@ contract LPStaking is Pausable {
         TimelockRewardDistributionTokenImpl newDist = _rewardDistributionTokenAddr(pool);
         if (!isContract(address(newDist))) {
             address deployedDist = _deployDividendToken(pool);
-            require(deployedDist == address(newDist), "Not deploying proper distro");
+            if (deployedDist != address(newDist)) revert NotDeployingProperDistro();
             emit PoolUpdated(vaultId, deployedDist);
         }
-        require(unusedDistBal + oldDistBal > 0, "Nothing to migrate");
+        if (unusedDistBal + oldDistBal == 0) revert NothingToMigrate();
         newDist.mint(msg.sender, unusedDistBal + oldDistBal);
     }
 
@@ -263,21 +275,21 @@ contract LPStaking is Pausable {
     function balanceOf(uint256 vaultId, address addr) public view returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         TimelockRewardDistributionTokenImpl dist = _rewardDistributionTokenAddr(pool);
-        require(isContract(address(dist)), "Not a pool");
+        if (!isContract(address(dist))) revert NotAPool();
         return dist.balanceOf(addr);
     }
 
     function oldBalanceOf(uint256 vaultId, address addr) public view returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         IRewardDistributionToken dist = _oldRewardDistributionTokenAddr(pool);
-        require(isContract(address(dist)), "Not a pool");
+        if (!isContract(address(dist))) revert NotAPool();
         return dist.balanceOf(addr);
     }
 
     function unusedBalanceOf(uint256 vaultId, address addr) public view returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         IRewardDistributionToken dist = _unusedRewardDistributionTokenAddr(pool);
-        require(isContract(address(dist)), "Not a pool");
+        if (!isContract(address(dist))) revert NotAPool();
         return dist.balanceOf(addr);
     }
 
@@ -297,12 +309,12 @@ contract LPStaking is Pausable {
     }
 
     function _claimRewards(StakingPool memory pool, address account) internal {
-        require(pool.stakingToken != address(0), "LPStaking: Nonexistent pool");
+        if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         _rewardDistributionTokenAddr(pool).withdrawReward(account);
     }
 
     function _withdraw(StakingPool memory pool, uint256 amount, address account) internal {
-        require(pool.stakingToken != address(0), "LPStaking: Nonexistent pool");
+        if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         _rewardDistributionTokenAddr(pool).burnFrom(account, amount);
         IERC20Upgradeable(pool.stakingToken).safeTransfer(account, amount);
     }
