@@ -47,6 +47,10 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
 
   event Timelocked(address user, uint256 amount, uint256 until);
 
+  error UserIsLocked();
+  error ZeroAmount();
+  error ZeroSupply();
+
   function __TimelockRewardDistributionToken_init(IERC20Upgradeable _target, string memory _name, string memory _symbol) public initializer {
     __Ownable_init();
     __ERC20_init(_name, _symbol);
@@ -133,8 +137,8 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   ///     but keeping track of such data on-chain costs much more than
   ///     the saved target, so we don't do that.
   function distributeRewards(uint amount) external virtual onlyOwner {
-    require(totalSupply() > 0, "RewardDist: 0 supply");
-    require(amount > 0, "RewardDist: 0 amount");
+    if (totalSupply() == 0) revert ZeroSupply();
+    if (amount == 0) revert ZeroAmount();
 
     // Because we receive the tokens from the staking contract, we assume the tokens have been received.
     magnifiedRewardPerShare = magnifiedRewardPerShare.add(
@@ -193,7 +197,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   /// @param to The address to transfer to.
   /// @param value The amount to be transferred.
   function _transfer(address from, address to, uint256 value) internal override {
-    require(block.timestamp > timelock[from], "User locked");
+    if (timelock[from] >= block.timestamp) revert UserIsLocked();
     super._transfer(from, to, value);
 
     int256 _magCorrection = magnifiedRewardPerShare.mul(value).toInt256();
@@ -217,7 +221,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   /// @param account The account whose tokens will be burnt.
   /// @param value The amount that will be burnt.
   function _burn(address account, uint256 value) internal override {
-    require(block.timestamp > timelock[account], "User locked");
+    if (timelock[account] >= block.timestamp) revert UserIsLocked();
     super._burn(account, value);
 
     magnifiedRewardCorrections[account] = magnifiedRewardCorrections[account]
