@@ -139,7 +139,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
   function testSetVaultFeesTooHigh() public {
     createVault();
-    vm.expectRevert("Cannot > 0.5 ether");
+    vm.expectRevert(FNFTCollectionFactory.FeeTooHigh.selector);
     factory.setVaultFees(
       0,
       0.6 ether,

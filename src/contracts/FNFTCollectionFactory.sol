@@ -44,6 +44,10 @@ contract FNFTCollectionFactory is
     uint64 public override factoryRandomSwapFee;
     uint64 public override factoryTargetSwapFee;
 
+    error FeeTooHigh();
+    error CallerIsNotVault();
+    error ZeroAddress();
+
     function __FNFTCollectionFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
@@ -60,8 +64,8 @@ contract FNFTCollectionFactory is
         bool allowAllItems
     ) external virtual override returns (uint256) {
         onlyOwnerIfPaused(0);
-        require(feeDistributor != address(0), "FNFTCollectionFactory: Fee receiver unset");
-        require(childImplementation() != address(0), "FNFTCollectionFactory: Vault implementation unset");
+        if (feeDistributor == address(0)) revert ZeroAddress();
+        if (childImplementation() == address(0)) revert ZeroAddress();
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint256 _vaultId = vaults.length;
         _vaultsForAsset[_assetAddress].push(vaultAddr);
@@ -78,11 +82,11 @@ contract FNFTCollectionFactory is
         uint256 randomSwapFee,
         uint256 targetSwapFee
     ) public onlyOwner virtual override {
-        require(mintFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(randomRedeemFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(targetRedeemFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(randomSwapFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(targetSwapFee <= 0.5 ether, "Cannot > 0.5 ether");
+        if (mintFee > 0.5 ether) revert FeeTooHigh();
+        if (randomRedeemFee > 0.5 ether) revert FeeTooHigh();
+        if (targetRedeemFee > 0.5 ether) revert FeeTooHigh();
+        if (randomSwapFee > 0.5 ether) revert FeeTooHigh();
+        if (targetSwapFee > 0.5 ether) revert FeeTooHigh();
 
         factoryMintFee = uint64(mintFee);
         factoryRandomRedeemFee = uint64(randomRedeemFee);
@@ -103,13 +107,13 @@ contract FNFTCollectionFactory is
     ) public virtual override {
         if (msg.sender != owner()) {
             address vaultAddr = vaults[vaultId];
-            require(msg.sender == vaultAddr, "Not from vault");
+            if (msg.sender != vaultAddr) revert CallerIsNotVault();
         }
-        require(mintFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(randomRedeemFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(targetRedeemFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(randomSwapFee <= 0.5 ether, "Cannot > 0.5 ether");
-        require(targetSwapFee <= 0.5 ether, "Cannot > 0.5 ether");
+        if (mintFee > 0.5 ether) revert FeeTooHigh();
+        if (randomRedeemFee > 0.5 ether) revert FeeTooHigh();
+        if (targetRedeemFee > 0.5 ether) revert FeeTooHigh();
+        if (randomSwapFee > 0.5 ether) revert FeeTooHigh();
+        if (targetSwapFee > 0.5 ether) revert FeeTooHigh();
 
         _vaultFees[vaultId] = VaultFees(
             true,
@@ -125,14 +129,14 @@ contract FNFTCollectionFactory is
     function disableVaultFees(uint256 vaultId) public virtual override {
         if (msg.sender != owner()) {
             address vaultAddr = vaults[vaultId];
-            require(msg.sender == vaultAddr, "Not vault");
+            if (msg.sender != vaultAddr) revert CallerIsNotVault();
         }
         delete _vaultFees[vaultId];
         emit DisableVaultFees(vaultId);
     }
 
     function setFeeDistributor(address _feeDistributor) public onlyOwner virtual override {
-        require(_feeDistributor != address(0));
+        if (_feeDistributor == address(0)) revert ZeroAddress();
         emit NewFeeDistributor(feeDistributor, _feeDistributor);
         feeDistributor = _feeDistributor;
     }
