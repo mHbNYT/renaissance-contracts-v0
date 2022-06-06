@@ -8,7 +8,6 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "../interfaces/IRewardDistributionToken.sol";
-import "../util/SafeMathInt.sol";
 
 /// @title Reward-Paying Token (renamed from Dividend)
 /// @author Roger Wu (https://github.com/roger-wu)
