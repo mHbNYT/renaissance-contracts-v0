@@ -39,6 +39,8 @@ contract FNFTCollection is
 
     uint256 randNonce;
 
+    uint256 flashLoanFee;
+
     address public override assetAddress;
     bool public override is1155;
     bool public override allowAllItems;
@@ -52,6 +54,7 @@ contract FNFTCollection is
     mapping(uint256 => uint256) quantity1155;
 
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
+    event FlashLoanFeeUpdated(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
 
     error ZeroAddress();
     error IneligibleNFTs();
@@ -68,6 +71,8 @@ contract FNFTCollection is
     error TargetSwapDisabled();
     error NFTAlreadyInCollection();
     error NotNFTOwner();
+    error WrongToken();
+    error FeeTooHigh();
 
     function __FNFTCollection_init(
         string memory _name,
@@ -271,6 +276,17 @@ contract FNFTCollection is
 
         emit Swapped(tokenIds, amounts, specificIds, ids, to);
         return ids;
+    }
+
+    function setFlashLoanFee(uint256 _flashLoanFee) external onlyOwner {
+        if (_flashLoanFee > 500) revert FeeTooHigh();
+        emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
+        flashLoanFee = _flashLoanFee;
+    }
+
+    function flashFee(address token, uint256 amount) public view virtual override returns (uint256) {
+        if (token != address(this)) revert WrongToken();
+        return amount * flashLoanFee / 10000;
     }
 
     function flashLoan(
