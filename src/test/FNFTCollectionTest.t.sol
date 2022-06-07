@@ -525,12 +525,42 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
 
-    assertEq(vault.totalSupply(), 1e18);
+    // we just want to know that the fee is distributed, we don't care what the destination is yet.
+    feeDistributor.pauseFeeDistribution(true);
+
+    assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
-    flashBorrower.goodFlashLoan(1e18);
-    assertEq(vault.totalSupply(), 0.99 ether);
+
+    uint256 treasuryBalanceBeforeFlashLoan = vault.balanceOf(address(TREASURY_ADDRESS));
+
+    flashBorrower.goodFlashLoan(1 ether);
+
+    assertEq(vault.totalSupply(), 1 ether);
+    assertEq(vault.balanceOf(address(vault)), 0);
     assertEq(vault.balanceOf(address(flashBorrower)), 0);
+    assertEq(vault.balanceOf(address(TREASURY_ADDRESS)) - treasuryBalanceBeforeFlashLoan, 0.01 ether);
+    assertEq(vault.allowance(address(flashBorrower), address(vault)), 0);
+  }
+
+  function testFlashLoanGoodFeeExcluded() public {
+    mintVaultTokens(1);
+    vault.setFlashLoanFee(100); // 1%
+
+    FlashBorrower flashBorrower = new FlashBorrower(address(vault));
+    factory.setFeeExclusion(address(flashBorrower), true);
+
+    assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
+
+    uint256 treasuryBalanceBeforeFlashLoan = vault.balanceOf(address(TREASURY_ADDRESS));
+
+    flashBorrower.goodFlashLoan(1 ether);
+
+    assertEq(vault.totalSupply(), 1 ether);
+    assertEq(vault.balanceOf(address(vault)), 0);
+    assertEq(vault.balanceOf(address(flashBorrower)), 0);
+    assertEq(vault.balanceOf(address(TREASURY_ADDRESS)) - treasuryBalanceBeforeFlashLoan, 0);
+    assertEq(vault.allowance(address(flashBorrower), address(vault)), 0);
   }
 
   function testFlashLoanBad() public {
@@ -540,11 +570,13 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
 
-    assertEq(vault.totalSupply(), 1e18);
+    assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
-    vm.expectRevert("ERC20FlashMint: allowance does not allow refund");
-    flashBorrower.badFlashLoan(1e18);
-    assertEq(vault.totalSupply(), 1e18);
+
+    vm.expectRevert(FNFTCollection.FlashLoanNotRepaid.selector);
+    flashBorrower.badFlashLoan(1 ether);
+
+    assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(flashBorrower)), 0.01 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
   }
