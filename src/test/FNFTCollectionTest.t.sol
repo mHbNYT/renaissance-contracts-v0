@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 import "ds-test/test.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {console, SetupEnvironment} from "./utils/utils.sol";
+import {FlashBorrower} from "./utils/FlashBorrower.sol";
 import {StakingTokenProvider} from "../contracts/StakingTokenProvider.sol";
 import {LPStaking} from "../contracts/LPStaking.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
@@ -502,6 +503,50 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     pauseFeature(3);
 
     failedSwap(tokenIds, new uint256[](0), FNFTCollection.Paused.selector);
+  }
+
+  function testSetFlashLoanFeeTooHigh() public {
+    mintVaultTokens(1);
+    vm.expectRevert(FNFTCollection.FeeTooHigh.selector);
+    vault.setFlashLoanFee(501);
+  }
+
+  function testSetFlashLoanFeeNotOwner() public {
+    mintVaultTokens(1);
+    vm.expectRevert("Ownable: caller is not the owner");
+    vm.prank(address(1));
+    vault.setFlashLoanFee(499);
+  }
+
+  function testFlashLoanGood() public {
+    mintVaultTokens(1);
+    vault.setFlashLoanFee(100); // 1%
+
+    FlashBorrower flashBorrower = new FlashBorrower(address(vault));
+    vault.transfer(address(flashBorrower), 0.01 ether); // for fees
+
+    assertEq(vault.totalSupply(), 1e18);
+    assertEq(vault.balanceOf(address(vault)), 0);
+    flashBorrower.goodFlashLoan(1e18);
+    assertEq(vault.totalSupply(), 0.99 ether);
+    assertEq(vault.balanceOf(address(flashBorrower)), 0);
+    assertEq(vault.balanceOf(address(vault)), 0);
+  }
+
+  function testFlashLoanBad() public {
+    mintVaultTokens(1);
+    vault.setFlashLoanFee(100); // 1%
+
+    FlashBorrower flashBorrower = new FlashBorrower(address(vault));
+    vault.transfer(address(flashBorrower), 0.01 ether); // for fees
+
+    assertEq(vault.totalSupply(), 1e18);
+    assertEq(vault.balanceOf(address(vault)), 0);
+    vm.expectRevert("ERC20FlashMint: allowance does not allow refund");
+    flashBorrower.badFlashLoan(1e18);
+    assertEq(vault.totalSupply(), 1e18);
+    assertEq(vault.balanceOf(address(flashBorrower)), 0.01 ether);
+    assertEq(vault.balanceOf(address(vault)), 0);
   }
 
   // TODO:
