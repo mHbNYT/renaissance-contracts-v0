@@ -73,6 +73,9 @@ contract FNFTCollection is
     error NotNFTOwner();
     error WrongToken();
     error FeeTooHigh();
+    error ExceedsMaxFlashLoan();
+    error FlashLoanNotRepaid();
+    error InvalidFlashLoanReturnValue();
 
     function __FNFTCollection_init(
         string memory _name,
@@ -296,7 +299,21 @@ contract FNFTCollection is
         bytes calldata data
     ) public override virtual returns (bool) {
         onlyOwnerIfPaused(4);
-        return super.flashLoan(receiver, token, amount, data);
+        if (amount > maxFlashLoan(token)) revert ExceedsMaxFlashLoan();
+
+        uint256 fee = factory.excludedFromFees(address(receiver)) ? 0 : flashFee(token, amount);
+
+        _mint(address(receiver), amount);
+        if (receiver.onFlashLoan(msg.sender, token, amount, fee, data) != _ON_FLASH_LOAN_RETURN_VALUE) revert InvalidFlashLoanReturnValue();
+        uint256 currentAllowance = allowance(address(receiver), address(this));
+        if (amount + fee > currentAllowance) revert FlashLoanNotRepaid();
+
+        _approve(address(receiver), address(this), currentAllowance - amount - fee);
+
+        _burn(address(receiver), amount);
+        _chargeAndDistributeFees(address(receiver), fee);
+
+        return true;
     }
 
     function mintFee() public view override virtual returns (uint256) {
