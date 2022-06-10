@@ -59,6 +59,9 @@ contract FNFTFactory is
     /// @notice instant buy allowed if bid > MC * instantBuyMultiplier
     uint256 public override instantBuyMultiplier;
 
+    /// @notice flash loan fee basis point
+    uint256 public override flashLoanFee;
+
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
@@ -86,6 +89,8 @@ contract FNFTFactory is
 
     event UpdateFeeReceiver(address _old, address _new);
 
+    event UpdateFlashLoanFee(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
+
     event FNFTCreated(
         address indexed token,
         address FNFT,
@@ -98,7 +103,7 @@ contract FNFTFactory is
 
     error MaxAuctionLengthOutOfBounds();
     error MinAuctionLengthOutOfBounds();
-    error GovFeeTooHigh();
+    error FeeTooHigh();
     error MinBidIncreaseOutOfBounds();
     error MinVotePercentageTooHigh();
     error MaxReserveFactorTooLow();
@@ -192,7 +197,7 @@ contract FNFTFactory is
 
     function setFee(FeeType feeType, uint256 _fee) external onlyOwner {
         if (feeType == FeeType.GovernanceFee) {
-            if (_fee > 1000) revert GovFeeTooHigh();
+            if (_fee > 1000) revert FeeTooHigh();
             emit UpdateGovernanceFee(governanceFee, _fee);
             governanceFee = _fee;
         } else if (feeType == FeeType.MaxCuratorFee) {
@@ -250,5 +255,11 @@ contract FNFTFactory is
         emit UpdateFeeReceiver(feeReceiver, _receiver);
 
         feeReceiver = _receiver;
+    }
+
+    function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
+        if (_flashLoanFee > 500) revert FeeTooHigh();
+        emit UpdateFlashLoanFee(flashLoanFee, _flashLoanFee);
+        flashLoanFee = _flashLoanFee;
     }
 }
