@@ -580,6 +580,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(flashBorrower)), 0.01 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
+    assertEq(vault.allowance(address(flashBorrower), address(vault)), 0);
   }
 
   // TODO:
