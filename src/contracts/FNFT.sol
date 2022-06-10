@@ -132,6 +132,7 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
     error NotEnoughVoters();
     error AuctionNotLive();
     error NoTokens();
+    error WrongToken();
 
     function initialize(
         address _curator,
@@ -214,10 +215,6 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         bool _verified = !verified;
         verified = _verified;
         emit Verified(_verified);
-    }
-
-    function setFlashLoanFee(uint256 _flashLoanFee) external onlyGov {
-        _setFlashLoanFee(_flashLoanFee);
     }
 
     /// -----------------------------------
@@ -607,14 +604,19 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         return success;
     }
 
+    function flashFee(address loanToken, uint256 amount) public view returns (uint256) {
+        if (loanToken != address(this)) revert WrongToken();
+        return IFNFTFactory(factory).flashLoanFee() * amount / 10000;
+    }
+
     function flashLoan(
         IERC3156FlashBorrowerUpgradeable receiver,
         address loanToken,
         uint256 amount,
         bytes calldata data
     ) public override virtual returns (bool) {
-        uint256 flashFee = flashFee(loanToken, amount);
-        return _flashLoan(receiver, loanToken, amount, flashFee, data);
+        uint256 flashLoanFee = flashFee(loanToken, amount);
+        return _flashLoan(receiver, loanToken, amount, flashLoanFee, data);
     }
 
     function _chargeAndDistributeFees(address user, uint256 amount) internal override virtual {

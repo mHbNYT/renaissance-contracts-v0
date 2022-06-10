@@ -18,8 +18,6 @@ import "./ERC20Upgradeable.sol";
  * _Available since v4.1._
  */
 abstract contract ERC20FlashMintUpgradeable is Initializable, ERC20Upgradeable, IERC3156FlashLenderUpgradeable {
-    uint256 flashLoanFee;
-
     function __ERC20FlashMint_init() internal onlyInitializing {
     }
 
@@ -27,24 +25,9 @@ abstract contract ERC20FlashMintUpgradeable is Initializable, ERC20Upgradeable, 
     }
     bytes32 private constant _ON_RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
-    event FlashLoanFeeUpdated(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
-
-    error WrongToken();
-    error FlashLoanFeeTooHigh();
     error ExceedsMaxFlashLoan();
     error FlashLoanNotRepaid();
     error InvalidFlashLoanReturnValue();
-
-    function _setFlashLoanFee(uint256 _flashLoanFee) internal {
-        if (_flashLoanFee > 500) revert FlashLoanFeeTooHigh();
-        emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
-        flashLoanFee = _flashLoanFee;
-    }
-
-    function flashFee(address token, uint256 amount) public view virtual override returns (uint256) {
-        if (token != address(this)) revert WrongToken();
-        return amount * flashLoanFee / 10000;
-    }
 
     /**
      * @dev Returns the maximum amount of tokens available for loan.

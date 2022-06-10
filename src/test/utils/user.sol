@@ -99,10 +99,6 @@ contract Curator {
         fnft.kickCurator(_who);
     }
 
-    function call_setFlashLoanFee(uint256 _fee) public {
-        fnft.setFlashLoanFee(_fee);
-    }
-
     // to be able to receive funds
     receive() external payable {} // solhint-disable-line no-empty-blocks
 }

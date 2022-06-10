@@ -69,6 +69,7 @@ contract FNFTCollection is
     error NFTAlreadyInCollection();
     error NotNFTOwner();
     error FeeTooHigh();
+    error WrongToken();
 
     function __FNFTCollection_init(
         string memory _name,
@@ -274,8 +275,9 @@ contract FNFTCollection is
         return ids;
     }
 
-    function setFlashLoanFee(uint256 _flashLoanFee) external onlyOwner {
-        _setFlashLoanFee(_flashLoanFee);
+    function flashFee(address token, uint256 amount) public view returns (uint256) {
+        if (token != address(this)) revert WrongToken();
+        return uint256(factory.flashLoanFee()) * amount / 10000;
     }
 
     function flashLoan(

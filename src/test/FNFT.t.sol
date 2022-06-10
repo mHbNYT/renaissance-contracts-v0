@@ -596,15 +596,6 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fnft.setVaultMetadata("Bored Ape", "BAYC");
     }
 
-    function testSetFlashLoanFeeTooHigh() public {
-        vm.expectRevert(ERC20FlashMintUpgradeable.FlashLoanFeeTooHigh.selector);
-        fnft.setFlashLoanFee(501);
-    }
-
-    function testSetFlashLoanFeeNotGov() public {
-        vm.expectRevert(FNFT.NotGov.selector);
-        curator.call_setFlashLoanFee(499);
-    }
 
     // TODO: include fees
     function testFlashLoanGood() public {

@@ -506,22 +506,21 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     failedSwap(tokenIds, new uint256[](0), FNFTCollection.Paused.selector);
   }
 
+  // TODO: we need an FNFTCollectionFactoryTest contract
   function testSetFlashLoanFeeTooHigh() public {
-    mintVaultTokens(1);
-    vm.expectRevert(ERC20FlashMintUpgradeable.FlashLoanFeeTooHigh.selector);
-    vault.setFlashLoanFee(501);
+    vm.expectRevert(FNFTCollectionFactory.FeeTooHigh.selector);
+    factory.setFlashLoanFee(501);
   }
 
   function testSetFlashLoanFeeNotOwner() public {
-    mintVaultTokens(1);
     vm.expectRevert("Ownable: caller is not the owner");
     vm.prank(address(1));
-    vault.setFlashLoanFee(499);
+    factory.setFlashLoanFee(499);
   }
 
   function testFlashLoanGood() public {
     mintVaultTokens(1);
-    vault.setFlashLoanFee(100); // 1%
+    factory.setFlashLoanFee(100); // 1%
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
@@ -545,7 +544,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
   function testFlashLoanGoodFeeExcluded() public {
     mintVaultTokens(1);
-    vault.setFlashLoanFee(100); // 1%
+    factory.setFlashLoanFee(100); // 1%
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     factory.setFeeExclusion(address(flashBorrower), true);
@@ -566,7 +565,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
   function testFlashLoanBad() public {
     mintVaultTokens(1);
-    vault.setFlashLoanFee(100); // 1%
+    factory.setFlashLoanFee(100); // 1%
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
