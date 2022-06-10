@@ -11,6 +11,7 @@ import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
 import {FeeDistributor} from "../contracts/FeeDistributor.sol";
 import {StakingTokenProvider} from "../contracts/StakingTokenProvider.sol";
+import {ERC20FlashMintUpgradeable} from "../contracts/token/ERC20FlashMintUpgradeable.sol";
 
 /// @author 0xkowloon
 /// @title Tests for FNFT collection vaults
@@ -507,7 +508,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
   function testSetFlashLoanFeeTooHigh() public {
     mintVaultTokens(1);
-    vm.expectRevert(FNFTCollection.FeeTooHigh.selector);
+    vm.expectRevert(ERC20FlashMintUpgradeable.FlashLoanFeeTooHigh.selector);
     vault.setFlashLoanFee(501);
   }
 
@@ -573,7 +574,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     assertEq(vault.totalSupply(), 1 ether);
     assertEq(vault.balanceOf(address(vault)), 0);
 
-    vm.expectRevert(FNFTCollection.FlashLoanNotRepaid.selector);
+    vm.expectRevert(ERC20FlashMintUpgradeable.FlashLoanNotRepaid.selector);
     flashBorrower.badFlashLoan(1 ether);
 
     assertEq(vault.totalSupply(), 1 ether);
