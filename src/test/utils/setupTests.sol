@@ -8,10 +8,7 @@ import {CheatCodes} from "./cheatcodes.sol";
 import {console} from "./console.sol";
 import {WETH} from "../../contracts/mocks/WETH.sol";
 import {PriceOracle} from "../../contracts/PriceOracle.sol";
-import {IFOSettings} from "../../contracts/IFOSettings.sol";
 import {IFOFactory} from "../../contracts/IFOFactory.sol";
-import {FNFTSettings} from "../../contracts/FNFTSettings.sol";
-import {FNFTFactory} from "../../contracts/FNFTFactory.sol";
 import {StakingTokenProvider} from "../../contracts/StakingTokenProvider.sol";
 import {FNFTCollectionFactory} from "../../contracts/FNFTCollectionFactory.sol";
 import {FNFTCollection} from "../../contracts/FNFTCollection.sol";
@@ -52,31 +49,19 @@ contract SetupEnvironment {
         priceOracle = PriceOracle(
             deployer.deployPriceOracle(address(new PriceOracle(v2Factory, address(weth))))
         );
-    }
+    }    
 
-    function setupIFOSettings() public returns (IFOSettings ifoSettings) {
-        ifoSettings = IFOSettings(
-            deployer.deployIFOSettings(address(new IFOSettings()))
-        );
-    }
-
-    function setupIFOFactory(address _ifoSettings) public returns (IFOFactory ifoFactory) {
+    function setupIFOFactory() public returns (IFOFactory ifoFactory) {
         ifoFactory = IFOFactory(
-            deployer.deployIFOFactory(address(new IFOFactory()), _ifoSettings)
+            deployer.deployIFOFactory(address(new IFOFactory()))
         );
     }
 
-    function setupFNFTSettings(address _ifoFactory, address _priceOracle) public returns (FNFTSettings fnftSettings) {
-        fnftSettings = FNFTSettings(
-            deployer.deployFNFTSettings(address(new FNFTSettings()), address(weth), _ifoFactory)
-        );
-        fnftSettings.setPriceOracle(_priceOracle);
-    }
-
-    function setupFNFTFactory(address _fnftSettings) public returns (FNFTFactory fnftFactory) {
+    function setupFNFTFactory(address _ifoFactory, address _priceOracle) public returns (FNFTFactory fnftFactory) {
         fnftFactory = FNFTFactory(
-            deployer.deployFNFTFactory(address(new FNFTFactory()), address(_fnftSettings))
+            deployer.deployFNFTFactory(address(new FNFTFactory()), address(weth), _ifoFactory)
         );
+        fnftFactory.setPriceOracle(_priceOracle);
     }
 
     function setupFNFT(address _fnftFactory, uint256 _amountToMint) public returns (FNFT fnft) {
@@ -143,20 +128,16 @@ contract SetupEnvironment {
         public
         returns (
             IUniswapV2Factory pairFactory,
-            PriceOracle priceOracle,
-            IFOSettings ifoSettings,
+            PriceOracle priceOracle,            
             IFOFactory ifoFactory,
-            FNFTSettings fnftSettings,
             FNFTFactory fnftFactory,
             FNFT fnft
         )
     {
         pairFactory = setupPairFactory();
-        priceOracle = setupPriceOracle(address(pairFactory));
-        ifoSettings = setupIFOSettings();
-        ifoFactory = setupIFOFactory(address(ifoSettings));
-        fnftSettings = setupFNFTSettings(address(ifoFactory), address(priceOracle));
-        fnftFactory = setupFNFTFactory(address(fnftSettings));
+        priceOracle = setupPriceOracle(address(pairFactory));        
+        ifoFactory = setupIFOFactory();
+        fnftFactory = setupFNFTFactory(address(ifoFactory), address(priceOracle));
         fnft = setupFNFT(address(fnftFactory), _fnftAmount);
     }
 

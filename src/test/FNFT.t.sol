@@ -6,12 +6,10 @@ import "ds-test/test.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {Deployer} from "../contracts/proxy/Deployer.sol";
 import {MultiProxyController} from "../contracts/proxy/MultiProxyController.sol";
-import {IFOSettings} from "../contracts/IFOSettings.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {IFO} from "../contracts/IFO.sol";
-import {FNFTSettings} from "../contracts/FNFTSettings.sol";
-import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFTFactory} from "../contracts/FNFTFactory.sol";
+import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IWETH} from "../contracts/interfaces/IWETH.sol";
@@ -21,13 +19,11 @@ import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWit
 
 /// @author Nibble Market
 /// @title Tests for the vaults
-contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
-    IFOSettings public ifoSettings;
+contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {    
     IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     IUniswapV2Factory public pairFactory;
     FNFTFactory public fnftFactory;
-    FNFTSettings public fnftSettings;
     MockNFT public token;
     FNFT public fnft;
 
@@ -42,9 +38,9 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
     function setUp() public {
         setupEnvironment(10 ether);
-        (pairFactory, priceOracle, ifoSettings, ifoFactory, fnftSettings, fnftFactory, ) = setupContracts(10 ether);
+        (pairFactory, priceOracle, ifoFactory, fnftFactory, ) = setupContracts(10 ether);
 
-        fnftSettings.setGovernanceFee(100);
+        fnftFactory.setFee(FNFTFactory.FeeType.GovernanceFee, 100);
 
         token = new MockNFT();
 
@@ -79,7 +75,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function test_InitializeFeeTooHigh() public {
-        uint256 maxCuratorFee = fnftSettings.maxCuratorFee();
+        uint256 maxCuratorFee = fnftFactory.maxCuratorFee();
         token.mint(address(this), 2);
         vm.expectRevert(FNFT.FeeTooHigh.selector);
         fnft = FNFT(fnftFactory.mint(
@@ -118,8 +114,8 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testPause() public {
-        fnftFactory.pause();
-        fnftFactory.unpause();
+        fnftFactory.togglePaused();
+        fnftFactory.togglePaused();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
@@ -129,7 +125,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testFnftFactoryPausedCannotMint() public {
-        fnftFactory.pause();
+        fnftFactory.togglePaused();
         MockNFT temp = new MockNFT();
 
         temp.mint(address(this), 1);
@@ -213,7 +209,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testChangeReserveBelowMinReserveFactor() public {
-        assertEq(fnftSettings.minReserveFactor(), 2000);
+        assertEq(fnftFactory.minReserveFactor(), 2000);
 
         //initial reserve is 1,
         //minReserveFactor is 20%
@@ -233,7 +229,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testChangeReserveAboveMaxReserveFactor() public {
-        assertEq(fnftSettings.maxReserveFactor(), 50000);
+        assertEq(fnftFactory.maxReserveFactor(), 50000);
 
         //initial reserve is 1,
         //maxReserveFactor is 500%
@@ -314,10 +310,10 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testAuctionPrice() public {
-        fnftSettings.setPriceOracle(address(0));
-        console.log("Quorum requirement: ", fnftSettings.minVotePercentage()); // 25%
-        console.log("Min reserve factor: ", fnftSettings.minReserveFactor()); // 20%
-        console.log("Max reserve factor: ", fnftSettings.maxReserveFactor()); // 500%
+        fnftFactory.setPriceOracle(address(0));
+        console.log("Quorum requirement: ", fnftFactory.minVotePercentage()); // 25%
+        console.log("Min reserve factor: ", fnftFactory.minReserveFactor()); // 20%
+        console.log("Max reserve factor: ", fnftFactory.maxReserveFactor()); // 500%
 
         assertEq(fnft.getQuorum(), 10000, "Quorum 1");
         assertEq(fnft.reservePrice(), 1 ether, "Reserve price 1");
@@ -477,7 +473,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     function testAuctionEndCurator0() public {
         fnft.updateFee(0);
         fnft.updateCurator(address(0));
-        fnftSettings.setGovernanceFee(0);
+        fnftFactory.setFee(FNFTFactory.FeeType.GovernanceFee, 0);
         fnft.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
         fnft.transfer(address(user2), 25e18);
@@ -547,12 +543,12 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
             fnft.balanceOf(address(this)), //amountForSale
             0.01 ether, //price per token
             fnft.totalSupply(), // max amount someone can buy
-            ifoSettings.minimumDuration(), //sale duration
+            ifoFactory.minimumDuration(), //sale duration
             false // allow whitelist
         );
 
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fnft)));
-        ifoSettings.setCreatorIFOLock(true);
+        ifoFactory.setCreatorIFOLock(true);
 
         fNFTIfo.start();
 
@@ -564,7 +560,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         fNFTIfo.deposit{value: 0.3 ether}(); // 30 eth
         vm.stopPrank();
 
-        vm.roll(fNFTIfo.startBlock() + ifoSettings.minimumDuration() + 1);
+        vm.roll(fNFTIfo.startBlock() + ifoFactory.minimumDuration() + 1);
 
         fNFTIfo.end();
 
@@ -578,7 +574,7 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertEq(fnft.getQuorum(), 10000);
 
-        ifoSettings.setCreatorIFOLock(false);
+        ifoFactory.setCreatorIFOLock(false);
 
         assertEq(fnft.getQuorum(), 4000);
     }
