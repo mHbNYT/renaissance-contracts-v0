@@ -20,7 +20,9 @@ contract FNFTCollectionFactory is
     address public override zapContract; // No longer needed, but keeping for compatibility.
     address public override feeDistributor;
     address public override eligibilityManager;
-
+    address public override priceOracle;
+    address public override WETH;
+    
     mapping(address => address[]) _vaultsForAsset;
 
     address[] internal vaults;
@@ -43,18 +45,21 @@ contract FNFTCollectionFactory is
     uint64 public override factoryTargetRedeemFee;
     uint64 public override factoryRandomSwapFee;
     uint64 public override factoryTargetSwapFee;
-    uint64 public override flashLoanFee;
+    uint64 public override flashLoanFee;    
+    uint64 public override swapFee;
 
     error FeeTooHigh();
     error CallerIsNotVault();
     error ZeroAddress();
 
-    function __FNFTCollectionFactory_init(address _vaultImpl, address _feeDistributor) public override initializer {
+    function __FNFTCollectionFactory_init(address _weth, address _feeDistributor) public override initializer {
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
-        __BeaconUpgradeable__init(_vaultImpl);
+        __BeaconUpgradeable__init(address(new FNFTCollection()));
         setFeeDistributor(_feeDistributor);
         setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether);
+
+        WETH = _weth;
     }
 
     function createVault(
@@ -76,10 +81,21 @@ contract FNFTCollectionFactory is
         return _vaultId;
     }
 
+    function setPriceOracle(address _newOracle) external onlyOwner {
+        emit UpdatePriceOracle(priceOracle, _newOracle);
+        priceOracle = _newOracle;
+    }
+
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
         if (_flashLoanFee > 500) revert FeeTooHigh();
         emit UpdateFlashLoanFee(flashLoanFee, _flashLoanFee);
         flashLoanFee = uint64(_flashLoanFee);
+    }
+
+    function setSwapFee(uint256 _swapFee) external virtual override onlyOwner {
+        if (_swapFee > 500) revert FeeTooHigh();
+        emit UpdateSwapFee(swapFee, _swapFee);
+        swapFee = uint64(_swapFee);
     }
 
     function setFactoryFees(

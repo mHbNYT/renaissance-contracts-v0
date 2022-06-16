@@ -15,7 +15,7 @@ import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IWETH} from "../contracts/interfaces/IWETH.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
-import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWithFNFTAndWETH} from "./utils/utils.sol";
+import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
 import {ERC20FlashMintUpgradeable} from "../contracts/token/ERC20FlashMintUpgradeable.sol";
 import {FlashBorrower} from "./utils/FlashBorrower.sol";
 
@@ -34,16 +34,12 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
     User public user3;
     UserNoETH public user4;
 
-    PairWithFNFTAndWETH public pair;
-
     Curator public curator;
 
     function setUp() public {
         setupEnvironment(10 ether);
         (pairFactory, priceOracle, ifoFactory, fnftFactory, ) = setupContracts(10 ether);
-
         fnftFactory.setFee(FNFTFactory.FeeType.GovernanceFee, 100);
-
         token = new MockNFT();
 
         token.mint(address(this), 1);
@@ -631,6 +627,54 @@ contract FNFTTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnft.balanceOf(address(fnft)), 0);
         assertEq(fnft.allowance(address(flashBorrower), address(fnft)), 0);
     }
+
+    function testSwapFee() public {
+        fnftFactory.setFee(FNFTFactory.FeeType.SwapFee, 100);
+
+        uint originalBalance = fnft.balanceOf(address(this));
+        uint transferAmount = 1 ether;
+        uint swapFeeAmount = 0.01 ether;
+        address distributor = fnftFactory.feeDistributor();
+        address pairAddress = address(fnft.pair());
+
+        fnft.transfer(pairAddress, transferAmount);
+
+        assertEq(fnft.balanceOf(pairAddress), transferAmount - swapFeeAmount);
+        assertEq(fnft.balanceOf(address(this)), originalBalance - transferAmount);
+        assertEq(fnft.balanceOf(distributor), swapFeeAmount);
+    }
+
+    function testExcludeSwapFeeFromFeeExclusion() public {
+        fnftFactory.setFee(FNFTFactory.FeeType.SwapFee, 100);
+        fnftFactory.setFeeExclusion(address(this), true);
+        assertTrue(fnftFactory.excludedFromFees(address(this)));
+
+        uint originalBalance = fnft.balanceOf(address(this));
+        uint transferAmount = 1 ether;
+        address distributor = fnftFactory.feeDistributor();
+        address pairAddress = address(fnft.pair());
+
+        fnft.transfer(pairAddress, transferAmount);
+
+        assertEq(fnft.balanceOf(pairAddress), transferAmount);
+        assertEq(fnft.balanceOf(address(this)), originalBalance - transferAmount);
+        assertEq(fnft.balanceOf(distributor), 0);
+    }
+
+    function testExcludeSwapFeeForNormalTransfers() public {
+        fnftFactory.setFee(FNFTFactory.FeeType.SwapFee, 100);        
+
+        uint originalBalance = fnft.balanceOf(address(this));
+        uint transferAmount = 1 ether;
+        address distributor = fnftFactory.feeDistributor();
+
+        fnft.transfer(address(user1), transferAmount);
+
+        assertEq(fnft.balanceOf(address(user1)), transferAmount);
+        assertEq(fnft.balanceOf(address(this)), originalBalance - transferAmount);
+        assertEq(fnft.balanceOf(distributor), 0);
+    }
+
 
     receive() external payable {}
 }

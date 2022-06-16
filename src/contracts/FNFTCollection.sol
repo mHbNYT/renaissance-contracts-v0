@@ -17,6 +17,7 @@ import "./interfaces/IEligibility.sol";
 import "./interfaces/IEligibilityManager.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./token/ERC20FlashMintUpgradeable.sol";
+import {IPriceOracle} from "./PriceOracle.sol";
 
 // Authors: @0xKiwi_ and @alexgausman.
 
@@ -34,6 +35,7 @@ contract FNFTCollection is
 
     uint256 public override vaultId;
     address public override manager;
+    address public override pair;
     IFNFTCollectionFactory public override factory;
     IEligibility public override eligibilityStorage;
 
@@ -81,11 +83,13 @@ contract FNFTCollection is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
         if (_assetAddress == address(0)) revert ZeroAddress();
+        IFNFTCollectionFactory _factory = IFNFTCollectionFactory(msg.sender);
         assetAddress = _assetAddress;
-        factory = IFNFTCollectionFactory(msg.sender);
+        factory = _factory;
         vaultId = factory.numVaults();
         is1155 = _is1155;
-        allowAllItems = _allowAllItems;
+        allowAllItems = _allowAllItems;        
+        pair = IPriceOracle(_factory.priceOracle()).createFNFTPair(address(this));
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
         setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/);
     }
@@ -456,8 +460,9 @@ contract FNFTCollection is
     }
 
     function _chargeAndDistributeFees(address user, uint256 amount) internal override virtual {
-        // Do not charge fees if the zap contract is calling
-        // Added in v1.0.3. Changed to mapping in v1.0.5.
+        if (amount == 0) {
+            return;
+        }
 
         IFNFTCollectionFactory _factory = factory;
 
@@ -465,13 +470,11 @@ contract FNFTCollection is
             return;
         }
 
-        // Mint fees directly to the distributor and distribute.
-        if (amount > 0) {
-            address feeDistributor = _factory.feeDistributor();
-            // Changed to a _transfer() in v1.0.3.
-            _transfer(user, feeDistributor, amount);
-            IFeeDistributor(feeDistributor).distribute(vaultId);
-        }
+        // Mint fees directly to the distributor and distribute.        
+        address feeDistributor = _factory.feeDistributor();
+        // Changed to a _transfer() in v1.0.3.
+        super._transfer(user, feeDistributor, amount);
+        IFeeDistributor(feeDistributor).distribute(vaultId);
     }
 
     function transferERC721(address assetAddr, address to, uint256 tokenId) internal virtual {
@@ -563,5 +566,35 @@ contract FNFTCollection is
         withdrawNFTsTo(numItems, specificIds, recipient);
         emit VaultShutdown(assetAddress, numItems, recipient);
         assetAddress = address(0);
+    }
+
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        //Take fee here
+        IFNFTCollectionFactory _factory = IFNFTCollectionFactory(factory);
+        uint256 swapFee = _factory.swapFee();
+        if (swapFee > 0 && to == pair && !_factory.excludedFromFees(msg.sender)) {            
+            uint256 feeAmount = amount * swapFee / 10000;
+
+            _chargeAndDistributeFees(from, feeAmount);
+
+            amount = amount - feeAmount;            
+        }
+
+        super._transfer(from, to, amount);
+    }
+
+    function _afterTokenTransfer(
+        address,
+        address,
+        uint256
+    ) internal virtual override {
+        address priceOracle = IFNFTCollectionFactory(factory).priceOracle();
+        if (priceOracle != address(0)) {
+            IPriceOracle(priceOracle).updateFNFTPairInfo(address(this));
+        }
     }
 }

@@ -5,7 +5,8 @@ import "./interfaces/IFNFTFactory.sol";
 import "./interfaces/IWETH.sol";
 import "./interfaces/IIFOFactory.sol";
 import "./interfaces/IIFO.sol";
-import "./libraries/UniswapV2Library.sol";
+import "./interfaces/IUniswapV2Pair.sol";
+import "./interfaces/IFeeDistributor.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
@@ -44,6 +45,8 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
 
     /// @notice the current user winning the token auction
     address payable public winning;
+
+    IUniswapV2Pair public pair;
 
     enum State {
         Inactive,
@@ -160,7 +163,7 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         lastClaimed = block.timestamp;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
-
+        pair = IUniswapV2Pair(IPriceOracle(IFNFTFactory(msg.sender).priceOracle()).createFNFTPair(address(this)));
         _mint(_curator, _supply);
     }
 
@@ -388,18 +391,12 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         uint256 _reservePrice = reservePrice();
 
         if (address(priceOracle) != address(0)) {
-            address weth = IFNFTFactory(factory).WETH();
-            IUniswapV2Pair pair = IUniswapV2Pair(IPriceOracle(priceOracle).getPairAddress(address(this), weth));
-            uint256 reserve1;
-            uint256 twapPrice;
-            if (IPriceOracle(priceOracle).getPairInfo(address(pair)).exists) {
-                (, reserve1) = UniswapV2Library.getReserves(pair.factory(), address(this), weth);
-                twapPrice = _getTWAP();
-            }
+            (, uint256 reserve1,) = pair.getReserves();
 
             bool aboveLiquidityThreshold = reserve1 * 2 > IFNFTFactory(factory).liquidityThreshold();
 
             if (aboveLiquidityThreshold) {
+                uint256 twapPrice = _getTWAP();
                 if (aboveQuorum) {
                     //twap price if twap > reserve
                     //reserve price if twap < reserve
@@ -424,7 +421,7 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
     }
 
     function _getTWAP() internal view returns (uint256) {
-        try IPriceOracle(IFNFTFactory(factory).priceOracle()).getfNFTPriceETH(address(this), totalSupply()) returns (uint256 twapPrice) {
+        try IPriceOracle(IFNFTFactory(factory).priceOracle()).getFNFTPriceETH(address(this), totalSupply()) returns (uint256 twapPrice) {
             return twapPrice;
         } catch {
             return 0;
@@ -483,6 +480,25 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         }
     }
 
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
+        //Take fee here
+        IFNFTFactory _factory = IFNFTFactory(factory);
+        uint256 swapFee = _factory.swapFee();
+        if (swapFee > 0 && to == address(pair) && !_factory.excludedFromFees(address(msg.sender))) {
+            uint256 feeAmount = amount * swapFee / 10000;
+
+            _chargeAndDistributeFees(from, feeAmount);
+
+            amount = amount - feeAmount;
+        }
+
+        super._transfer(from, to, amount);
+    }
+
     function _afterTokenTransfer(
         address,
         address,
@@ -490,7 +506,7 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
     ) internal virtual override {
         address priceOracle = IFNFTFactory(factory).priceOracle();
         if (priceOracle != address(0)) {
-            IPriceOracle(priceOracle).updatefNFTPairInfo(address(this));
+            IPriceOracle(priceOracle).updateFNFTPairInfo(address(this));
         }
     }
 
@@ -619,7 +635,17 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         return _flashLoan(receiver, loanToken, amount, flashLoanFee, data);
     }
 
-    function _chargeAndDistributeFees(address user, uint256 amount) internal override virtual {
-        // TODO: charge a fee
+    function _chargeAndDistributeFees(address user, uint256 amount) internal override virtual {        
+        if (amount == 0) {
+            return;
+        }
+
+        IFNFTFactory _factory = IFNFTFactory(factory);
+
+        // Mint fees directly to the distributor and distribute.
+        address feeDistributor = _factory.feeDistributor();
+        // Changed to a _transfer() in v1.0.3.
+        super._transfer(user, feeDistributor, amount);
+        // IFeeDistributor(feeDistributor).distribute(vaultId);
     }
 }
