@@ -87,8 +87,11 @@ contract LPStaking is Pausable {
 
     function updatePoolForVaults(uint256[] calldata vaultIds) external {
         uint256 length = vaultIds.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             updatePoolForVault(vaultIds[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
@@ -199,8 +202,11 @@ contract LPStaking is Pausable {
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external {
         uint256 length = vaultIds.length;
-        for (uint256 i; i < length; ++i) {
+        for (uint256 i; i < length;) {
             claimRewards(vaultIds[i]);
+            unchecked {
+                ++i;
+            }
         }
     }
 
