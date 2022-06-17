@@ -66,7 +66,6 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     assertTrue(vault.enableTargetSwap());
 
     assertEq(factory.numVaults(), 1);
-    assertEq(factory.allVaults().length, 1);
     assertEq(factory.vaultsForAsset(address(token))[0], address(vault));
   }
 
@@ -586,7 +585,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   // "not from vault" error
   // disable vault fees
 
-  function createVault() private {
+  function createVault() private {    
     factory.createVault("Doodles", "DOODLE", address(token), false, true);
     vault = FNFTCollection(factory.vault(0));
   }

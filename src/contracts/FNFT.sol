@@ -22,7 +22,12 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
     /// -----------------------------------
 
     /// @notice the ERC721 token address of the vault's token
-    address public token;
+    address public token;    
+
+    /// @notice the current user winning the token auction
+    address payable public winning;
+
+    uint256 public vaultId;
 
     /// @notice the ERC721 token ID of the vault's token
     uint256 public id;
@@ -42,9 +47,6 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
 
     /// @notice the current price of the token during an auction
     uint256 public livePrice;
-
-    /// @notice the current user winning the token auction
-    address payable public winning;
 
     IUniswapV2Pair public pair;
 
@@ -151,11 +153,18 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         __ERC20_init(_name, _symbol);
         __ERC721Holder_init();
 
-        if (_fee > IFNFTFactory(msg.sender).maxCuratorFee()) revert FeeTooHigh();
+        IFNFTFactory _factory = IFNFTFactory(msg.sender);
+
+        if (_fee > _factory.maxCuratorFee()) revert FeeTooHigh();
 
         // set storage variables
-        factory = msg.sender;
+        factory = address(_factory);
         token = _token;
+        vaultId = uint256(keccak256(abi.encodePacked(
+            _token,
+            _id,
+            _factory.numVaults()
+        )));
         id = _id;
         auctionLength = 3 days;
         curator = _curator;
@@ -163,7 +172,7 @@ contract FNFT is ERC20FlashMintUpgradeable, ERC721HolderUpgradeable {
         lastClaimed = block.timestamp;
         userReservePrice[_curator] = _listPrice;
         initialReserve = _listPrice;
-        pair = IUniswapV2Pair(IPriceOracle(IFNFTFactory(msg.sender).priceOracle()).createFNFTPair(address(this)));
+        pair = IUniswapV2Pair(IPriceOracle(_factory.priceOracle()).createFNFTPair(address(this)));
         _mint(_curator, _supply);
     }
 

@@ -23,12 +23,12 @@ contract FNFTCollectionFactory is
     address public override priceOracle;
     address public override WETH;
     
-    mapping(address => address[]) _vaultsForAsset;
-
-    address[] internal vaults;
+    mapping(address => address[]) _vaultsForAsset;    
 
     // v1.0.1
     mapping(address => bool) public override excludedFromFees;
+
+    mapping(uint256 => address) internal vaults;
 
     // v1.0.2
     struct VaultFees {
@@ -47,6 +47,7 @@ contract FNFTCollectionFactory is
     uint64 public override factoryTargetSwapFee;
     uint64 public override flashLoanFee;    
     uint64 public override swapFee;
+    uint64 public override numVaults;
 
     error FeeTooHigh();
     error CallerIsNotVault();
@@ -73,9 +74,10 @@ contract FNFTCollectionFactory is
         if (feeDistributor == address(0)) revert ZeroAddress();
         if (childImplementation() == address(0)) revert ZeroAddress();
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
-        uint256 _vaultId = vaults.length;
+        uint256 _vaultId = uint256(keccak256(abi.encodePacked(_assetAddress, numVaults)));
         _vaultsForAsset[_assetAddress].push(vaultAddr);
-        vaults.push(vaultAddr);
+        vaults[_vaultId] = vaultAddr;
+        numVaults++;
         IFeeDistributor(feeDistributor).initializeVaultReceivers(_vaultId);
         emit NewVault(_vaultId, vaultAddr, _assetAddress);
         return _vaultId;
@@ -206,13 +208,6 @@ contract FNFTCollectionFactory is
         return vaults[vaultId];
     }
 
-    function allVaults() external view override virtual returns (address[] memory) {
-        return vaults;
-    }
-
-    function numVaults() external view override virtual returns (uint256) {
-        return vaults.length;
-    }
 
     function deployVault(
         string memory name,

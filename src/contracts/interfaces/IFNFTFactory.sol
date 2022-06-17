@@ -3,9 +3,7 @@ pragma solidity ^0.8.0;
 import {IPriceOracle} from "./IPriceOracle.sol";
 import {IWETH} from "./IWETH.sol";
 
-interface IFNFTFactory {
-    function fnfts(bytes32) external view returns (address);
-
+interface IFNFTFactory {    
     function excludedFromFees(address) external view returns (bool);
 
     function feeDistributor() external view returns (address);
@@ -15,6 +13,12 @@ interface IFNFTFactory {
     function ifoFactory() external view returns (address);
 
     function WETH() external view returns (address);
+
+    function vault(uint256 vaultId) external view returns (address);
+
+    function numVaults() external view returns (uint256);
+
+    function vaultsForAsset(address asset, uint256 tokenId) external view returns (address[] memory);
 
     function swapFee() external view returns (uint256);
 

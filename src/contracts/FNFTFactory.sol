@@ -21,11 +21,13 @@ contract FNFTFactory is
     enum FeeType { GovernanceFee, MaxCuratorFee, SwapFee }
     enum Boundary { Min, Max }
 
-    /// @notice a mapping of fNFT ids (see getFnftId) to the address of the fNFT contract
-    mapping(bytes32 => address) public override fnfts;
-
     /// @notice fee exclusion for swaps
+
+    mapping(address => mapping(uint256 => address[])) _vaultsForAsset;    
+    
     mapping(address => bool) public override excludedFromFees;
+
+    mapping(uint256 => address) internal vaults;
 
     address public override feeDistributor;
 
@@ -34,6 +36,8 @@ contract FNFTFactory is
     address public override priceOracle;
 
     address public override ifoFactory;
+
+    uint256 public override numVaults;
 
     uint256 public override swapFee;
 
@@ -175,18 +179,15 @@ contract FNFTFactory is
 
         address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
 
-        bytes32 fnftId = getFNFTId(_nft, _tokenId);
+        uint256 _vaultId = uint256(keccak256(abi.encodePacked(_nft, _tokenId, numVaults)));
+        _vaultsForAsset[fnft][_tokenId].push(fnft);
+        vaults[_vaultId] = fnft;
+        numVaults++;
 
         emit FNFTCreated(_nft, fnft, msg.sender, _listPrice, _name, _symbol);
 
-        fnfts[fnftId] = fnft;
-
         IERC721(_nft).safeTransferFrom(msg.sender, fnft, _tokenId);
         return fnft;
-    }
-
-    function getFNFTId(address nftContract, uint256 tokenId) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(nftContract, tokenId));
     }
 
     function togglePaused() external onlyOwner {
@@ -291,5 +292,13 @@ contract FNFTFactory is
         if (_flashLoanFee > 500) revert FeeTooHigh();
         emit UpdateFlashLoanFee(flashLoanFee, _flashLoanFee);
         flashLoanFee = _flashLoanFee;
+    }
+
+    function vaultsForAsset(address assetAddress, uint256 tokenId) external view override virtual returns (address[] memory) {
+        return _vaultsForAsset[assetAddress][tokenId];
+    }
+
+    function vault(uint256 vaultId) external view override virtual returns (address) {
+        return vaults[vaultId];
     }
 }
