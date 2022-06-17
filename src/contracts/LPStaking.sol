@@ -139,18 +139,18 @@ contract LPStaking is Pausable {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         IERC20Upgradeable(pool.stakingToken).safeTransferFrom(msg.sender, address(this), amount);
-        TimelockRewardDistributionTokenImpl xSLPToken = _rewardDistributionToken(pool);
+        TimelockRewardDistributionTokenImpl rewardDistToken = _rewardDistributionToken(pool);
 
         // If the user has an existing timelock, check if it is in the future.
-        uint256 currentTimelock = xSLPToken.timelockUntil(msg.sender);
+        uint256 currentTimelock = rewardDistToken.timelockUntil(msg.sender);
         if (currentTimelock > block.timestamp) {
             // Maintain the same timelock if they already have one.
             // We do this instead of patching in the token because
-            // the xSLP contracts as currently deployed are not upgradeable.
-            xSLPToken.timelockMint(msg.sender, amount, currentTimelock-block.timestamp);
+            // the reward distribution token contracts as currently deployed are not upgradeable.
+            rewardDistToken.timelockMint(msg.sender, amount, currentTimelock-block.timestamp);
         } else {
             // Timelock for 2 seconds if they don't already have a timelock to prevent flash loans.
-            xSLPToken.timelockMint(msg.sender, amount, 2);
+            rewardDistToken.timelockMint(msg.sender, amount, 2);
         }
     }
 
@@ -283,8 +283,8 @@ contract LPStaking is Pausable {
 
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) public onlyOwner {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        TimelockRewardDistributionTokenImpl xSlp = _rewardDistributionToken(pool);
-        xSlp.burnFrom(from, amount);
-        xSlp.mint(to, amount);
+        TimelockRewardDistributionTokenImpl rewardDistToken = _rewardDistributionToken(pool);
+        rewardDistToken.burnFrom(from, amount);
+        rewardDistToken.mint(to, amount);
     }
 }
