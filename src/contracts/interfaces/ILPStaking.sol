@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 
 interface ILPStaking {
     function fnftCollectionFactory() external view returns (address);
-    function rewardDistTokenImpl() external view returns (address);
     function stakingTokenProvider() external view returns (address);
     function vaultToken(address _stakingToken) external view returns (address);
     function stakingToken(address _vaultToken) external view returns (address);

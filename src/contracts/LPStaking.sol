@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 
 import "./interfaces/IFNFTCollectionFactory.sol";
-import "./interfaces/IRewardDistributionToken.sol";
 import "./util/Pausable.sol";
 import "./StakingTokenProvider.sol";
 import "./token/TimelockRewardDistributionTokenImpl.sol";
@@ -23,7 +22,6 @@ contract LPStaking is Pausable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     IFNFTCollectionFactory public fnftCollectionFactory;
-    IRewardDistributionToken public rewardDistTokenImpl;
     StakingTokenProvider public stakingTokenProvider;
 
     event PoolCreated(uint256 vaultId, address pool);
@@ -218,22 +216,6 @@ contract LPStaking is Pausable {
         return _rewardDistributionTokenAddr(pool);
     }
 
-   function rewardDistributionToken(uint256 vaultId) external view returns (IRewardDistributionToken) {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        if (pool.stakingToken == address(0)) {
-            return IRewardDistributionToken(address(0));
-        }
-        return _unusedRewardDistributionTokenAddr(pool);
-    }
-
-    function unusedRewardDistributionToken(uint256 vaultId) external view returns (address) {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        if (pool.stakingToken == address(0)) {
-            return address(0);
-        }
-        return address(_unusedRewardDistributionTokenAddr(pool));
-    }
-
     function rewardDistributionTokenAddr(address stakedToken, address rewardToken) public view returns (address) {
         StakingPool memory pool = StakingPool(stakedToken, rewardToken);
         return address(_rewardDistributionTokenAddr(pool));
@@ -242,13 +224,6 @@ contract LPStaking is Pausable {
     function balanceOf(uint256 vaultId, address addr) public view returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         TimelockRewardDistributionTokenImpl dist = _rewardDistributionTokenAddr(pool);
-        if (!isContract(address(dist))) revert NotAPool();
-        return dist.balanceOf(addr);
-    }
-
-    function unusedBalanceOf(uint256 vaultId, address addr) public view returns (uint256) {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        IRewardDistributionToken dist = _unusedRewardDistributionTokenAddr(pool);
         if (!isContract(address(dist))) revert NotAPool();
         return dist.balanceOf(addr);
     }
@@ -293,13 +268,6 @@ contract LPStaking is Pausable {
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2) /* small nonce to change tokens */));
         address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(newTimelockRewardDistTokenImpl), salt);
         return TimelockRewardDistributionTokenImpl(tokenAddr);
-    }
-
-    // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
-    function _unusedRewardDistributionTokenAddr(StakingPool memory pool) public view returns (IRewardDistributionToken) {
-        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken));
-        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(rewardDistTokenImpl), salt);
-        return IRewardDistributionToken(tokenAddr);
     }
 
     function isContract(address account) internal view returns (bool) {
