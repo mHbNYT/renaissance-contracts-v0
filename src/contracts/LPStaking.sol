@@ -23,6 +23,9 @@ contract LPStaking is Pausable {
 
     IFNFTCollectionFactory public fnftCollectionFactory;
     StakingTokenProvider public stakingTokenProvider;
+    TimelockRewardDistributionTokenImpl public timelockRewardDistTokenImpl;
+
+    mapping(uint256 => StakingPool) public vaultStakingInfo;
 
     event PoolCreated(uint256 vaultId, address pool);
     event PoolUpdated(uint256 vaultId, address pool);
@@ -32,9 +35,6 @@ contract LPStaking is Pausable {
         address stakingToken;
         address rewardToken;
     }
-    mapping(uint256 => StakingPool) public vaultStakingInfo;
-
-    TimelockRewardDistributionTokenImpl public timelockRewardDistTokenImpl;
 
     error FactoryAlreadySet();
     error FactoryNotSet();
