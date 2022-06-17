@@ -186,37 +186,6 @@ contract LPStaking is Pausable {
         _withdraw(pool, dist.balanceOf(msg.sender), msg.sender);
     }
 
-    function emergencyMigrate(uint256 vaultId) external {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        IRewardDistributionToken unusedDist = _unusedRewardDistributionTokenAddr(pool);
-        IRewardDistributionToken oldDist = _oldRewardDistributionTokenAddr(pool);
-
-        uint256 unusedDistBal;
-        if (isContract(address(unusedDist))) {
-            unusedDistBal = unusedDist.balanceOf(msg.sender);
-            if (unusedDistBal > 0) {
-                unusedDist.burnFrom(msg.sender, unusedDistBal);
-            }
-        }
-        uint256 oldDistBal;
-        if (isContract(address(oldDist))) {
-            oldDistBal = oldDist.balanceOf(msg.sender);
-            if (oldDistBal > 0) {
-                oldDist.withdrawReward(msg.sender);
-                oldDist.burnFrom(msg.sender, oldDistBal);
-            }
-        }
-
-        TimelockRewardDistributionTokenImpl newDist = _rewardDistributionTokenAddr(pool);
-        if (!isContract(address(newDist))) {
-            address deployedDist = _deployDividendToken(pool);
-            if (deployedDist != address(newDist)) revert NotDeployingProperDistro();
-            emit PoolUpdated(vaultId, deployedDist);
-        }
-        if (unusedDistBal + oldDistBal == 0) revert NothingToMigrate();
-        newDist.mint(msg.sender, unusedDistBal + oldDistBal);
-    }
-
     function withdraw(uint256 vaultId, uint256 amount) external {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         _claimRewards(pool, msg.sender);
@@ -251,14 +220,6 @@ contract LPStaking is Pausable {
         return _unusedRewardDistributionTokenAddr(pool);
     }
 
-    function oldRewardDistributionToken(uint256 vaultId) external view returns (address) {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        if (pool.stakingToken == address(0)) {
-            return address(0);
-        }
-        return address(_oldRewardDistributionTokenAddr(pool));
-    }
-
     function unusedRewardDistributionToken(uint256 vaultId) external view returns (address) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) {
@@ -275,13 +236,6 @@ contract LPStaking is Pausable {
     function balanceOf(uint256 vaultId, address addr) public view returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         TimelockRewardDistributionTokenImpl dist = _rewardDistributionTokenAddr(pool);
-        if (!isContract(address(dist))) revert NotAPool();
-        return dist.balanceOf(addr);
-    }
-
-    function oldBalanceOf(uint256 vaultId, address addr) public view returns (uint256) {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        IRewardDistributionToken dist = _oldRewardDistributionTokenAddr(pool);
         if (!isContract(address(dist))) revert NotAPool();
         return dist.balanceOf(addr);
     }
@@ -333,13 +287,6 @@ contract LPStaking is Pausable {
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2) /* small nonce to change tokens */));
         address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(newTimelockRewardDistTokenImpl), salt);
         return TimelockRewardDistributionTokenImpl(tokenAddr);
-    }
-
-    // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
-    function _oldRewardDistributionTokenAddr(StakingPool memory pool) public view returns (IRewardDistributionToken) {
-        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(1)));
-        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(rewardDistTokenImpl), salt);
-        return IRewardDistributionToken(tokenAddr);
     }
 
     // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
