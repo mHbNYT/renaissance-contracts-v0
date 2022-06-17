@@ -34,7 +34,7 @@ contract LPStaking is Pausable {
     }
     mapping(uint256 => StakingPool) public vaultStakingInfo;
 
-    TimelockRewardDistributionTokenImpl public newTimelockRewardDistTokenImpl;
+    TimelockRewardDistributionTokenImpl public timelockRewardDistTokenImpl;
 
     error FactoryAlreadySet();
     error FactoryNotSet();
@@ -51,10 +51,10 @@ contract LPStaking is Pausable {
     function __LPStaking__init(address _stakingTokenProvider) external initializer {
         __Ownable_init();
         if (_stakingTokenProvider == address(0)) revert ZeroAddress();
-        if (address(newTimelockRewardDistTokenImpl) != address(0)) revert TimelockRewardDistTokenImplAlreadySet();
+        if (address(timelockRewardDistTokenImpl) != address(0)) revert TimelockRewardDistTokenImplAlreadySet();
         stakingTokenProvider = StakingTokenProvider(_stakingTokenProvider);
-        newTimelockRewardDistTokenImpl = new TimelockRewardDistributionTokenImpl();
-        newTimelockRewardDistTokenImpl.__TimelockRewardDistributionToken_init(IERC20Upgradeable(address(0)), "", "");
+        timelockRewardDistTokenImpl = new TimelockRewardDistributionTokenImpl();
+        timelockRewardDistTokenImpl.__TimelockRewardDistributionToken_init(IERC20Upgradeable(address(0)), "", "");
     }
 
     modifier onlyAdmin() {
@@ -257,7 +257,7 @@ contract LPStaking is Pausable {
     function _deployDividendToken(StakingPool memory pool) internal returns (address) {
         // Changed to use new nonces.
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2)));
-        address rewardDistToken = ClonesUpgradeable.cloneDeterministic(address(newTimelockRewardDistTokenImpl), salt);
+        address rewardDistToken = ClonesUpgradeable.cloneDeterministic(address(timelockRewardDistTokenImpl), salt);
         string memory name = stakingTokenProvider.nameForStakingToken(pool.rewardToken);
         TimelockRewardDistributionTokenImpl(rewardDistToken).__TimelockRewardDistributionToken_init(IERC20Upgradeable(pool.rewardToken), name, name);
         return rewardDistToken;
@@ -266,7 +266,7 @@ contract LPStaking is Pausable {
     // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
     function _rewardDistributionTokenAddr(StakingPool memory pool) public view returns (TimelockRewardDistributionTokenImpl) {
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2) /* small nonce to change tokens */));
-        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(newTimelockRewardDistTokenImpl), salt);
+        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(timelockRewardDistTokenImpl), salt);
         return TimelockRewardDistributionTokenImpl(tokenAddr);
     }
 
