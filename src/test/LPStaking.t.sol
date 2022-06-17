@@ -45,7 +45,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
 
     token = new MockNFT();
 
-    vaultId = uint256(keccak256(abi.encodePacked(address(token), factory.numVaults())));
+    vaultId = uint256(keccak256(abi.encodePacked(address(token), uint64(0))));
   }
 
   function testVariables() public {
