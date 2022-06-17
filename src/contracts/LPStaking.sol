@@ -208,7 +208,7 @@ contract LPStaking is Pausable {
         }
     }
 
-    function newRewardDistributionToken(uint256 vaultId) external view returns (TimelockRewardDistributionTokenImpl) {
+    function rewardDistributionToken(uint256 vaultId) external view returns (TimelockRewardDistributionTokenImpl) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) {
             return TimelockRewardDistributionTokenImpl(address(0));
