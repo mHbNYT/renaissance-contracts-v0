@@ -180,7 +180,7 @@ contract FNFTFactory is
         address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
 
         uint256 _vaultId = uint256(keccak256(abi.encodePacked(_nft, _tokenId, numVaults)));
-        _vaultsForAsset[fnft][_tokenId].push(fnft);
+        _vaultsForAsset[_nft][_tokenId].push(fnft);
         vaults[_vaultId] = fnft;
         numVaults++;
 
