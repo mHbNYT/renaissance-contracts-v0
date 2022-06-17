@@ -298,8 +298,9 @@ contract LPStakingTest is DSTest, SetupEnvironment {
 
   // TODO: merge with FNFTCollectionTest.t.sol
   function createVault() private {
+    uint256 vaultId = uint256(keccak256(abi.encodePacked(address(token), factory.numVaults())));
     factory.createVault("Doodles", "DOODLE", address(token), false, true);
-    vault = FNFTCollection(factory.vault(0));
+    vault = FNFTCollection(factory.vault(vaultId));
   }
 
   function mintVaultTokens(uint256 numberOfTokens) private {
