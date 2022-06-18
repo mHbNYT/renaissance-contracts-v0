@@ -48,7 +48,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   }
 
   function testCreateVault() public {
-    uint256 vaultId = uint256(keccak256(abi.encodePacked(address(token), factory.numVaults())));
+    uint256 vaultId = uint256(keccak256(abi.encodePacked(address(token), uint64(0))));
 
     createVault();
 
@@ -588,7 +588,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   // disable vault fees
 
   function createVault() private {
-    uint256 vaultId = uint256(keccak256(abi.encodePacked(address(token), factory.numVaults())));
+    uint256 vaultId = uint256(keccak256(abi.encodePacked(address(token), uint64(0))));
     factory.createVault("Doodles", "DOODLE", address(token), false, true);
     vault = FNFTCollection(factory.vault(vaultId));
   }
