@@ -5,18 +5,17 @@ pragma solidity 0.8.13;
 import "../proxy/IBeacon.sol";
 
 interface IFNFTCollectionFactory is IBeacon {
-  // Read functions.
-  function numVaults() external view returns (uint256);
+  // Read functions.  
   function zapContract() external view returns (address);
   function feeDistributor() external view returns (address);
   function eligibilityManager() external view returns (address);
   function vault(uint256 vaultId) external view returns (address);
   function priceOracle() external view returns (address);
   function WETH() external view returns (address);
-  function allVaults() external view returns (address[] memory);
   function vaultsForAsset(address asset) external view returns (address[] memory);
   function isLocked(uint256 id) external view returns (bool);
   function excludedFromFees(address addr) external view returns (bool);
+  function numVaults() external view returns (uint64);
   function factoryMintFee() external view returns (uint64);
   function factoryRandomRedeemFee() external view returns (uint64);
   function factoryTargetRedeemFee() external view returns (uint64);

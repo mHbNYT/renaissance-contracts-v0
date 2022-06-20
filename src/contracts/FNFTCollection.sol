@@ -86,7 +86,7 @@ contract FNFTCollection is
         IFNFTCollectionFactory _factory = IFNFTCollectionFactory(msg.sender);
         assetAddress = _assetAddress;
         factory = _factory;
-        vaultId = factory.numVaults();
+        vaultId = uint256(keccak256(abi.encodePacked(_assetAddress, _factory.numVaults())));
         is1155 = _is1155;
         allowAllItems = _allowAllItems;        
         pair = IPriceOracle(_factory.priceOracle()).createFNFTPair(address(this));
