@@ -18,11 +18,11 @@ contract CustomRouter {
     error TxFailed();
 
     modifier ensure(uint deadline) {
-        if (deadline < block.timestamp) revert Expired();        
+        if (deadline < block.timestamp) revert Expired();
         _;
     }
 
-    constructor(address _factory, address _WETH) public {
+    constructor(address _factory, address _WETH) {
         factory = _factory;
         WETH = _WETH;
     }
@@ -49,12 +49,12 @@ contract CustomRouter {
         } else {
             uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                if (amountBOptimal < amountBMin) revert InsufficientB();                
+                if (amountBOptimal < amountBMin) revert InsufficientB();
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
                 uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                if (amountAOptimal < amountAMin) revert InsufficientA();                
+                if (amountAOptimal < amountAMin) revert InsufficientA();
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
@@ -121,7 +121,7 @@ contract CustomRouter {
             address(this),
             deadline
         );
-        IERC20(token).safeTransfer(to, amountToken);        
+        IERC20(token).safeTransfer(to, amountToken);
         IWETH(WETH).withdraw(amountETH);
         _safeTransferETH(to, amountETH);
     }
