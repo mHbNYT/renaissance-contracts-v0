@@ -9,7 +9,6 @@ import {LPStaking} from "../contracts/LPStaking.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
 import {FeeDistributor} from "../contracts/FeeDistributor.sol";
-import {StakingTokenProvider} from "../contracts/StakingTokenProvider.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IUniswapV2Pair} from "../contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Router} from "../contracts/interfaces/IUniswapV2Router.sol";
@@ -37,7 +36,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
       stakingTokenProvider,
       lpStaking,
       feeDistributor,
-      factory
+      factory,
     ) = setupCollectionVaultContracts();
 
     uniswapV2Factory = setupPairFactory();
@@ -48,7 +47,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     vaultId = uint256(keccak256(abi.encodePacked(address(token), uint64(0))));
   }
 
-  function testVariables() public {
+  function testStorageVariables() public {
     assertEq(address(lpStaking.fnftCollectionFactory()), address(factory));
     assertEq(address(lpStaking.stakingTokenProvider()), address(stakingTokenProvider));
   }

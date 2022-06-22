@@ -56,6 +56,7 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
         _;
     }
 
+    // TODO: timelock exclude list is not yet implemented
     function setTimelockExcludeList(address addr) external onlyOwner {
         timelockExcludeList = ITimelockExcludeList(addr);
     }
@@ -134,10 +135,10 @@ contract InventoryStaking is Pausable, BeaconUpgradeable, IInventoryStaking {
         emit Withdraw(vaultId, baseTokensRedeemed, _share, msg.sender);
     }
 
-   function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
+    function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
         IERC20Upgradeable baseToken = IERC20Upgradeable(fnftCollectionFactory.vault(vaultId));
         XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
-        if (address(xToken) == address(0)) revert XTokenNotDeployed();
+        if (!isContract(address(xToken))) revert XTokenNotDeployed();
 
         uint256 multiplier = 10 ** 18;
         return xToken.totalSupply() > 0
