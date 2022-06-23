@@ -5,7 +5,7 @@ pragma solidity 0.8.13;
 import "./util/Pausable.sol";
 
 import "./interfaces/IFNFTCollectionFactory.sol";
-import "./interfaces/IFeeDistributor.sol";
+import "./interfaces/IVaultManager.sol";
 import "./FNFTCollection.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
@@ -17,18 +17,9 @@ contract FNFTCollectionFactory is
     BeaconUpgradeable,
     IFNFTCollectionFactory
 {
-    address public override zapContract; // No longer needed, but keeping for compatibility.
-    address public override feeDistributor;
+
+    address public override vaultManager;
     address public override eligibilityManager;
-    address public override priceOracle;
-    address public override WETH;
-    
-    mapping(address => address[]) _vaultsForAsset;    
-
-    // v1.0.1
-    mapping(address => bool) public override excludedFromFees;
-
-    mapping(uint256 => address) internal vaults;
 
     // v1.0.2
     struct VaultFees {
@@ -45,22 +36,20 @@ contract FNFTCollectionFactory is
     uint64 public override factoryTargetRedeemFee;
     uint64 public override factoryRandomSwapFee;
     uint64 public override factoryTargetSwapFee;
-    uint64 public override flashLoanFee;    
+    uint64 public override flashLoanFee;
     uint64 public override swapFee;
-    uint64 public override numVaults;
 
     error FeeTooHigh();
     error CallerIsNotVault();
     error ZeroAddress();
 
-    function __FNFTCollectionFactory_init(address _weth, address _feeDistributor) public override initializer {
+    function __FNFTCollectionFactory_init(address _vaultManager) public override initializer {
+        if (_vaultManager == address(0)) revert ZeroAddress();
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
         __BeaconUpgradeable__init(address(new FNFTCollection()));
-        setFeeDistributor(_feeDistributor);
+        setVaultManager(_vaultManager);
         setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether);
-
-        WETH = _weth;
     }
 
     function createVault(
@@ -71,21 +60,17 @@ contract FNFTCollectionFactory is
         bool allowAllItems
     ) external virtual override returns (uint256) {
         onlyOwnerIfPaused(0);
-        if (feeDistributor == address(0)) revert ZeroAddress();
         if (childImplementation() == address(0)) revert ZeroAddress();
+        IVaultManager _vaultManager = IVaultManager(vaultManager);
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
-        uint256 _vaultId = uint256(keccak256(abi.encodePacked(_assetAddress, numVaults)));
-        _vaultsForAsset[_assetAddress].push(vaultAddr);
-        vaults[_vaultId] = vaultAddr;
-        numVaults++;
-        IFeeDistributor(feeDistributor).initializeVaultReceivers(_vaultId);
-        emit NewVault(_vaultId, vaultAddr, _assetAddress);
-        return _vaultId;
+        uint vaultId = _vaultManager.addVault(vaultAddr);
+        emit NewVault(vaultId, vaultAddr, _assetAddress);
+        return vaultId;
     }
 
-    function setPriceOracle(address _newOracle) external onlyOwner {
-        emit UpdatePriceOracle(priceOracle, _newOracle);
-        priceOracle = _newOracle;
+    function setVaultManager(address _vaultManager) public virtual override onlyOwner {
+        emit UpdateVaultManager(vaultManager, _vaultManager);
+        vaultManager = _vaultManager;
     }
 
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
@@ -131,7 +116,7 @@ contract FNFTCollectionFactory is
         uint256 targetSwapFee
     ) public virtual override {
         if (msg.sender != owner()) {
-            address vaultAddr = vaults[vaultId];
+            address vaultAddr = IVaultManager(vaultManager).vault(vaultId);
             if (msg.sender != vaultAddr) revert CallerIsNotVault();
         }
         if (mintFee > 0.5 ether) revert FeeTooHigh();
@@ -153,27 +138,11 @@ contract FNFTCollectionFactory is
 
     function disableVaultFees(uint256 vaultId) public virtual override {
         if (msg.sender != owner()) {
-            address vaultAddr = vaults[vaultId];
+            address vaultAddr = IVaultManager(vaultManager).vault(vaultId);
             if (msg.sender != vaultAddr) revert CallerIsNotVault();
         }
         delete _vaultFees[vaultId];
         emit DisableVaultFees(vaultId);
-    }
-
-    function setFeeDistributor(address _feeDistributor) public onlyOwner virtual override {
-        if (_feeDistributor == address(0)) revert ZeroAddress();
-        emit NewFeeDistributor(feeDistributor, _feeDistributor);
-        feeDistributor = _feeDistributor;
-    }
-
-    function setZapContract(address _zapContract) public onlyOwner virtual override {
-        emit NewZapContract(zapContract, _zapContract);
-        zapContract = _zapContract;
-    }
-
-    function setFeeExclusion(address _excludedAddr, bool excluded) public onlyOwner virtual override {
-        emit FeeExclusion(_excludedAddr, excluded);
-        excludedFromFees[_excludedAddr] = excluded;
     }
 
     function setEligibilityManager(address _eligibilityManager) external onlyOwner virtual override {
@@ -199,15 +168,6 @@ contract FNFTCollectionFactory is
     function isLocked(uint256 lockId) external view override virtual returns (bool) {
         return isPaused[lockId];
     }
-
-    function vaultsForAsset(address assetAddress) external view override virtual returns (address[] memory) {
-        return _vaultsForAsset[assetAddress];
-    }
-
-    function vault(uint256 vaultId) external view override virtual returns (address) {
-        return vaults[vaultId];
-    }
-
 
     function deployVault(
         string memory name,

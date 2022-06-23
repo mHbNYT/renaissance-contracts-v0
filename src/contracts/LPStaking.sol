@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 
-import "./interfaces/IFNFTCollectionFactory.sol";
+import "./interfaces/IVaultManager.sol";
 import "./util/Pausable.sol";
 import "./StakingTokenProvider.sol";
 import "./token/TimelockRewardDistributionTokenImpl.sol";
@@ -21,7 +21,7 @@ import "./token/TimelockRewardDistributionTokenImpl.sol";
 contract LPStaking is Pausable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    IFNFTCollectionFactory public fnftCollectionFactory;
+    IVaultManager public vaultManager;
     StakingTokenProvider public stakingTokenProvider;
     TimelockRewardDistributionTokenImpl public timelockRewardDistTokenImpl;
 
@@ -36,8 +36,8 @@ contract LPStaking is Pausable {
         address rewardToken;
     }
 
-    error FactoryAlreadySet();
-    error FactoryNotSet();
+    error VaultManagerAlreadySet();
+    error VaultManagerNotSet();
     error NotAPool();
     error NotDeployingProperDistro();
     error NotExcludedFromFees();
@@ -48,23 +48,24 @@ contract LPStaking is Pausable {
     error TimelockRewardDistTokenImplAlreadySet();
     error ZeroAddress();
 
-    function __LPStaking__init(address _stakingTokenProvider) external initializer {
+    function __LPStaking__init(address _vaultManager, address _stakingTokenProvider) external initializer {
         __Ownable_init();
         if (_stakingTokenProvider == address(0)) revert ZeroAddress();
         if (address(timelockRewardDistTokenImpl) != address(0)) revert TimelockRewardDistTokenImplAlreadySet();
+        setVaultManager(_vaultManager);
         stakingTokenProvider = StakingTokenProvider(_stakingTokenProvider);
         timelockRewardDistTokenImpl = new TimelockRewardDistributionTokenImpl();
         timelockRewardDistTokenImpl.__TimelockRewardDistributionToken_init(IERC20Upgradeable(address(0)), "", "");
     }
 
     modifier onlyAdmin() {
-        if (msg.sender != owner() && msg.sender != fnftCollectionFactory.feeDistributor()) revert Unauthorized();
+        if (msg.sender != owner() && msg.sender != vaultManager.feeDistributor()) revert Unauthorized();
         _;
     }
 
-    function setFNFTCollectionFactory(address newFactory) external onlyOwner {
-        if (address(fnftCollectionFactory) != address(0)) revert FactoryAlreadySet();
-        fnftCollectionFactory = IFNFTCollectionFactory(newFactory);
+    function setVaultManager(address _vaultManager) public onlyOwner {
+        if (address(vaultManager) != address(0)) revert VaultManagerAlreadySet();
+        vaultManager = IVaultManager(_vaultManager);
     }
 
     function setStakingTokenProvider(address newProvider) external onlyOwner {
@@ -73,9 +74,9 @@ contract LPStaking is Pausable {
     }
 
     function addPoolForVault(uint256 vaultId) external onlyAdmin {
-        if (address(fnftCollectionFactory) == address(0)) revert FactoryNotSet();
+        if (address(vaultManager) == address(0)) revert VaultManagerNotSet();
         if (vaultStakingInfo[vaultId].stakingToken != address(0)) revert PoolAlreadyExists();
-        address _rewardToken = fnftCollectionFactory.vault(vaultId);
+        address _rewardToken = vaultManager.vault(vaultId);
         address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_rewardToken);
         StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
         vaultStakingInfo[vaultId] = pool;
@@ -156,7 +157,7 @@ contract LPStaking is Pausable {
 
     function timelockDepositFor(uint256 vaultId, address account, uint256 amount, uint256 timelockLength) external {
         if (timelockLength >= 2592000) revert TimelockTooLong();
-        if (!fnftCollectionFactory.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
+        if (!vaultManager.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
         onlyOwnerIfPaused(10);
         // Check the pool in case its been updated.
         updatePoolForVault(vaultId);

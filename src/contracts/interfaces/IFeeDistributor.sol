@@ -10,14 +10,14 @@ interface IFeeDistributor {
     bool isContract;
   }
 
-  function fnftCollectionFactory() external returns (address);
+  function vaultManager() external returns (address);
   function lpStaking() external returns (address);
   function inventoryStaking() external returns (address);
   function treasury() external returns (address);
   function allocTotal() external returns (uint256);
 
   // Write functions.
-  function __FeeDistributor__init__(address _lpStaking, address _treasury) external;
+  function __FeeDistributor__init__(address _vaultManager, address _lpStaking, address _treasury) external;
   function rescueTokens(address token) external;
   function distribute(uint256 vaultId) external;
   function addReceiver(uint256 _allocPoint, address _receiver, bool _isContract) external;
@@ -31,5 +31,5 @@ interface IFeeDistributor {
   function setTreasuryAddress(address _treasury) external;
   function setLPStakingAddress(address _lpStaking) external;
   function setInventoryStakingAddress(address _inventoryStaking) external;
-  function setFNFTCollectionFactory(address _factory) external;
+  function setVaultManager(address _vaultManager) external;
 }
