@@ -17,7 +17,6 @@ contract FNFTCollectionFactory is
     BeaconUpgradeable,
     IFNFTCollectionFactory
 {
-
     // v1.0.2
     struct VaultFees {
         bool active;
