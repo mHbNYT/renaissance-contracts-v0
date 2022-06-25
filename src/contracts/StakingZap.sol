@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -32,6 +32,19 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
   uint256 public inventoryLockTime = 7 days;
   uint256 constant BASE = 1e18;
 
+  error LockTooLong();
+  error NotZero();
+  error NotEqualLength();
+  error IncorrectAmount();
+  error CallFailed();
+  error CallFailed(string message);
+  error NotOwner();
+  error IdenticalOwner();
+  error ZeroAddress();
+  error OnlyWETH();
+  error InvalidDestination();
+  error NotExcluded();
+
   event UserStaked(uint256 vaultId, uint256 count, uint256 lpBalance, uint256 timelockUntil, address sender);
 
   constructor(address _vaultManager, address _router) Ownable() ReentrancyGuard() {
@@ -42,18 +55,18 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
   }
 
   function assignStakingContracts() public {
-    require(address(lpStaking) == address(0) || address(inventoryStaking) == address(0), "not zero");
+    if (address(lpStaking) != address(0) && address(inventoryStaking) != address(0)) revert NotZero();
     lpStaking = ILPStaking(IFeeDistributor(IVaultManager(vaultManager).feeDistributor()).lpStaking());
     inventoryStaking = IInventoryStaking(IFeeDistributor(IVaultManager(vaultManager).feeDistributor()).inventoryStaking());
   }
 
   function setLPLockTime(uint256 newLPLockTime) external onlyOwner {
-    require(newLPLockTime <= 7 days, "Lock too long");
+    if (newLPLockTime > 7 days) revert LockTooLong();
     lpLockTime = newLPLockTime;
   }
 
   function setInventoryLockTime(uint256 newInventoryLockTime) external onlyOwner {
-    require(newInventoryLockTime <= 14 days, "Lock too long");
+    if (newInventoryLockTime > 14 days) revert LockTooLong();
     inventoryLockTime = newInventoryLockTime;
   }
 
@@ -72,12 +85,12 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     }
     vault.mintTo(tokenIds, amounts, address(xToken));
     uint256 newBal = IERC20Upgradeable(vault).balanceOf(xToken);
-    require(newBal == oldBal + count*BASE, "Incorrect vtokens minted");
+    if (newBal != oldBal + count*BASE) revert IncorrectAmount();
   }
 
   function provideInventory1155(uint256 vaultId, uint256[] calldata tokenIds, uint256[] calldata amounts) external {
     uint256 length = tokenIds.length;
-    require(length == amounts.length, "Not equal length");
+    if (length != amounts.length) revert NotEqualLength();
     uint256 count;
     for (uint256 i; i < length; ++i) {
       count += amounts[i];
@@ -91,7 +104,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     nft.setApprovalForAll(address(vault), true);
     vault.mintTo(tokenIds, amounts, address(xToken));
     uint256 newBal = IERC20Upgradeable(vault).balanceOf(address(xToken));
-    require(newBal == oldBal + count*BASE, "Incorrect vtokens minted");
+    if (newBal != oldBal + count*BASE) revert IncorrectAmount();
   }
 
   function addLiquidity721ETH(
@@ -108,7 +121,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 minWethIn,
     address to
   ) public payable nonReentrant returns (uint256) {
-    require(to != address(0) && to != address(this));
+    if (to == address(0) || to == address(this)) revert InvalidDestination();
     WETH.deposit{value: msg.value}();
     (, uint256 amountEth, uint256 liquidity) = _addLiquidity721WETH(vaultId, ids, minWethIn, msg.value, to);
 
@@ -117,7 +130,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     if (remaining != 0) {
       WETH.withdraw(remaining);
       (bool success, ) = payable(to).call{value: remaining}("");
-      require(success, "Address: unable to send value, recipient may have reverted");
+      if (!success) revert CallFailed();
     }
 
     return liquidity;
@@ -139,7 +152,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 minEthIn,
     address to
   ) public payable nonReentrant returns (uint256) {
-    require(to != address(0) && to != address(this));
+    if (to == address(0) || to == address(this)) revert InvalidDestination();
     WETH.deposit{value: msg.value}();
     // Finish this.
     (, uint256 amountEth, uint256 liquidity) = _addLiquidity1155WETH(vaultId, ids, amounts, minEthIn, msg.value, to);
@@ -149,7 +162,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     if (remaining != 0) {
       WETH.withdraw(remaining);
       (bool success, ) = payable(to).call{value: remaining}("");
-      require(success, "Address: unable to send value, recipient may have reverted");
+      if (!success) revert CallFailed();
     }
 
     return liquidity;
@@ -171,7 +184,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 wethIn,
     address to
   ) public nonReentrant returns (uint256) {
-    require(to != address(0) && to != address(this));
+    if (to == address(0) || to == address(this)) revert InvalidDestination();
     IERC20Upgradeable(address(WETH)).safeTransferFrom(msg.sender, address(this), wethIn);
     (, uint256 amountEth, uint256 liquidity) = _addLiquidity721WETH(vaultId, ids, minWethIn, wethIn, to);
 
@@ -202,7 +215,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 wethIn,
     address to
   ) public nonReentrant returns (uint256) {
-    require(to != address(0) && to != address(this));
+    if (to == address(0) || to == address(this)) revert InvalidDestination();
     IERC20Upgradeable(address(WETH)).safeTransferFrom(msg.sender, address(this), wethIn);
     (, uint256 amountEth, uint256 liquidity) = _addLiquidity1155WETH(vaultId, ids, amounts, minWethIn, wethIn, to);
 
@@ -222,7 +235,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 wethIn,
     address to
   ) internal returns (uint256, uint256, uint256) {
-    require(vaultManager.excludedFromFees(address(this)));
+    if (!vaultManager.excludedFromFees(address(this))) revert NotExcluded();
     address vault = vaultManager.vault(vaultId);
 
     address assetAddress = IFNFTCollection(vault).assetAddress();
@@ -246,7 +259,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 wethIn,
     address to
   ) internal returns (uint256, uint256, uint256) {
-    require(vaultManager.excludedFromFees(address(this)));
+    if (!vaultManager.excludedFromFees(address(this))) revert NotExcluded();
     address vault = vaultManager.vault(vaultId);
 
     address assetAddress = IFNFTCollection(vault).assetAddress();
@@ -361,7 +374,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
         bytes memory punkIndexToAddress = abi.encodeWithSignature("punkIndexToAddress(uint256)", tokenId);
         (bool checkSuccess, bytes memory result) = address(assetAddr).staticcall(punkIndexToAddress);
         (address nftOwner) = abi.decode(result, (address));
-        require(checkSuccess && nftOwner == msg.sender, "Not the NFT owner");
+        if (!checkSuccess || nftOwner != msg.sender) revert NotOwner();
         data = abi.encodeWithSignature("buyPunk(uint256)", tokenId);
     } else {
         // Default.
@@ -369,7 +382,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
         data = abi.encodeWithSignature("safeTransferFrom(address,address,uint256)", msg.sender, to, tokenId);
     }
     (bool success, bytes memory resultData) = address(assetAddr).call(data);
-    require(success, string(resultData));
+    if (!success) revert CallFailed(string(resultData));
   }
 
   function approveERC721(address assetAddr, address to, uint256 tokenId) internal virtual {
@@ -389,7 +402,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
       return;
     }
     (bool success, bytes memory resultData) = address(assetAddr).call(data);
-    require(success, string(resultData));
+    if (!success) revert CallFailed(string(resultData));
   }
 
   // calculates the CREATE2 address for a pair without making any external calls
@@ -405,19 +418,19 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
 
   // returns sorted token addresses, used to handle return values from pairs sorted in this order
   function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
-      require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');
-      (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-      require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');
+    if (tokenA == tokenB) revert IdenticalAddress();
+    (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+    if (token0 == address(0)) revert ZeroAddress();
   }
 
   receive() external payable {
-    require(msg.sender == address(WETH), "Only WETH");
+    if (msg.sender != address(WETH)) revert OnlyWETH();
   }
 
   function rescue(address token) external onlyOwner {
     if (token == address(0)) {
       (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
-      require(success, "Address: unable to send value, recipient may have reverted");
+      if (!success) revert CallFailed();
     } else {
       IERC20Upgradeable(token).safeTransfer(msg.sender, IERC20Upgradeable(token).balanceOf(address(this)));
     }
