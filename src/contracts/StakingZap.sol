@@ -37,9 +37,9 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
   error NotEqualLength();
   error IncorrectAmount();
   error CallFailed();
-  error CallFailed(string message);
+  error CallFailedWithMessage(string message);
   error NotOwner();
-  error IdenticalOwner();
+  error IdenticalAddress();
   error ZeroAddress();
   error OnlyWETH();
   error InvalidDestination();
@@ -382,7 +382,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
         data = abi.encodeWithSignature("safeTransferFrom(address,address,uint256)", msg.sender, to, tokenId);
     }
     (bool success, bytes memory resultData) = address(assetAddr).call(data);
-    if (!success) revert CallFailed(string(resultData));
+    if (!success) revert CallFailedWithMessage(string(resultData));
   }
 
   function approveERC721(address assetAddr, address to, uint256 tokenId) internal virtual {
@@ -402,7 +402,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
       return;
     }
     (bool success, bytes memory resultData) = address(assetAddr).call(data);
-    if (!success) revert CallFailed(string(resultData));
+    if (!success) revert CallFailedWithMessage(string(resultData));
   }
 
   // calculates the CREATE2 address for a pair without making any external calls
