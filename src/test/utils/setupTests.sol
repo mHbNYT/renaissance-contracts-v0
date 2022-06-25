@@ -82,7 +82,7 @@ contract SetupEnvironment {
         );
     }
 
-    function setupFNFT(address _fnftFactory, uint256 _amountToMint) public returns (FNFT fnft) {
+    function setupFNFTSingle(address _fnftFactory, uint256 _amountToMint) public returns (FNFT fnft) {
         FNFTFactory factory = FNFTFactory(_fnftFactory);
 
         MockNFT token = new MockNFT();
@@ -102,6 +102,27 @@ contract SetupEnvironment {
                 vaultManager
             )
         );
+    }
+
+    function setupFNFTCollection(address _fnftCollectionFactory, uint256 _amountToMint) public returns (FNFTCollection fnftCollection) {
+        FNFTCollectionFactory factory = FNFTCollectionFactory(_fnftCollectionFactory);
+
+        MockNFT token = new MockNFT();
+
+        fnftCollection = FNFTCollection(factory.createVault("Doodles", "DOODLE", address(token), false, true));
+
+        uint256[] memory tokenIds = new uint256[](_amountToMint);
+
+        for (uint i; i < _amountToMint; i++) {
+            token.mint(address(this), i + 1);
+            tokenIds[i] = i + 1;
+        }
+
+        token.setApprovalForAll(address(fnftCollection), true);
+
+        uint256[] memory amounts = new uint256[](0);
+
+        fnftCollection.mint(tokenIds, amounts);
     }
 
     function setupStakingTokenProvider() public returns (StakingTokenProvider stakingTokenProvider) {
@@ -171,9 +192,5 @@ contract SetupEnvironment {
         vaultManager.setFNFTCollectionFactory(address(fnftCollectionFactory));
         vaultManager.setFNFTSingleFactory(address(fnftFactory));
         vaultManager.setFeeDistributor(address(feeDistributor));
-    }
-
-    function setupFNFTSingle(address fnftFactory, uint _fnftAmount) public returns (FNFT fnft) {
-        fnft = setupFNFT(fnftFactory, _fnftAmount);
     }
 }
