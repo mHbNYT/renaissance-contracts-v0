@@ -3,20 +3,15 @@ pragma solidity 0.8.13;
 
 import "./interfaces/IIFOFactory.sol";
 import "./interfaces/IFNFT.sol";
+import "./interfaces/IFNFTSingle.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 contract IFO is Initializable {
     struct UserInfo {
         uint256 amount; // Amount ETH deposited by user
         uint256 debt; // total fNFT claimed thus fNFT debt
-    }
-
-    enum FNFTState {
-        Inactive,
-        Live,
-        Ended,
-        Redeemed
     }
 
     IFNFT public fnft; // fNFT the ifo contract sells
@@ -96,8 +91,18 @@ contract IFO is Initializable {
         fnft = IFNFT(_fnft);
         uint256 curatorSupply = fnft.balanceOf(_curator);
         uint256 totalSupply = fnft.totalSupply();
+        bool isSingle = IERC165(address(fnft)).supportsInterface(type(IFNFTSingle).interfaceId);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (curatorSupply < totalSupply) revert NotEnoughSupply();
+        if (isSingle) {
+            // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
+            //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
+            if (curatorSupply < totalSupply) revert NotEnoughSupply();
+            if (_price * totalSupply / (10 ** fnft.decimals()) > IFNFTSingle(address(fnft)).initialReserve()) revert InvalidReservePrice();
+        } else {
+            //0.5 ether is the maximum (5%) mint fee for collection.
+            if (totalSupply == 0 ||
+                curatorSupply < totalSupply - (totalSupply / 1 ether * 0.5 ether)) revert NotEnoughSupply();
+        }
         // make sure amount for sale is not bigger than the supply if FNFT
         if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
         if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
@@ -105,9 +110,6 @@ contract IFO is Initializable {
         if (_duration != 0 &&
         (_duration < IIFOFactory(msg.sender).minimumDuration()
         || _duration > IIFOFactory(msg.sender).maximumDuration())) revert InvalidDuration();
-        // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
-        //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
-        if (_price * totalSupply / (10 ** fnft.decimals()) > fnft.initialReserve()) revert InvalidReservePrice();
 
         factory = msg.sender;
         curator = _curator;
@@ -244,8 +246,8 @@ contract IFO is Initializable {
 
         totalSold += payout;
 
-        address govAddress = IIFOFactory(factory).feeReceiver();        
-        uint256 govFee = IIFOFactory(factory).governanceFee();        
+        address govAddress = IIFOFactory(factory).feeReceiver();
+        uint256 govFee = IIFOFactory(factory).governanceFee();
 
         uint256 fee = (govFee * msg.value) / 10000;
         uint256 profit = msg.value - fee;
@@ -254,8 +256,8 @@ contract IFO is Initializable {
         totalRaised += msg.value;
         profitRaised += profit;
 
-        fnft.transfer(msg.sender, payout);        
-        _safeTransferETH(govAddress, fee);        
+        fnft.transfer(msg.sender, payout);
+        _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
     }
@@ -291,7 +293,8 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (_fnftLocked() && fnft.auctionState() != uint256(FNFTState.Ended)) {
+        if (IERC165(address(fnft)).supportsInterface(type(IFNFTSingle).interfaceId) &&
+            IFNFTSingle(address(fnft)).auctionState() != IFNFTSingle.State.Ended && _fnftLocked()) {
             revert FNFTLocked();
         }
 
