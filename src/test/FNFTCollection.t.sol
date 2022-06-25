@@ -37,7 +37,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
         vaultManager,
         ,
         fnftCollectionFactory
-    ) = setupContracts();    
+    ) = setupContracts();
 
     token = new MockNFT();
   }
@@ -53,7 +53,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     assertEq(fnftCollectionFactory.factoryTargetSwapFee(), 0.1 ether);
   }
 
-  function testCreateVault() public {    
+  function testCreateVault() public {
     createVault();
 
     assertEq(vault.name(), "Doodles");
