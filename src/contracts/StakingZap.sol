@@ -19,7 +19,7 @@ import "./interfaces/IVaultManager.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IUniswapV2Router.sol";
 
-contract NFTXStakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
   IWETH public immutable WETH;
@@ -225,7 +225,6 @@ contract NFTXStakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ER
     require(vaultManager.excludedFromFees(address(this)));
     address vault = vaultManager.vault(vaultId);
 
-    // Transfer tokens to zap and mint to NFTX.
     address assetAddress = IFNFTCollection(vault).assetAddress();
     uint256 length = ids.length;
     for (uint256 i; i < length; i++) {
@@ -250,7 +249,6 @@ contract NFTXStakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ER
     require(vaultManager.excludedFromFees(address(this)));
     address vault = vaultManager.vault(vaultId);
 
-    // Transfer tokens to zap and mint to NFTX.
     address assetAddress = IFNFTCollection(vault).assetAddress();
     IERC1155Upgradeable(assetAddress).safeBatchTransferFrom(msg.sender, address(this), ids, amounts, "");
     IERC1155Upgradeable(assetAddress).setApprovalForAll(vault, true);
