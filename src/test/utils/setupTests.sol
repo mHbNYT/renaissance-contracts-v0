@@ -17,7 +17,6 @@ import {InventoryStaking} from "../../contracts/InventoryStaking.sol";
 import {FeeDistributor} from "../../contracts/FeeDistributor.sol";
 import {IUniswapV2Factory} from "../../contracts/interfaces/IUniswapV2Factory.sol";
 import {IUniswapV2Router} from "../../contracts/interfaces/IUniswapV2Router.sol";
-import {IFNFT} from "../../contracts/interfaces/IFNFT.sol";
 import {FNFTFactory} from "../../contracts/FNFTFactory.sol";
 import {VaultManager} from "../../contracts/VaultManager.sol";
 import {FNFT} from "../../contracts/FNFT.sol";

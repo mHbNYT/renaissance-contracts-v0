@@ -4,7 +4,7 @@ import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20
 import {IUniswapV2Pair} from "../../contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Factory} from "../../contracts/interfaces/IUniswapV2Factory.sol";
 import {UniswapV2Library} from "../../contracts/libraries/UniswapV2Library.sol";
-import {IFNFT} from "../../contracts/interfaces/IFNFT.sol";
+import {IFNFTSingle} from "../../contracts/interfaces/IFNFTSingle.sol";
 import {IWETH} from "../../contracts/interfaces/IWETH.sol";
 import {FNFT} from "../../contracts/FNFT.sol";
 import {MockERC20Upgradeable} from "../../contracts/mocks/ERC20.sol";
@@ -14,7 +14,7 @@ import {CheatCodes} from "./cheatcodes.sol";
 contract Pair {
     IUniswapV2Pair public uPair;
     IUniswapV2Factory public uFactory;
-    IERC20Upgradeable public token0; 
+    IERC20Upgradeable public token0;
     IERC20Upgradeable public token1;
     CheatCodes public vm;
 
@@ -40,12 +40,12 @@ contract Pair {
 
         uPair.sync();
     }
-    
+
     // Sync uniswap pair to get the most updated cumulative price and last block.timestamp.
     function sync() public {
         uPair.sync();
     }
-    
+
     // Get token reserves from uniswap.
     function getReserves() public view returns (uint256 reserve0, uint256 reserve1) {
         (reserve0, reserve1) = UniswapV2Library.getReserves(address(uFactory), address(token0), address(token1));
@@ -55,7 +55,7 @@ contract Pair {
 contract PairWithWETH {
     IUniswapV2Pair public uPair;
     IUniswapV2Factory public uFactory;
-    IERC20Upgradeable public token; 
+    IERC20Upgradeable public token;
     IWETH public weth;
     CheatCodes public vm;
 
@@ -81,12 +81,12 @@ contract PairWithWETH {
 
         uPair.sync();
     }
-    
+
     // Sync uniswap pair to get the most updated cumulative price and last block.timestamp.
     function sync() public {
         uPair.sync();
     }
-    
+
     // Get token reserves from uniswap.
     function getReserves() public view returns (uint256 reserve0, uint256 reserve1) {
         (reserve0, reserve1) = UniswapV2Library.getReserves(address(uFactory), address(token), address(weth));
@@ -96,7 +96,7 @@ contract PairWithWETH {
 contract PairWithFNFTAndWETH{
     IUniswapV2Pair public uPair;
     IUniswapV2Factory public uFactory;
-    IFNFT public fnft;
+    IFNFTSingle public fnft;
     IWETH public weth;
     CheatCodes public vm;
 
@@ -104,7 +104,7 @@ contract PairWithFNFTAndWETH{
         address pairAddress = IUniswapV2Factory(_uniswapFactory).getPair(_fnft, _weth);
         uFactory = IUniswapV2Factory(_uniswapFactory);
         uPair = IUniswapV2Pair(pairAddress);
-        fnft = IFNFT(_fnft);
+        fnft = IFNFTSingle(_fnft);
         weth = IWETH(_weth);
         vm = _vm;
     }
@@ -113,13 +113,13 @@ contract PairWithFNFTAndWETH{
     function receiveToken(uint256 _fnftAmount, uint256 _wethAmount) public {
         // Prank next fnft calls as the fnft owner.
         vm.startPrank(msg.sender);
-        fnft.approve(address(msg.sender), _fnftAmount);
-        fnft.transfer(address(uPair), _fnftAmount);
-        
+        IERC20Upgradeable(address(fnft)).approve(address(msg.sender), _fnftAmount);
+        IERC20Upgradeable(address(fnft)).transfer(address(uPair), _fnftAmount);
+
         weth.approve(address(msg.sender), _wethAmount);
         weth.transfer(address(uPair), _wethAmount);
         vm.stopPrank();
-        
+
         uPair.sync();
     }
 
