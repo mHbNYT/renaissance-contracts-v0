@@ -182,6 +182,8 @@ contract SetupEnvironment {
         vaultManager.setFeeDistributor(address(feeDistributor));
 
         inventoryStaking = setupInventoryStaking(address(vaultManager));
+
+        feeDistributor.setInventoryStakingAddress(address(inventoryStaking));
     }
 
     function setupFNFTSingle(address fnftFactory, uint _fnftAmount) public returns (FNFT fnft) {
