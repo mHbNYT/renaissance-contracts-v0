@@ -100,7 +100,9 @@ contract FNFTCollection is
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(ERC1155ReceiverUpgradeable, IERC165) returns (bool) {
-        return interfaceId == type(IFNFTCollection).interfaceId;
+        return interfaceId == type(IFNFTCollection).interfaceId ||
+                interfaceId == type(IERC165).interfaceId ||
+                super.supportsInterface(interfaceId);
     }
 
     function finalizeVault() external override virtual {

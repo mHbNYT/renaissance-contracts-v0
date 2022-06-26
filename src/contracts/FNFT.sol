@@ -121,7 +121,8 @@ contract FNFT is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721HolderUp
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(IERC165) returns (bool) {
-        return interfaceId == type(IFNFTSingle).interfaceId;
+        return interfaceId == type(IFNFTSingle).interfaceId ||
+                interfaceId == type(IERC165).interfaceId;
     }
 
     modifier onlyCurator() {
