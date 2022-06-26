@@ -46,6 +46,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
             ,
             ,
             fnftFactory,
+            ,
         ) = setupContracts();
         fnft = setupFNFTSingle(address(fnftFactory), 100 ether);
 
@@ -229,6 +230,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
             ,
             ,
             fnftFactory,
+            ,
         ) = setupContracts();
         fnft = setupFNFTSingle(address(fnftFactory), FNFTAmount);
 

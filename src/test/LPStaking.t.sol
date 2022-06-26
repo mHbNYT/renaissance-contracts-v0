@@ -42,7 +42,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
         feeDistributor,
         vaultManager,
         ,
-        fnftCollectionFactory
+        fnftCollectionFactory,
     ) = setupContracts();
 
     uniswapV2Factory = setupPairFactory();

@@ -36,7 +36,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
         feeDistributor,
         vaultManager,
         ,
-        fnftCollectionFactory
+        fnftCollectionFactory,
     ) = setupContracts();
 
     token = new MockNFT();

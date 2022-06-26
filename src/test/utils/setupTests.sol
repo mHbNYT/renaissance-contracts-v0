@@ -157,6 +157,14 @@ contract SetupEnvironment {
         );
     }
 
+    function setupInventoryStaking(address fnftCollectionFactory) public returns (InventoryStaking inventoryStaking) {
+        inventoryStaking = InventoryStaking(
+            deployer.deployInventoryStaking(
+                address(new InventoryStaking()),
+                fnftCollectionFactory
+            )
+        );
+    }
 
     function setupEnvironment(uint256 _wethAmount) public {
         vm = CheatCodes(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));
@@ -175,7 +183,8 @@ contract SetupEnvironment {
             FeeDistributor feeDistributor,
             VaultManager vaultManager,
             FNFTFactory fnftFactory,
-            FNFTCollectionFactory fnftCollectionFactory
+            FNFTCollectionFactory fnftCollectionFactory,
+            InventoryStaking inventoryStaking
         )
     {
         ifoFactory = setupIFOFactory();
@@ -192,5 +201,7 @@ contract SetupEnvironment {
         vaultManager.setFNFTCollectionFactory(address(fnftCollectionFactory));
         vaultManager.setFNFTSingleFactory(address(fnftFactory));
         vaultManager.setFeeDistributor(address(feeDistributor));
+
+        inventoryStaking = setupInventoryStaking(address(vaultManager));
     }
 }
