@@ -45,4 +45,19 @@ contract StakingZapTest is DSTest, SetupEnvironment {
         assertEq(address(stakingZap.lpStaking()), address(lpStaking));
         assertEq(address(stakingZap.inventoryStaking()), address(inventoryStaking));
     }
+
+    event LPLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
+    event InventoryLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
+
+    function testSetLPLockTime() public {
+        vm.expectEmit(true, false, false, true);
+        emit LPLockTimeUpdated(48 hours, 7 days);
+        stakingZap.setLPLockTime(7 days);
+    }
+
+    function testSetInventoryLockTime() public {
+        vm.expectEmit(true, false, false, true);
+        emit InventoryLockTimeUpdated(7 days, 14 days);
+        stakingZap.setInventoryLockTime(14 days);
+    }
 }

@@ -46,6 +46,8 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
   error NotExcluded();
 
   event UserStaked(uint256 vaultId, uint256 count, uint256 lpBalance, uint256 timelockUntil, address sender);
+  event InventoryLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
+  event LPLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
 
   constructor(address _vaultManager, address _router) Ownable() ReentrancyGuard() {
     vaultManager = IVaultManager(_vaultManager);
@@ -63,11 +65,13 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
 
   function setLPLockTime(uint256 newLPLockTime) external onlyOwner {
     if (newLPLockTime > 7 days) revert LockTooLong();
+    emit LPLockTimeUpdated(lpLockTime, newLPLockTime);
     lpLockTime = newLPLockTime;
   }
 
   function setInventoryLockTime(uint256 newInventoryLockTime) external onlyOwner {
     if (newInventoryLockTime > 14 days) revert LockTooLong();
+    emit InventoryLockTimeUpdated(inventoryLockTime, newInventoryLockTime);
     inventoryLockTime = newInventoryLockTime;
   }
 
