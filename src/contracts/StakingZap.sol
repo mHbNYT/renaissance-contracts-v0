@@ -126,7 +126,7 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     (, uint256 amountEth, uint256 liquidity) = _addLiquidity721WETH(vaultId, ids, minWethIn, msg.value, to);
 
     // Return extras.
-    uint256 remaining = msg.value-amountEth;
+    uint256 remaining = msg.value - amountEth;
     if (remaining != 0) {
       WETH.withdraw(remaining);
       (bool success, ) = payable(to).call{value: remaining}("");
