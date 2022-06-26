@@ -56,8 +56,9 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
 
   function assignStakingContracts() public {
     if (address(lpStaking) != address(0) && address(inventoryStaking) != address(0)) revert NotZero();
-    lpStaking = ILPStaking(IFeeDistributor(IVaultManager(vaultManager).feeDistributor()).lpStaking());
-    inventoryStaking = IInventoryStaking(IFeeDistributor(IVaultManager(vaultManager).feeDistributor()).inventoryStaking());
+    IFeeDistributor feeDistributor = IFeeDistributor(IVaultManager(vaultManager).feeDistributor());
+    lpStaking = ILPStaking(feeDistributor.lpStaking());
+    inventoryStaking = IInventoryStaking(feeDistributor.inventoryStaking());
   }
 
   function setLPLockTime(uint256 newLPLockTime) external onlyOwner {
