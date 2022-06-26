@@ -36,8 +36,6 @@ contract FNFTFactory is
     /// @notice flash loan fee basis point
     uint256 public override flashLoanFee;
 
-
-
     /// @notice the maximum auction length
     uint256 public override maxAuctionLength;
 
