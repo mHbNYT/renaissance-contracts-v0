@@ -80,9 +80,12 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256[] memory amounts = new uint256[](0);
     address assetAddress = vault.assetAddress();
     uint256 length = tokenIds.length;
-    for (uint256 i; i < length; ++i) {
+    for (uint256 i; i < length;) {
       transferFromERC721(assetAddress, tokenIds[i], address(vault));
       approveERC721(assetAddress, address(vault), tokenIds[i]);
+      unchecked {
+        ++i;
+      }
     }
     vault.mintTo(tokenIds, amounts, address(xToken));
     uint256 newBal = IERC20Upgradeable(vault).balanceOf(xToken);
@@ -93,8 +96,11 @@ contract StakingZap is Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC115
     uint256 length = tokenIds.length;
     if (length != amounts.length) revert NotEqualLength();
     uint256 count;
-    for (uint256 i; i < length; ++i) {
+    for (uint256 i; i < length;) {
       count += amounts[i];
+      unchecked {
+        ++i;
+      }
     }
     IFNFTCollection vault = IFNFTCollection(vaultManager.vault(vaultId));
     inventoryStaking.timelockMintFor(vaultId, count*BASE, msg.sender, inventoryLockTime);
