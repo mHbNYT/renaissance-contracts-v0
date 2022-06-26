@@ -86,7 +86,7 @@ contract FNFTCollectionFactory is
     function setSwapFee(uint256 _swapFee) external virtual override onlyOwner {
         if (_swapFee > 500) revert FeeTooHigh();
         emit UpdateSwapFee(swapFee, _swapFee);
-        swapFee = uint64(_swapFee);
+        swapFee = _swapFee;
     }
 
     function setFactoryFees(

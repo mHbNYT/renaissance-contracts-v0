@@ -46,7 +46,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
             ,
             ,
             fnftFactory,
-            ,
+            fnftCollectionFactory,
         ) = setupContracts();
 
         fnftFactory.setFee(FNFTFactory.FeeType.GovernanceFee, 0);
@@ -67,9 +67,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
                 0 // the % * 10 fee minted to the fractionalizer anually
             )
         );
-
         fractionalizedNFTCollection = setupFNFTCollection(address(fnftCollectionFactory), 5);
-
         // create a curator account
         curator = new Curator(address(fractionalizedNFT));
 
@@ -161,9 +159,9 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         (uint256 _mintFee, , , ,) = fnftCollectionFactory.vaultFees(0);
         assertEq(
             fractionalizedNFTCollection.balanceOf(address(fnftCollectionIfo)),
-            fractionalizedNFTCollection.totalSupply() - fractionalizedNFTCollection.totalSupply() / 1 ether * _mintFee
+            4500000000000000000
         );
-        assertEq(fnftCollectionIfo.duration(), ifoFactory.minimumDuration());
+        assertEq(fnftCollectionIfo.duration(), 86400);
     }
 
     function testCreateIFOInvalidAddress() public {

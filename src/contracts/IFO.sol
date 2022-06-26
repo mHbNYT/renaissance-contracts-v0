@@ -101,7 +101,7 @@ contract IFO is Initializable {
         } else {
             //0.5 ether is the maximum (5%) mint fee for collection.
             if (totalSupply == 0 ||
-                curatorSupply < totalSupply - (totalSupply / 1 ether * 0.5 ether)) revert NotEnoughSupply();
+                curatorSupply < totalSupply - (totalSupply / 2)) revert NotEnoughSupply();
         }
         // make sure amount for sale is not bigger than the supply if FNFT
         if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
