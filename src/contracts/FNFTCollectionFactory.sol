@@ -18,9 +18,6 @@ contract FNFTCollectionFactory is
     IFNFTCollectionFactory
 {
 
-    address public override vaultManager;
-    address public override eligibilityManager;
-
     // v1.0.2
     struct VaultFees {
         bool active;
@@ -31,13 +28,20 @@ contract FNFTCollectionFactory is
         uint64 targetSwapFee;
     }
     mapping(uint256 => VaultFees) private _vaultFees;
+
     uint64 public override factoryMintFee;
     uint64 public override factoryRandomRedeemFee;
     uint64 public override factoryTargetRedeemFee;
     uint64 public override factoryRandomSwapFee;
+
+    address public override vaultManager;
     uint64 public override factoryTargetSwapFee;
+
+    address public override eligibilityManager;
     uint64 public override flashLoanFee;
-    uint64 public override swapFee;
+
+    uint256 public override swapFee;
+
 
     error FeeTooHigh();
     error CallerIsNotVault();
