@@ -99,9 +99,9 @@ contract IFO is Initializable {
             if (curatorSupply < totalSupply) revert NotEnoughSupply();
             if (_price * totalSupply / (10 ** fnft.decimals()) > IFNFTSingle(address(fnft)).initialReserve()) revert InvalidReservePrice();
         } else {
-            //0.5 ether is the maximum (5%) mint fee for collection.
+            //0.5 ether is the maximum (50%) mint fee for collection.
             if (totalSupply == 0 ||
-                curatorSupply < totalSupply - (totalSupply / 2)) revert NotEnoughSupply();
+                curatorSupply < totalSupply / 2) revert NotEnoughSupply();
         }
         // make sure amount for sale is not bigger than the supply if FNFT
         if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
