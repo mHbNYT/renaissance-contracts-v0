@@ -71,7 +71,7 @@ contract IFO is Initializable {
     error FNFTLocked();
 
     /// @param _curator original owner
-    /// @param _fnft FNFT address
+    /// @param _fnftAddress FNFT address
     /// @param _amountForSale Amount of FNFT for sale in IFO
     /// @param _price Price per FNFT in IFO
     /// @param _cap Maximum an account can buy
@@ -79,7 +79,7 @@ contract IFO is Initializable {
     /// @param _allowWhitelisting If IFO should be governed by whitelists
     function initialize(
         address _curator,
-        address _fnft,
+        address _fnftAddress,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
@@ -87,21 +87,20 @@ contract IFO is Initializable {
         bool _allowWhitelisting
     ) external initializer {
         // set storage variables
-        if (_fnft == address(0)) revert InvalidAddress();
-        fnft = IFNFT(_fnft);
-        uint256 curatorSupply = fnft.balanceOf(_curator);
-        uint256 totalSupply = fnft.totalSupply();
-        bool isSingle = IERC165(address(fnft)).supportsInterface(type(IFNFTSingle).interfaceId);
+        if (_fnftAddress == address(0)) revert InvalidAddress();
+        IFNFT _fnft = IFNFT(_fnftAddress);
+        uint256 curatorSupply = _fnft.balanceOf(_curator);
+        uint256 totalSupply = _fnft.totalSupply();
+        bool isSingle = IERC165(_fnftAddress).supportsInterface(type(IFNFTSingle).interfaceId);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
         if (isSingle) {
             // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
             //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
             if (curatorSupply < totalSupply) revert NotEnoughSupply();
-            if (_price * totalSupply / (10 ** fnft.decimals()) > IFNFTSingle(address(fnft)).initialReserve()) revert InvalidReservePrice();
+            if (_price * totalSupply / (10 ** _fnft.decimals()) > IFNFTSingle(_fnftAddress).initialReserve()) revert InvalidReservePrice();
         } else {
             //0.5 ether is the maximum (50%) mint fee for collection.
-            if (totalSupply == 0 ||
-                curatorSupply < totalSupply / 2) revert NotEnoughSupply();
+            if (totalSupply == 0 || curatorSupply < totalSupply / 2) revert NotEnoughSupply();
         }
         // make sure amount for sale is not bigger than the supply if FNFT
         if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
@@ -118,11 +117,12 @@ contract IFO is Initializable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;
+        fnft = _fnft;
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         address creatorUtilityContract = IIFOFactory(msg.sender).creatorUtilityContract();
         if (creatorUtilityContract != address(0)) {
-            fnft.approve(creatorUtilityContract, totalSupply);
+            _fnft.approve(creatorUtilityContract, totalSupply);
         }
     }
 
