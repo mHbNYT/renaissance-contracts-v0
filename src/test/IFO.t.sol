@@ -156,7 +156,6 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     function testCreateFNFTCollectionIFO() public {
         IFO fnftCollectionIfo = createValidFNFTCollectionIFO();
 
-        (uint256 _mintFee, , , ,) = fnftCollectionFactory.vaultFees(0);
         assertEq(
             fractionalizedNFTCollection.balanceOf(address(fnftCollectionIfo)),
             4500000000000000000
