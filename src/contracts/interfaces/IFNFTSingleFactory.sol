@@ -4,7 +4,7 @@ import {IPriceOracle} from "./IPriceOracle.sol";
 import {IWETH} from "./IWETH.sol";
 import {IVaultManager} from "./IVaultManager.sol";
 
-interface IFNFTFactory {
+interface IFNFTSingleFactory {
     function vaultManager() external view returns (IVaultManager);
 
     function swapFee() external view returns (uint256);
