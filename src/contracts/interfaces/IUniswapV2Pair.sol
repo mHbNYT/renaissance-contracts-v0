@@ -93,5 +93,5 @@ interface IUniswapV2Pair {
 
     function sync() external;
 
-    function __UniswapV2Pair_init(address, address) external;
+    function initialize(address, address) external;
 }
