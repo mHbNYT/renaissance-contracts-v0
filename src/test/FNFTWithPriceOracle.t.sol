@@ -10,6 +10,7 @@ import {FNFTFactory} from "../contracts/FNFTFactory.sol";
 import {FNFT} from "../contracts/FNFT.sol";
 import {IUniswapV2Pair} from "../contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
+import {IFNFTSingle} from "../contracts/interfaces/IFNFTSingle.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {CheatCodes, SetupEnvironment, User, Curator, UserNoETH, PairWithFNFTAndWETH} from "./utils/utils.sol";
@@ -267,7 +268,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         // since the total voting token is set to 0.
         uint256 userPrice = (fnft.initialReserve() * fnftFactory.maxReserveFactor() + 1 ether) / 10000;
         vm.startPrank(address(user1));
-        vm.expectRevert(FNFT.PriceTooHigh.selector);
+        vm.expectRevert(IFNFTSingle.PriceTooHigh.selector);
         fnft.updateUserPrice(userPrice);
     }
 
@@ -285,7 +286,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         // since the total voting token is set to 0.
         uint256 userPrice = (fnft.initialReserve() * fnftFactory.minReserveFactor() - 1 ether) / 10000;
         vm.startPrank(address(user1));
-        vm.expectRevert(FNFT.PriceTooLow.selector);
+        vm.expectRevert(IFNFTSingle.PriceTooLow.selector);
         fnft.updateUserPrice(userPrice);
     }
 

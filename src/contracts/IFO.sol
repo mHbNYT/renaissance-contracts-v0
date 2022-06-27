@@ -2,9 +2,12 @@
 pragma solidity 0.8.13;
 
 import "./interfaces/IIFOFactory.sol";
-import "./interfaces/IFNFT.sol";
+import "./interfaces/IFNFTSingle.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
 
 contract IFO is Initializable {
     struct UserInfo {
@@ -12,14 +15,7 @@ contract IFO is Initializable {
         uint256 debt; // total fNFT claimed thus fNFT debt
     }
 
-    enum FNFTState {
-        Inactive,
-        Live,
-        Ended,
-        Redeemed
-    }
-
-    IFNFT public fnft; // fNFT the ifo contract sells
+    IFNFTSingle public fnft; // fNFT the ifo contract sells
     uint256 public amountForSale; // amount of fNFT for sale
     uint256 public price; // initial price per fNFT
     uint256 public cap; // cap per user
@@ -76,7 +72,7 @@ contract IFO is Initializable {
     error FNFTLocked();
 
     /// @param _curator original owner
-    /// @param _fnft FNFT address
+    /// @param _fnftAddress FNFT address
     /// @param _amountForSale Amount of FNFT for sale in IFO
     /// @param _price Price per FNFT in IFO
     /// @param _cap Maximum an account can buy
@@ -84,7 +80,7 @@ contract IFO is Initializable {
     /// @param _allowWhitelisting If IFO should be governed by whitelists
     function initialize(
         address _curator,
-        address _fnft,
+        address _fnftAddress,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
@@ -92,12 +88,21 @@ contract IFO is Initializable {
         bool _allowWhitelisting
     ) external initializer {
         // set storage variables
-        if (_fnft == address(0)) revert InvalidAddress();
-        fnft = IFNFT(_fnft);
-        uint256 curatorSupply = fnft.balanceOf(_curator);
-        uint256 totalSupply = fnft.totalSupply();
+        if (_fnftAddress == address(0)) revert InvalidAddress();
+        IFNFTSingle _fnft = IFNFTSingle(_fnftAddress);
+        uint256 curatorSupply = IERC20Upgradeable(_fnftAddress).balanceOf(_curator);
+        uint256 totalSupply = IERC20Upgradeable(_fnftAddress).totalSupply();
+        bool isSingle = IERC165(_fnftAddress).supportsInterface(type(IFNFTSingle).interfaceId);
         // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
-        if (curatorSupply < totalSupply) revert NotEnoughSupply();
+        if (isSingle) {
+            // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
+            //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
+            if (curatorSupply < totalSupply) revert NotEnoughSupply();
+            if (_price * totalSupply / (10 ** IERC20MetadataUpgradeable(_fnftAddress).decimals()) > IFNFTSingle(_fnftAddress).initialReserve()) revert InvalidReservePrice();
+        } else {
+            //0.5 ether is the maximum (50%) mint fee for collection.
+            if (totalSupply == 0 || curatorSupply < totalSupply / 2) revert NotEnoughSupply();
+        }
         // make sure amount for sale is not bigger than the supply if FNFT
         if (_amountForSale == 0 || _amountForSale > curatorSupply) revert InvalidAmountForSale();
         if (_cap == 0 || _cap > totalSupply) revert InvalidCap();
@@ -105,9 +110,6 @@ contract IFO is Initializable {
         if (_duration != 0 &&
         (_duration < IIFOFactory(msg.sender).minimumDuration()
         || _duration > IIFOFactory(msg.sender).maximumDuration())) revert InvalidDuration();
-        // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
-        //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
-        if (_price * totalSupply / (10 ** fnft.decimals()) > fnft.initialReserve()) revert InvalidReservePrice();
 
         factory = msg.sender;
         curator = _curator;
@@ -116,11 +118,12 @@ contract IFO is Initializable {
         cap = _cap;
         allowWhitelisting = _allowWhitelisting;
         duration = _duration;
+        fnft = _fnft;
 
         /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
         address creatorUtilityContract = IIFOFactory(msg.sender).creatorUtilityContract();
         if (creatorUtilityContract != address(0)) {
-            fnft.approve(creatorUtilityContract, totalSupply);
+            IERC20Upgradeable(_fnftAddress).approve(creatorUtilityContract, totalSupply);
         }
     }
 
@@ -188,7 +191,8 @@ contract IFO is Initializable {
     function start() external onlyCurator {
         if (started) revert SaleAlreadyStarted();
         if (ended) revert SaleAlreadyEnded();
-        if (fnft.balanceOf(address(this)) < fnft.totalSupply()) revert NotEnoughSupply();
+        IERC20Upgradeable _fnft = IERC20Upgradeable(address(fnft));
+        if (_fnft.balanceOf(address(this)) < _fnft.totalSupply()) revert NotEnoughSupply();
 
         startBlock = block.number;
 
@@ -224,7 +228,7 @@ contract IFO is Initializable {
         if (ended) revert SaleAlreadyEnded();
 
         ended = true;
-        lockedSupply = fnft.balanceOf(address(this));
+        lockedSupply = IERC20Upgradeable(address(fnft)).balanceOf(address(this));
         emit End();
     }
 
@@ -238,14 +242,17 @@ contract IFO is Initializable {
 
         UserInfo storage user = userInfo[msg.sender];
 
-        uint256 payout = msg.value * (10 ** fnft.decimals()) / price; // fNFT to mint for msg.value
+        address fnftAddress = address(fnft);
+
+        // fNFT to mint for msg.value
+        uint256 payout = msg.value * (10 ** IERC20MetadataUpgradeable(fnftAddress).decimals()) / price;
 
         if (user.amount + payout > cap) revert OverLimit();
 
         totalSold += payout;
 
-        address govAddress = IIFOFactory(factory).feeReceiver();        
-        uint256 govFee = IIFOFactory(factory).governanceFee();        
+        address govAddress = IIFOFactory(factory).feeReceiver();
+        uint256 govFee = IIFOFactory(factory).governanceFee();
 
         uint256 fee = (govFee * msg.value) / 10000;
         uint256 profit = msg.value - fee;
@@ -254,8 +261,8 @@ contract IFO is Initializable {
         totalRaised += msg.value;
         profitRaised += profit;
 
-        fnft.transfer(msg.sender, payout);        
-        _safeTransferETH(govAddress, fee);        
+        IERC20Upgradeable(fnftAddress).transfer(msg.sender, payout);
+        _safeTransferETH(govAddress, fee);
 
         emit Deposit(msg.sender, msg.value, payout);
     }
@@ -273,7 +280,7 @@ contract IFO is Initializable {
     */
     function updateFNFTAddress(address _address) external onlyGov {
         if (_address == address(0)) revert InvalidAddress();
-        fnft = IFNFT(_address);
+        fnft = IFNFTSingle(_address);
     }
 
     /// @notice withdraws ETH from sale only after IFO over
@@ -291,30 +298,35 @@ contract IFO is Initializable {
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
     function adminWithdrawFNFT() external checkDeadline onlyCurator {
         if (!ended) revert SaleActive();
-        if (_fnftLocked() && fnft.auctionState() != uint256(FNFTState.Ended)) {
+        address fnftAddress = address(fnft);
+        if (IERC165(fnftAddress).supportsInterface(type(IFNFTSingle).interfaceId) &&
+            IFNFTSingle(fnftAddress).auctionState() != IFNFTSingle.State.Ended && _fnftLocked()) {
             revert FNFTLocked();
         }
 
-        uint256 fNFTBalance = fnft.balanceOf(address(this));
+        IERC20Upgradeable _fnft = IERC20Upgradeable(fnftAddress);
+        uint256 fNFTBalance = _fnft.balanceOf(address(this));
         lockedSupply -= fNFTBalance;
-        fnft.transfer(msg.sender, fNFTBalance);
+        _fnft.transfer(msg.sender, fNFTBalance);
 
-        emit AdminFNFTWithdrawal(address(fnft), fNFTBalance);
+        emit AdminFNFTWithdrawal(fnftAddress, fNFTBalance);
     }
 
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
     function approve() external onlyCurator {
         address creatorUtilityContract = IIFOFactory(factory).creatorUtilityContract();
         if (creatorUtilityContract == address(0)) revert InvalidAddress();
-        fnft.approve(creatorUtilityContract, fnft.totalSupply());
+        IERC20Upgradeable _fnft = IERC20Upgradeable(address(fnft));
+        _fnft.approve(creatorUtilityContract, _fnft.totalSupply());
     }
 
     function emergencyWithdrawFNFT() external onlyGov {
-        uint256 fNFTBalance = fnft.balanceOf(address(this));
+        IERC20Upgradeable _fnft = IERC20Upgradeable(address(fnft));
+        uint256 fNFTBalance = _fnft.balanceOf(address(this));
         lockedSupply = 0;
-        fnft.transfer(curator, fNFTBalance);
+        _fnft.transfer(curator, fNFTBalance);
 
-        emit EmergencyFNFTWithdrawal(address(fnft), fNFTBalance);
+        emit EmergencyFNFTWithdrawal(address(_fnft), fNFTBalance);
     }
 
     //Helper functions

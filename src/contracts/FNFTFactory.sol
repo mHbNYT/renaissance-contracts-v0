@@ -27,17 +27,20 @@ contract FNFTFactory is
     /// @notice fee exclusion for swaps
     uint256 public override swapFee;
 
-    /// @notice the maximum auction length
-    uint256 public override maxAuctionLength;
-
-    /// @notice the minimum auction length
-    uint256 public override minAuctionLength;
-
     /// @notice governance fee max
     uint256 public override governanceFee;
 
     /// @notice max curator fee
     uint256 public override maxCuratorFee;
+
+    /// @notice flash loan fee basis point
+    uint256 public override flashLoanFee;
+
+    /// @notice the maximum auction length
+    uint256 public override maxAuctionLength;
+
+    /// @notice the minimum auction length
+    uint256 public override minAuctionLength;
 
     /// @notice the % bid increase required for a new bid
     uint256 public override minBidIncrease;
@@ -56,9 +59,6 @@ contract FNFTFactory is
 
     /// @notice instant buy allowed if bid > MC * instantBuyMultiplier
     uint256 public override instantBuyMultiplier;
-
-    /// @notice flash loan fee basis point
-    uint256 public override flashLoanFee;
 
     event UpdateMaxAuctionLength(uint256 _old, uint256 _new);
 

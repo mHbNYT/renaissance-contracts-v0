@@ -17,6 +17,7 @@ contract FNFTCollectionFactory is
     BeaconUpgradeable,
     IFNFTCollectionFactory
 {
+
     // v1.0.2
     struct VaultFees {
         bool active;
@@ -27,6 +28,7 @@ contract FNFTCollectionFactory is
         uint64 targetSwapFee;
     }
     mapping(uint256 => VaultFees) private _vaultFees;
+
     uint64 public override factoryMintFee;
     uint64 public override factoryRandomRedeemFee;
     uint64 public override factoryTargetRedeemFee;
@@ -39,6 +41,7 @@ contract FNFTCollectionFactory is
     uint64 public override flashLoanFee;
 
     uint256 public override swapFee;
+
 
     error FeeTooHigh();
     error CallerIsNotVault();
@@ -59,14 +62,14 @@ contract FNFTCollectionFactory is
         address _assetAddress,
         bool is1155,
         bool allowAllItems
-    ) external virtual override returns (uint256) {
+    ) external virtual override returns (address) {
         onlyOwnerIfPaused(0);
         if (childImplementation() == address(0)) revert ZeroAddress();
         IVaultManager _vaultManager = IVaultManager(vaultManager);
         address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint vaultId = _vaultManager.addVault(vaultAddr);
         emit NewVault(vaultId, vaultAddr, _assetAddress);
-        return vaultId;
+        return vaultAddr;
     }
 
     function setVaultManager(address _vaultManager) public virtual override onlyOwner {

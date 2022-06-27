@@ -26,7 +26,7 @@ interface IFNFTCollectionFactory is IBeacon {
       address _assetAddress,
       bool is1155,
       bool allowAllItems
-  ) external returns (uint256);
+  ) external returns (address);
   function setVaultManager(address _vaultManager) external;
   function setEligibilityManager(address _eligibilityManager) external;
   function setSwapFee(uint256 _swapFee) external;
