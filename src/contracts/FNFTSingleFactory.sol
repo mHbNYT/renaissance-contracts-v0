@@ -6,23 +6,23 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import "./FNFT.sol";
+import "./FNFTSingle.sol";
 import "./proxy/BeaconUpgradeable.sol";
 import "./proxy/BeaconProxy.sol";
-import "./interfaces/IFNFTFactory.sol";
+import "./interfaces/IFNFTSingleFactory.sol";
 import "./interfaces/IVaultManager.sol";
 import "./interfaces/IFeeDistributor.sol";
 
-contract FNFTFactory is
+contract FNFTSingleFactory is
     OwnableUpgradeable,
     PausableUpgradeable,
     BeaconUpgradeable,
-    IFNFTFactory
+    IFNFTSingleFactory
 {
     enum FeeType { GovernanceFee, MaxCuratorFee, SwapFee }
     enum Boundary { Min, Max }
 
-    address public override vaultManager;
+    IVaultManager public override vaultManager;
 
     /// @notice fee exclusion for swaps
     uint256 public override swapFee;
@@ -88,9 +88,9 @@ contract FNFTFactory is
 
     event FeeExclusion(address target, bool excluded);
 
-    event FNFTCreated(
+    event FNFTSingleCreated(
         address indexed token,
-        address FNFT,
+        address fnftSingle,
         address creator,
 
         uint256 price,
@@ -111,7 +111,7 @@ contract FNFTFactory is
     function __FNFTSingleFactory_init(address _vaultManager) external initializer {
         __Ownable_init();
         __Pausable_init();
-        __BeaconUpgradeable__init(address(new FNFT()));
+        __BeaconUpgradeable__init(address(new FNFTSingle()));
         setVaultManager(_vaultManager);
 
         maxAuctionLength = 2 weeks;
@@ -125,7 +125,7 @@ contract FNFTFactory is
         instantBuyMultiplier = 15; // instant buy allowed if 1.5x MC
     }
 
-    /// @notice the function to mint a fNFT
+    /// @notice the function to mint a fnftSingle
     /// @param _name the desired name of the vault
     /// @param _symbol the desired symbol of the vault
     /// @param _nft the ERC721 token address
@@ -142,7 +142,7 @@ contract FNFTFactory is
         uint256 _fee
     ) external whenNotPaused returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFT.__FNFTSingle_init.selector,
+            FNFTSingle.__FNFTSingle_init.selector,
             msg.sender,
             _nft,
             _tokenId,
@@ -153,13 +153,13 @@ contract FNFTFactory is
             _symbol
         );
 
-        address fnft = address(new BeaconProxy(address(this), _initializationCalldata));
-        IVaultManager _vaultManager = IVaultManager(vaultManager);
-        _vaultManager.addVault(fnft);
-        emit FNFTCreated(_nft, fnft, msg.sender, _listPrice, _name, _symbol);
+        address fnftSingle = address(new BeaconProxy(address(this), _initializationCalldata));
+        IVaultManager _vaultManager = vaultManager;
+        _vaultManager.addVault(fnftSingle);
+        emit FNFTSingleCreated(_nft, fnftSingle, msg.sender, _listPrice, _name, _symbol);
 
-        IERC721(_nft).safeTransferFrom(msg.sender, fnft, _tokenId);
-        return fnft;
+        IERC721(_nft).safeTransferFrom(msg.sender, fnftSingle, _tokenId);
+        return fnftSingle;
     }
 
     function togglePaused() external onlyOwner {
@@ -167,8 +167,8 @@ contract FNFTFactory is
     }
 
     function setVaultManager(address _vaultManager) public virtual override onlyOwner {
-        emit UpdateVaultManager(vaultManager, _vaultManager);
-        vaultManager = _vaultManager;
+        emit UpdateVaultManager(address(vaultManager), _vaultManager);
+        vaultManager = IVaultManager(_vaultManager);
     }
 
     function setAuctionLength(Boundary boundary, uint256 _length) external onlyOwner {

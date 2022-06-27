@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "../FNFTFactory.sol";
+import "../FNFTSingleFactory.sol";
 import "../IFOFactory.sol";
 import "../PriceOracle.sol";
 import "../VaultManager.sol";
@@ -27,7 +27,7 @@ contract Deployer is Ownable {
 
     IMultiProxyController public proxyController;
 
-    bytes32 constant public FNFT_FACTORY = bytes32(0x464e4654466163746f7279000000000000000000000000000000000000000000);
+    bytes32 constant public FNFT_SINGLE_FACTORY = bytes32(0x464e465453696e676c65466163746f7279000000000000000000000000000000);
     bytes32 constant public IFO_FACTORY = bytes32(0x49464f466163746f727900000000000000000000000000000000000000000000);
     bytes32 constant public PRICE_ORACLE = bytes32(0x50726963654f7261636c65000000000000000000000000000000000000000000);
     bytes32 constant public FNFT_COLLECTION_FACTORY = bytes32(0x464e4654436f6c6c656374696f6e466163746f72790000000000000000000000);
@@ -123,26 +123,26 @@ contract Deployer is Ownable {
         emit ProxyDeployed(VAULT_MANAGER, vaultManager, msg.sender);
     }
 
-    /// @notice the function to deploy FNFTFactory
+    /// @notice the function to deploy FNFTSingleFactory
     /// @param _logic the implementation
-    /// @param _vaultManager variable needed for FNFTFactory
-    function deployFNFTFactory(
+    /// @param _vaultManager variable needed for FNFTSingleFactory
+    function deployFNFTSingleFactory(
         address _logic,
         address _vaultManager
-    ) external onlyOwner returns (address fnftFactory) {
+    ) external onlyOwner returns (address fnftSingleFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTFactory.__FNFTSingleFactory_init.selector,
+            FNFTSingleFactory.__FNFTSingleFactory_init.selector,
             _vaultManager
         );
 
-        fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
-        IOwnable(fnftFactory).transferOwnership(msg.sender);
+        fnftSingleFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(fnftSingleFactory).transferOwnership(msg.sender);
 
-        proxyController.deployerUpdateProxy(FNFT_FACTORY, fnftFactory);
+        proxyController.deployerUpdateProxy(FNFT_SINGLE_FACTORY, fnftSingleFactory);
 
-        emit ProxyDeployed(FNFT_FACTORY, fnftFactory, msg.sender);
+        emit ProxyDeployed(FNFT_SINGLE_FACTORY, fnftSingleFactory, msg.sender);
     }
 
     /// @notice the function to deploy FNFTCollectionFactory

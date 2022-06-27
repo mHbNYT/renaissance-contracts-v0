@@ -9,9 +9,9 @@ import {IFOFactory} from "../contracts/IFOFactory.sol";
 import {IPriceOracle} from "../contracts/interfaces/IPriceOracle.sol";
 import {IFNFTSingle} from "../contracts/interfaces/IFNFTSingle.sol";
 import {PriceOracle} from "../contracts/PriceOracle.sol";
-import {FNFTFactory} from "../contracts/FNFTFactory.sol";
+import {FNFTSingleFactory} from "../contracts/FNFTSingleFactory.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
-import {FNFT} from "../contracts/FNFT.sol";
+import {FNFTSingle} from "../contracts/FNFTSingle.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
 import {IFO} from "../contracts/IFO.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
@@ -22,12 +22,12 @@ import {BeaconProxy} from "../contracts/proxy/BeaconProxy.sol";
 /// @author Nibble Market
 /// @title Tests for the fnfts
 contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
-    FNFTFactory public fnftFactory;
+    FNFTSingleFactory public fnftSingleFactory;
     FNFTCollectionFactory public fnftCollectionFactory;
     IFOFactory public ifoFactory;
     IPriceOracle public priceOracle;
     MockNFT public nft;
-    FNFT public fractionalizedNFT;
+    FNFTSingle public fractionalizedNFT;
     FNFTCollection public fractionalizedNFTCollection;
 
     User public user1;
@@ -45,19 +45,19 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
             priceOracle,
             ,
             ,
-            fnftFactory,
+            fnftSingleFactory,
             fnftCollectionFactory,
         ) = setupContracts();
 
-        fnftFactory.setFee(FNFTFactory.FeeType.GovernanceFee, 0);
+        fnftSingleFactory.setFee(FNFTSingleFactory.FeeType.GovernanceFee, 0);
 
         nft = new MockNFT();
 
         nft.mint(address(this), 1);
 
-        nft.setApprovalForAll(address(fnftFactory), true);
-        fractionalizedNFT = FNFT(
-            fnftFactory.mint(
+        nft.setApprovalForAll(address(fnftSingleFactory), true);
+        fractionalizedNFT = FNFTSingle(
+            fnftSingleFactory.mint(
                 "testName",
                 "TEST",
                 address(nft),

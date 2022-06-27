@@ -16,21 +16,6 @@ contract EligibilityManager is OwnableUpgradeable {
     }
     EligibilityModule[] public modules;
 
-    event ModuleAdded(
-        address implementation,
-        address targetAsset,
-        string name,
-        bool finalizedOnDeploy
-    );
-    event ModuleUpdated(
-        address implementation,
-        string name,
-        bool finalizedOnDeploy
-    );
-
-    error OutOfBounds();
-    error NoImplementation();
-
     function __EligibilityManager_init() public initializer {
         __Ownable_init();
     }
