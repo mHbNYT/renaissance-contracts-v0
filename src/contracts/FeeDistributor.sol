@@ -42,7 +42,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   error OutOfBounds();
   error ZeroAddress();
 
-  function __FeeDistributor__init__(address _vaultManager, address _lpStaking, address _treasury) public override initializer {
+  function __FeeDistributor_init(address _vaultManager, address _lpStaking, address _treasury) public override initializer {
     __Pausable_init();
     setTreasuryAddress(_treasury);
     setLPStakingAddress(_lpStaking);

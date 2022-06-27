@@ -33,7 +33,7 @@ contract VaultManager is
     /// @notice the address who receives auction fees
     address payable public override feeReceiver;
 
-    function initialize(
+    function __VaultManager_init(
         address _weth,
         address _ifoFactory,
         address _priceOracle

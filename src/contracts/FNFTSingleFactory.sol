@@ -108,7 +108,7 @@ contract FNFTSingleFactory is
     error ZeroAddressDisallowed();
     error MultiplierTooLow();
 
-    function initialize(address _vaultManager) external initializer {
+    function __FNFTSingleFactory_init(address _vaultManager) external initializer {
         __Ownable_init();
         __Pausable_init();
         __BeaconUpgradeable__init(address(new FNFTSingle()));
@@ -142,7 +142,7 @@ contract FNFTSingleFactory is
         uint256 _fee
     ) external whenNotPaused returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTSingle.initialize.selector,
+            FNFTSingle.__FNFTSingle_init.selector,
             msg.sender,
             _nft,
             _tokenId,

@@ -50,7 +50,7 @@ contract Deployer is Ownable {
     ) external onlyOwner returns (address ifoFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
-        bytes memory _initializationCalldata = abi.encodeWithSelector(IFOFactory.initialize.selector);
+        bytes memory _initializationCalldata = abi.encodeWithSelector(IFOFactory.__IFOFactory_init.selector);
 
         ifoFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IIFOFactory(ifoFactory).setFeeReceiver(payable(msg.sender));
@@ -67,7 +67,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            PriceOracle.initialize.selector
+            PriceOracle.__PriceOracle_init.selector
         );
 
         priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
@@ -84,7 +84,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FeeDistributor.__FeeDistributor__init__.selector,
+            FeeDistributor.__FeeDistributor_init.selector,
             vaultManager,
             lpStaking,
             treasury
@@ -109,7 +109,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            VaultManager.initialize.selector,
+            VaultManager.__VaultManager_init.selector,
             _weth,
             _ifoFactory,
             _priceOracle
@@ -133,7 +133,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTSingleFactory.initialize.selector,
+            FNFTSingleFactory.__FNFTSingleFactory_init.selector,
             _vaultManager
         );
 

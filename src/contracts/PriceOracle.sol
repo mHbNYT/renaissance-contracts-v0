@@ -44,7 +44,7 @@ contract PriceOracle is OwnableUpgradeable, IPriceOracle {
         FACTORY = IUniswapV2Factory(_factory);
     }
 
-    function initialize() external initializer {
+    function __PriceOracle_init() external initializer {
         __Ownable_init();
 
         period = 10 minutes;

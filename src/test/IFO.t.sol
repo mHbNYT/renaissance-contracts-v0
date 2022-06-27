@@ -538,7 +538,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            IFO.initialize.selector,
+            IFO.__IFO_init.selector,
             address(this),
             address(fractionalizedNFT), // the address of the fractionalized token
             fractionalizedNFT.balanceOf(address(this)), //amountForSale
