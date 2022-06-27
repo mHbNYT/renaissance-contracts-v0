@@ -127,7 +127,7 @@ interface IUniswapV2Pair {
 
     function sync() external;
 
-    function initialize(address, address) external;
+    function __UniswapV2Pair_init(address, address) external;
 }
 
 contract UniswapV2Pair is UniswapV2ERC20 {
@@ -197,7 +197,7 @@ contract UniswapV2Pair is UniswapV2ERC20 {
     }
 
     // called once by the factory at time of deployment
-    function initialize(address _token0, address _token1) external {
+    function __UniswapV2Pair_init(address _token0, address _token1) external {
         require(msg.sender == factory, "UniswapV2: FORBIDDEN"); // sufficient check
         token0 = _token0;
         token1 = _token1;

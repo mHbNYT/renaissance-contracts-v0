@@ -78,7 +78,7 @@ contract IFO is Initializable {
     /// @param _cap Maximum an account can buy
     /// @param _duration Duration of IFO. Max duration set by DAO if _duration == 0
     /// @param _allowWhitelisting If IFO should be governed by whitelists
-    function initialize(
+    function __IFO_init(
         address _curator,
         address _fnftAddress,
         uint256 _amountForSale,

@@ -45,7 +45,7 @@ contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeabl
     error InvalidDuration();
     error IFOExists(address nft);
 
-    function initialize() external initializer {
+    function __IFOFactory_init() external initializer {
         __Ownable_init();
         __Pausable_init();
         __BeaconUpgradeable__init(address(new IFO()));
@@ -72,7 +72,7 @@ contract IFOFactory is OwnableUpgradeable, PausableUpgradeable, BeaconUpgradeabl
         bool _allowWhitelisting
     ) external whenNotPaused returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            IFO.initialize.selector,
+            IFO.__IFO_init.selector,
             msg.sender,
             _FNFT,
             _amountForSale,

@@ -40,11 +40,11 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
         ) = setupContracts();
 
         MockERC20Upgradeable token0 = new MockERC20Upgradeable();
-        token0.initialize("Fake Token 0", "FT0");
+        token0.__MockERC20Upgradeable_init("Fake Token 0", "FT0");
         token0.mint(address(this), 100 ether);
 
         MockERC20Upgradeable token1 = new MockERC20Upgradeable();
-        token1.initialize("Fake Token 1", "FT1");
+        token1.__MockERC20Upgradeable_init("Fake Token 1", "FT1");
         token1.mint(address(this), 100 ether);
 
         pair = new Pair(address(pairFactory), address(token0), address(token1), vm);

@@ -15,7 +15,7 @@ contract TimelockRewardDistributionTokenTest is DSTest {
   function setUp() public {
     distribution = new TimelockRewardDistributionTokenImpl();
     rewardToken = new MockERC20Upgradeable();
-    rewardToken.initialize("Test", "TEST");
+    rewardToken.__MockERC20Upgradeable_init("Test", "TEST");
     distribution.__TimelockRewardDistributionToken_init(rewardToken, "Test", "TEST");
 
     vm = CheatCodes(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));

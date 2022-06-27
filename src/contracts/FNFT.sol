@@ -85,7 +85,7 @@ contract FNFT is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721HolderUp
     /// @notice a mapping of users to their desired token price
     mapping(address => uint256) public override userReservePrice;
 
-    function initialize(
+    function __FNFTSingle_init(
         address _curator,
         address _token,
         uint256 _id,

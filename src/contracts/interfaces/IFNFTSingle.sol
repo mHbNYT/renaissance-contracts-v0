@@ -50,7 +50,7 @@ interface IFNFTSingle {
 
     function userReservePrice(address) external returns (uint256);
 
-    function initialize(
+    function __FNFTSingle_init(
         address _curator,
         address _token,
         uint256 _id,

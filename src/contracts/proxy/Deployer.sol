@@ -42,7 +42,7 @@ contract Deployer is Ownable {
     function setProxyController(address _controller) external onlyOwner {
         proxyController = IMultiProxyController(_controller);
     }
-    
+
     /// @notice the function to deploy IFOFactory
     /// @param _logic the implementation
     function deployIFOFactory(
@@ -50,7 +50,7 @@ contract Deployer is Ownable {
     ) external onlyOwner returns (address ifoFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
-        bytes memory _initializationCalldata = abi.encodeWithSelector(IFOFactory.initialize.selector);
+        bytes memory _initializationCalldata = abi.encodeWithSelector(IFOFactory.__IFOFactory_init.selector);
 
         ifoFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IIFOFactory(ifoFactory).setFeeReceiver(payable(msg.sender));
@@ -67,7 +67,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            PriceOracle.initialize.selector
+            PriceOracle.__PriceOracle_init.selector
         );
 
         priceOracle = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
@@ -84,7 +84,7 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FeeDistributor.__FeeDistributor__init__.selector,
+            FeeDistributor.__FeeDistributor_init.selector,
             vaultManager,
             lpStaking,
             treasury
@@ -109,13 +109,13 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            VaultManager.initialize.selector,
+            VaultManager.__VaultManager_init.selector,
             _weth,
             _ifoFactory,
             _priceOracle
         );
 
-        vaultManager = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));        
+        vaultManager = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IOwnable(vaultManager).transferOwnership(msg.sender);
 
         proxyController.deployerUpdateProxy(VAULT_MANAGER, vaultManager);
@@ -133,12 +133,12 @@ contract Deployer is Ownable {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTFactory.initialize.selector,
+            FNFTFactory.__FNFTSingleFactory_init.selector,
             _vaultManager
         );
 
-        fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));        
-        IOwnable(fnftFactory).transferOwnership(msg.sender);        
+        fnftFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
+        IOwnable(fnftFactory).transferOwnership(msg.sender);
 
         proxyController.deployerUpdateProxy(FNFT_FACTORY, fnftFactory);
 
@@ -149,7 +149,7 @@ contract Deployer is Ownable {
     /// @param _logic the implementation
     /// @param _vaultManager variable needed for FNFTCollectionFactory
     function deployFNFTCollectionFactory(
-        address _logic,         
+        address _logic,
         address _vaultManager
     ) external onlyOwner returns (address factory) {
         if (address(proxyController) == address(0)) revert NoController();
@@ -159,7 +159,7 @@ contract Deployer is Ownable {
             _vaultManager
         );
 
-        factory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));        
+        factory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
         IOwnable(factory).transferOwnership(msg.sender);
 
         proxyController.deployerUpdateProxy(FNFT_COLLECTION_FACTORY, factory);
