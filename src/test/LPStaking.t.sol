@@ -5,7 +5,7 @@ import "ds-test/test.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {console, SetupEnvironment} from "./utils/utils.sol";
 import {StakingTokenProvider} from "../contracts/StakingTokenProvider.sol";
-import {LPStaking} from "../contracts/LPStaking.sol";
+import {LPStaking, ILPStaking} from "../contracts/LPStaking.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
 import {VaultManager} from "../contracts/VaultManager.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
@@ -58,24 +58,19 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(address(lpStaking.stakingTokenProvider()), address(stakingTokenProvider));
   }
 
-  function testSetVaultManagerAlreadySet() public {
-    vm.expectRevert(LPStaking.VaultManagerAlreadySet.selector);
-    lpStaking.setVaultManager(address(1));
-  }
-
   function testSetStakingTokenProvider() public {
     lpStaking.setStakingTokenProvider(address(1));
     assertEq(address(lpStaking.stakingTokenProvider()), address(1));
   }
 
   function testSetStakingTokenProviderZeroAddress() public {
-    vm.expectRevert(LPStaking.ZeroAddress.selector);
+    vm.expectRevert(ILPStaking.ZeroAddress.selector);
     lpStaking.setStakingTokenProvider(address(0));
   }
 
   function testAddPoolForVaultPoolAlreadyExists() public {
     mintVaultTokens(1);
-    vm.expectRevert(LPStaking.PoolAlreadyExists.selector);
+    vm.expectRevert(ILPStaking.PoolAlreadyExists.selector);
     lpStaking.addPoolForVault(vaultId);
   }
 
@@ -127,7 +122,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
 
     uint256 lpTokenBalance = uniswapV2Pair.balanceOf(address(this));
     uniswapV2Pair.approve(address(lpStaking), lpTokenBalance);
-    vm.expectRevert(LPStaking.NotExcludedFromFees.selector);
+    vm.expectRevert(ILPStaking.NotExcludedFromFees.selector);
     lpStaking.timelockDepositFor(vaultId, address(1), lpTokenBalance, 123);
   }
 
@@ -139,7 +134,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
 
     uint256 lpTokenBalance = uniswapV2Pair.balanceOf(address(this));
     uniswapV2Pair.approve(address(lpStaking), lpTokenBalance);
-    vm.expectRevert(LPStaking.TimelockTooLong.selector);
+    vm.expectRevert(ILPStaking.TimelockTooLong.selector);
     lpStaking.timelockDepositFor(vaultId, address(1), lpTokenBalance, 2592000);
   }
 

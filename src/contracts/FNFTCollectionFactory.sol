@@ -13,20 +13,10 @@ import "./proxy/BeaconUpgradeable.sol";
 // Authors: @0xKiwi_ and @alexgausman.
 
 contract FNFTCollectionFactory is
+    IFNFTCollectionFactory,
     Pausable,
-    BeaconUpgradeable,
-    IFNFTCollectionFactory
+    BeaconUpgradeable
 {
-
-    // v1.0.2
-    struct VaultFees {
-        bool active;
-        uint64 mintFee;
-        uint64 randomRedeemFee;
-        uint64 targetRedeemFee;
-        uint64 randomSwapFee;
-        uint64 targetSwapFee;
-    }
     mapping(uint256 => VaultFees) private _vaultFees;
 
     uint64 public override factoryMintFee;
@@ -42,17 +32,12 @@ contract FNFTCollectionFactory is
 
     uint256 public override swapFee;
 
-
-    error FeeTooHigh();
-    error CallerIsNotVault();
-    error ZeroAddress();
-
     function __FNFTCollectionFactory_init(address _vaultManager) public override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
         __Pausable_init();
         // We use a beacon proxy so that every child contract follows the same implementation code.
         __BeaconUpgradeable__init(address(new FNFTCollection()));
-        setVaultManager(_vaultManager);
+        vaultManager = IVaultManager(_vaultManager);
         setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether);
     }
 
@@ -66,15 +51,10 @@ contract FNFTCollectionFactory is
         onlyOwnerIfPaused(0);
         if (childImplementation() == address(0)) revert ZeroAddress();
         IVaultManager _vaultManager = vaultManager;
-        address vaultAddr = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
-        uint vaultId = _vaultManager.addVault(vaultAddr);
-        emit NewVault(vaultId, vaultAddr, _assetAddress);
-        return vaultAddr;
-    }
-
-    function setVaultManager(address _vaultManager) public virtual override onlyOwner {
-        emit UpdateVaultManager(address(vaultManager), _vaultManager);
-        vaultManager = IVaultManager(_vaultManager);
+        address fnftCollection = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
+        uint vaultId = _vaultManager.addVault(fnftCollection);
+        emit NewVault(vaultId, fnftCollection, _assetAddress);
+        return fnftCollection;
     }
 
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
@@ -180,8 +160,17 @@ contract FNFTCollectionFactory is
         bool is1155,
         bool allowAllItems
     ) internal returns (address) {
-        address newBeaconProxy = address(new BeaconProxy(address(this), ""));
-        FNFTCollection(newBeaconProxy).__FNFTCollection_init(name, symbol, _assetAddress, is1155, allowAllItems);
+        bytes memory _initializationCalldata = abi.encodeWithSelector(
+            FNFTCollection.__FNFTCollection_init.selector,
+            name,
+            symbol,
+            _assetAddress,
+            is1155,
+            allowAllItems
+        );
+
+        address newBeaconProxy = address(new BeaconProxy(address(this), _initializationCalldata));
+
         // Manager for configuration.
         FNFTCollection(newBeaconProxy).setManager(msg.sender);
         // Owner for administrative functions.

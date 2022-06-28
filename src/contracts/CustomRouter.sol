@@ -4,18 +4,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IUniswapV2Factory.sol";
 import "./interfaces/IWETH.sol";
+import "./interfaces/ICustomRouter.sol";
 import "./libraries/UniswapV2Library.sol";
 
-contract CustomRouter {
+contract CustomRouter is ICustomRouter {
     using SafeERC20 for IERC20;
 
-    address public immutable factory;
-    address public immutable WETH;
-
-    error Expired();
-    error InsufficientA();
-    error InsufficientB();
-    error TxFailed();
+    address public immutable override factory;
+    address public immutable override WETH;
 
     modifier ensure(uint deadline) {
         if (deadline < block.timestamp) revert Expired();
@@ -67,7 +63,7 @@ contract CustomRouter {
         uint amountETHMin,
         address to,
         uint deadline
-    ) external virtual payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
+    ) external virtual payable override ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
         (amountToken, amountETH) = _addLiquidity(
             token,
             WETH,
@@ -94,7 +90,7 @@ contract CustomRouter {
         uint amountBMin,
         address to,
         uint deadline
-    ) public virtual ensure(deadline) returns (uint amountA, uint amountB) {
+    ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
         address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
         IUniswapV2Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
         (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
@@ -111,7 +107,7 @@ contract CustomRouter {
         uint amountETHMin,
         address to,
         uint deadline
-    ) public virtual ensure(deadline) returns (uint amountToken, uint amountETH) {
+    ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
         (amountToken, amountETH) = removeLiquidity(
             token,
             WETH,

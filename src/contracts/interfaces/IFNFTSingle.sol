@@ -1,10 +1,13 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
+
 import "./IVaultManager.sol";
 import "./IUniswapV2Pair.sol";
+import "../token/ERC20Upgradeable.sol";
 
-interface IFNFTSingle {
+interface IFNFTSingle  is IERC20Upgradeable {
     enum State {
         Inactive,
         Live,
@@ -51,14 +54,14 @@ interface IFNFTSingle {
     function userReservePrice(address) external returns (uint256);
 
     function __FNFTSingle_init(
+        string memory _name,
+        string memory _symbol,
         address _curator,
         address _token,
         uint256 _id,
         uint256 _supply,
         uint256 _listPrice,
-        uint256 _fee,
-        string memory _name,
-        string memory _symbol
+        uint256 _fee
     ) external;
 
     function reservePrice() external view returns (uint256);
@@ -96,6 +99,15 @@ interface IFNFTSingle {
     function redeem() external;
 
     function cash() external;
+
+    function flashFee(address borrowedToken, uint256 amount) external view returns (uint256);
+
+    function flashLoan(
+        IERC3156FlashBorrowerUpgradeable receiver,
+        address borrowedToken,
+        uint256 amount,
+        bytes calldata data
+    ) external returns (bool);
 
     function setVaultMetadata(
         string calldata name_,

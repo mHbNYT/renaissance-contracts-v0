@@ -6,14 +6,12 @@ import "ds-test/test.sol";
 
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {IFOFactory} from "../contracts/IFOFactory.sol";
-import {IPriceOracle} from "../contracts/interfaces/IPriceOracle.sol";
-import {IFNFTSingle} from "../contracts/interfaces/IFNFTSingle.sol";
-import {PriceOracle} from "../contracts/PriceOracle.sol";
-import {FNFTSingleFactory} from "../contracts/FNFTSingleFactory.sol";
+import {PriceOracle, IPriceOracle} from "../contracts/PriceOracle.sol";
+import {FNFTSingleFactory, IFNFTSingleFactory} from "../contracts/FNFTSingleFactory.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
-import {FNFTSingle} from "../contracts/FNFTSingle.sol";
+import {FNFTSingle, IFNFTSingle} from "../contracts/FNFTSingle.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
-import {IFO} from "../contracts/IFO.sol";
+import {IFO, IIFO} from "../contracts/IFO.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
 import {WETH} from "../contracts/mocks/WETH.sol";
 import {console, CheatCodes, SetupEnvironment, User, Curator, UserNoETH} from "./utils/utils.sol";
@@ -49,7 +47,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
             fnftCollectionFactory,
         ) = setupContracts();
 
-        fnftSingleFactory.setFee(FNFTSingleFactory.FeeType.GovernanceFee, 0);
+        fnftSingleFactory.setFee(IFNFTSingleFactory.FeeType.GovernanceFee, 0);
 
         nft = new MockNFT();
 
@@ -57,7 +55,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         nft.setApprovalForAll(address(fnftSingleFactory), true);
         fractionalizedNFT = FNFTSingle(
-            fnftSingleFactory.mint(
+            fnftSingleFactory.createVault(
                 "testName",
                 "TEST",
                 address(nft),
@@ -168,7 +166,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidAddress.selector);
+        vm.expectRevert(IIFO.InvalidAddress.selector);
         ifoFactory.create(
             address(0), // wrong address
             balance, //amountForSale
@@ -186,7 +184,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         fractionalizedNFT.approve(address(ifoFactory), balance);
         // burn 1
         fractionalizedNFT.transfer(0x000000000000000000000000000000000000dEaD, 1);
-        vm.expectRevert(IFO.NotEnoughSupply.selector);
+        vm.expectRevert(IIFO.NotEnoughSupply.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -202,7 +200,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidCap.selector);
+        vm.expectRevert(IIFO.InvalidCap.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -217,7 +215,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 balance = fractionalizedNFT.balanceOf(address(this));
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidCap.selector);
+        vm.expectRevert(IIFO.InvalidCap.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -232,7 +230,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), fractionalizedNFT.balanceOf(address(this)));
-        vm.expectRevert(IFO.InvalidAmountForSale.selector);
+        vm.expectRevert(IIFO.InvalidAmountForSale.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             0, // amountForSale
@@ -248,7 +246,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidAmountForSale.selector);
+        vm.expectRevert(IIFO.InvalidAmountForSale.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance + 1, //amountForSale
@@ -264,7 +262,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidReservePrice.selector);
+        vm.expectRevert(IIFO.InvalidReservePrice.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -280,7 +278,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 minimumDuration = ifoFactory.minimumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidDuration.selector);
+        vm.expectRevert(IIFO.InvalidDuration.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -296,7 +294,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         uint256 totalSupply = fractionalizedNFT.totalSupply();
         uint256 maximumDuration = ifoFactory.maximumDuration();
         fractionalizedNFT.approve(address(ifoFactory), balance);
-        vm.expectRevert(IFO.InvalidDuration.selector);
+        vm.expectRevert(IIFO.InvalidDuration.selector);
         ifoFactory.create(
             address(fractionalizedNFT),
             balance, //amountForSale
@@ -353,7 +351,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     function testUpdateFNFTAddressZeroAddress() public {
         IFO fNFTIfo = createValidIFO();
 
-        vm.expectRevert(IFO.InvalidAddress.selector);
+        vm.expectRevert(IIFO.InvalidAddress.selector);
         fNFTIfo.updateFNFTAddress(address(0));
     }
 
@@ -375,7 +373,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         );
         IFO fNFTIfo = IFO(ifoFactory.getIFO(address(fractionalizedNFT)));
 
-        vm.expectRevert(IFO.NotGov.selector);
+        vm.expectRevert(IIFO.NotGov.selector);
         fNFTIfo.updateFNFTAddress(address(user1));
 
         vm.stopPrank();
@@ -397,7 +395,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.addWhitelist(address(user1));
 
         vm.stopPrank();
@@ -406,7 +404,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     function testAddWhitelistWhitelistNotAllowed() public {
         IFO fNFTIfo = createValidIFO();
 
-        vm.expectRevert(IFO.WhitelistingDisallowed.selector);
+        vm.expectRevert(IIFO.WhitelistingDisallowed.selector);
         fNFTIfo.addWhitelist(address(user1));
     }
 
@@ -436,7 +434,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.addMultipleWhitelists(whitelists);
 
         vm.stopPrank();
@@ -451,7 +449,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         whitelists[1] = address(user2);
         whitelists[2] = address(user3);
 
-        vm.expectRevert(IFO.WhitelistingDisallowed.selector);
+        vm.expectRevert(IIFO.WhitelistingDisallowed.selector);
         fNFTIfo.addMultipleWhitelists(whitelists);
     }
 
@@ -476,7 +474,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.removeWhitelist(address(user1));
 
         vm.stopPrank();
@@ -499,7 +497,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.start();
 
         vm.stopPrank();
@@ -514,7 +512,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertTrue(fNFTIfo.started());
 
-        vm.expectRevert(IFO.SaleAlreadyStarted.selector);
+        vm.expectRevert(IIFO.SaleAlreadyStarted.selector);
         fNFTIfo.start();
     }
 
@@ -564,7 +562,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.end();
 
         vm.stopPrank();
@@ -583,7 +581,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.roll(fNFTIfo.startBlock() + ifoFactory.minimumDuration() + 1);
 
-        vm.expectRevert(IFO.ContractPaused.selector);
+        vm.expectRevert(IIFO.ContractPaused.selector);
         fNFTIfo.end();
     }
 
@@ -592,7 +590,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertTrue(!fNFTIfo.started());
 
-        vm.expectRevert(IFO.SaleUnstarted.selector);
+        vm.expectRevert(IIFO.SaleUnstarted.selector);
         fNFTIfo.end();
     }
 
@@ -605,7 +603,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.roll(fNFTIfo.startBlock() + ifoFactory.minimumDuration());
 
-        vm.expectRevert(IFO.DeadlineActive.selector);
+        vm.expectRevert(IIFO.DeadlineActive.selector);
         fNFTIfo.end();
     }
 
@@ -622,7 +620,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertTrue(fNFTIfo.ended());
 
-        vm.expectRevert(IFO.SaleAlreadyEnded.selector);
+        vm.expectRevert(IIFO.SaleAlreadyEnded.selector);
         fNFTIfo.end();
     }
 
@@ -633,7 +631,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertTrue(fNFTIfo.started());
 
-        vm.expectRevert(IFO.DeadlineActive.selector);
+        vm.expectRevert(IIFO.DeadlineActive.selector);
         fNFTIfo.end();
     }
 
@@ -678,7 +676,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     function testTogglePauseWhenNotStarted() public {
         IFO fNFTIfo = createValidIFO();
 
-        vm.expectRevert(IFO.SaleUnstarted.selector);
+        vm.expectRevert(IIFO.SaleUnstarted.selector);
         fNFTIfo.togglePause();
     }
 
@@ -691,7 +689,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.end();
 
-        vm.expectRevert(IFO.SaleAlreadyEnded.selector);
+        vm.expectRevert(IIFO.SaleAlreadyEnded.selector);
         fNFTIfo.togglePause();
     }
 
@@ -704,7 +702,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.startPrank(address(user1));
 
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.togglePause();
 
         vm.stopPrank();
@@ -769,7 +767,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         fNFTIfo.end();
 
         vm.startPrank(address(user2));
-        vm.expectRevert(IFO.NotCurator.selector);
+        vm.expectRevert(IIFO.NotCurator.selector);
         fNFTIfo.adminWithdrawProfit();
         vm.stopPrank();
     }
@@ -812,7 +810,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.roll(fNFTIfo.startBlock() + ifoFactory.minimumDuration() + 1);
 
-        vm.expectRevert(IFO.SaleActive.selector);
+        vm.expectRevert(IIFO.SaleActive.selector);
         fNFTIfo.adminWithdrawProfit();
     }
 
@@ -831,7 +829,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.adminWithdrawProfit();
 
-        vm.expectRevert(IFO.NoProfit.selector);
+        vm.expectRevert(IIFO.NoProfit.selector);
         fNFTIfo.adminWithdrawProfit();
     }
 
@@ -883,7 +881,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         assertEq(fractionalizedNFT.balanceOf(address(fNFTIfo)), originalBalance - (1 ether * 1e18 / 0.01 ether));
 
-        vm.expectRevert(IFO.SaleActive.selector);
+        vm.expectRevert(IIFO.SaleActive.selector);
         fNFTIfo.adminWithdrawFNFT();
     }
 
@@ -974,7 +972,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.end();
 
-        vm.expectRevert(IFO.FNFTLocked.selector);
+        vm.expectRevert(IIFO.FNFTLocked.selector);
         fNFTIfo.adminWithdrawFNFT();
     }
 
@@ -1018,7 +1016,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     function testManualApproveUtilityContractZeroAddress() public {
         IFO fNFTIfo = createValidIFO();
 
-        vm.expectRevert(IFO.InvalidAddress.selector);
+        vm.expectRevert(IIFO.InvalidAddress.selector);
         fNFTIfo.approve();
     }
 
@@ -1105,7 +1103,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.end();
 
-        vm.expectRevert(IFO.SaleAlreadyEnded.selector);
+        vm.expectRevert(IIFO.SaleAlreadyEnded.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 
@@ -1116,7 +1114,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.togglePause();
 
-        vm.expectRevert(IFO.ContractPaused.selector);
+        vm.expectRevert(IIFO.ContractPaused.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 
@@ -1151,14 +1149,14 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         vm.roll(fNFTIfo.startBlock() + ifoFactory.minimumDuration() + 1);
 
-        vm.expectRevert(IFO.SaleAlreadyEnded.selector);
+        vm.expectRevert(IIFO.SaleAlreadyEnded.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 
     function testDepositBeforeSaleStarted() public {
         IFO fNFTIfo = createValidIFO();
 
-        vm.expectRevert(IFO.SaleUnstarted.selector);
+        vm.expectRevert(IIFO.SaleUnstarted.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 
@@ -1178,7 +1176,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        vm.expectRevert(IFO.NotWhitelisted.selector);
+        vm.expectRevert(IIFO.NotWhitelisted.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 
@@ -1207,7 +1205,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.start();
 
-        vm.expectRevert(IFO.OverLimit.selector);
+        vm.expectRevert(IIFO.OverLimit.selector);
         fNFTIfo.deposit{value: 3.1 ether}();
     }
 
@@ -1218,7 +1216,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.deposit{value: 1 ether}();
 
-        vm.expectRevert(IFO.OverLimit.selector);
+        vm.expectRevert(IIFO.OverLimit.selector);
         fNFTIfo.deposit{value: 2.1 ether}();
     }
 
@@ -1231,7 +1229,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
 
         fNFTIfo.deposit{value: 2 ether}();
 
-        vm.expectRevert(IFO.OverLimit.selector);
+        vm.expectRevert(IIFO.OverLimit.selector);
         fNFTIfo.deposit{value: 1 ether}();
     }
 

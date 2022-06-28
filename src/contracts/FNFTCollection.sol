@@ -23,8 +23,8 @@ import {IPriceOracle} from "./PriceOracle.sol";
 // Authors: @0xKiwi_ and @alexgausman.
 
 contract FNFTCollection is
-    OwnableUpgradeable,
     IFNFTCollection,
+    OwnableUpgradeable,
     IERC165,
     ERC20FlashMintUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -42,7 +42,7 @@ contract FNFTCollection is
     IFNFTCollectionFactory public override factory;
     IEligibility public override eligibilityStorage;
 
-    uint256 randNonce;
+    uint256 private randNonce;
 
     address public override assetAddress;
     bool public override is1155;
@@ -53,28 +53,8 @@ contract FNFTCollection is
     bool public override enableRandomSwap;
     bool public override enableTargetSwap;
 
-    EnumerableSetUpgradeable.UintSet holdings;
-    mapping(uint256 => uint256) quantity1155;
-
-    event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
-
-    error ZeroAddress();
-    error IneligibleNFTs();
-    error ZeroTransferAmount();
-    error NotOwner();
-    error NotManager();
-    error Paused();
-    error TooManyNFTs();
-    error EligibilityAlreadySet();
-    error MintDisabled();
-    error RandomRedeemDisabled();
-    error TargetRedeemDisabled();
-    error RandomSwapDisabled();
-    error TargetSwapDisabled();
-    error NFTAlreadyInCollection();
-    error NotNFTOwner();
-    error FeeTooHigh();
-    error WrongToken();
+    EnumerableSetUpgradeable.UintSet internal holdings;
+    mapping(uint256 => uint256) public override quantity1155;
 
     function __FNFTCollection_init(
         string memory _name,
@@ -289,21 +269,27 @@ contract FNFTCollection is
         return ids;
     }
 
-    function flashFee(address token, uint256 amount) public view returns (uint256) {
-        if (token != address(this)) revert WrongToken();
+    function flashFee(address borrowedToken, uint256 amount) public view override (
+        IERC3156FlashLenderUpgradeable,
+        IFNFTCollection
+    ) returns (uint256) {
+        if (borrowedToken != address(this)) revert WrongToken();
         return uint256(factory.flashLoanFee()) * amount / 10000;
     }
 
     function flashLoan(
         IERC3156FlashBorrowerUpgradeable receiver,
-        address token,
+        address borrowedToken,
         uint256 amount,
         bytes calldata data
-    ) public override virtual returns (bool) {
+    ) public virtual override (
+        IERC3156FlashLenderUpgradeable,
+        IFNFTCollection
+    ) returns (bool) {
         onlyOwnerIfPaused(4);
 
-        uint256 fee = vaultManager.excludedFromFees(address(receiver)) ? 0 : flashFee(token, amount);
-        return _flashLoan(receiver, token, amount, fee, data);
+        uint256 flashLoanFee = vaultManager.excludedFromFees(address(receiver)) ? 0 : flashFee(borrowedToken, amount);
+        return _flashLoan(receiver, borrowedToken, amount, flashLoanFee, data);
     }
 
     function mintFee() public view override virtual returns (uint256) {
@@ -373,8 +359,8 @@ contract FNFTCollection is
     }
 
     // Added in v1.0.3.
-    function version() external pure returns (string memory) {
-        return "v1.0.5";
+    function version() external pure override returns (string memory) {
+        return "v1.0.0";
     }
 
     // We set a hook to the eligibility module (if it exists) after redeems in case anything needs to be modified.
@@ -569,7 +555,7 @@ contract FNFTCollection is
         _mint(to, amount);
     }
 
-    function shutdown(address recipient) public onlyOwner {
+    function shutdown(address recipient) public override onlyOwner {
         uint256 numItems = totalSupply() / base;
         if (numItems >= 4) revert TooManyNFTs();
         uint256[] memory specificIds = new uint256[](0);

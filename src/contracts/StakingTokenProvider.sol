@@ -8,23 +8,19 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-contract StakingTokenProvider is OwnableUpgradeable {
+import "./interfaces/IStakingTokenProvider.sol";
 
-  address public uniLikeExchange;
-  address public defaultPairedToken;
-  string public defaultPrefix;
-  mapping(address => address) public pairedToken;
-  mapping(address => string) public pairedPrefix;
+contract StakingTokenProvider is IStakingTokenProvider, OwnableUpgradeable {
 
-  event NewDefaultPaired(address oldPaired, address newPaired);
-  event NewPairedTokenForVault(address vaultToken, address oldPairedtoken, address newPairedToken);
-
-  error IdenticalAddress();
-  error ZeroAddress();
+  address public override uniLikeExchange;
+  address public override defaultPairedToken;
+  string public override defaultPrefix;
+  mapping(address => address) public override pairedToken;
+  mapping(address => string) public override pairedPrefix;
 
   // This is an address provder to allow us to abstract out what liquidity
   // our vault tokens should be paired with.
-  function __StakingTokenProvider_init(address _uniLikeExchange, address _defaultPairedtoken, string memory _defaultPrefix) public initializer {
+  function __StakingTokenProvider_init(address _uniLikeExchange, address _defaultPairedtoken, string memory _defaultPrefix) public override initializer {
     __Ownable_init();
     if (_uniLikeExchange == address(0)) revert ZeroAddress();
     if (_defaultPairedtoken == address(0)) revert ZeroAddress();
@@ -33,20 +29,20 @@ contract StakingTokenProvider is OwnableUpgradeable {
     defaultPrefix = _defaultPrefix;
   }
 
-  function setPairedTokenForVaultToken(address _vaultToken, address _newPairedToken, string calldata _newPrefix) external onlyOwner {
+  function setPairedTokenForVaultToken(address _vaultToken, address _newPairedToken, string calldata _newPrefix) external override onlyOwner {
     if (_newPairedToken == address(0)) revert ZeroAddress();
     emit NewPairedTokenForVault(_vaultToken, pairedToken[_vaultToken], _newPairedToken);
     pairedToken[_vaultToken] = _newPairedToken;
     pairedPrefix[_vaultToken] = _newPrefix;
   }
 
-  function setDefaultPairedToken(address _newDefaultPaired, string calldata _newDefaultPrefix) external onlyOwner {
+  function setDefaultPairedToken(address _newDefaultPaired, string calldata _newDefaultPrefix) external override onlyOwner {
     emit NewDefaultPaired(defaultPairedToken, _newDefaultPaired);
     defaultPairedToken = _newDefaultPaired;
     defaultPrefix = _newDefaultPrefix;
   }
 
-  function stakingTokenForVaultToken(address _vaultToken) external view returns (address) {
+  function stakingTokenForVaultToken(address _vaultToken) external view override returns (address) {
     address _pairedToken = pairedToken[_vaultToken];
     if (_pairedToken == address(0)) {
       _pairedToken = defaultPairedToken;
@@ -54,7 +50,7 @@ contract StakingTokenProvider is OwnableUpgradeable {
     return pairFor(uniLikeExchange, _vaultToken, _pairedToken);
   }
 
-  function nameForStakingToken(address _vaultToken) external view returns (string memory) {
+  function nameForStakingToken(address _vaultToken) external view override returns (string memory) {
     string memory _pairedPrefix = pairedPrefix[_vaultToken];
     if (bytes(_pairedPrefix).length == 0) {
       _pairedPrefix = defaultPrefix;
@@ -69,7 +65,7 @@ contract StakingTokenProvider is OwnableUpgradeable {
     return string(abi.encodePacked(_pairedPrefix, symbol1, symbol2));
   }
 
-  function pairForVaultToken(address _vaultToken, address _pairedToken) external view returns (address) {
+  function pairForVaultToken(address _vaultToken, address _pairedToken) external view override returns (address) {
     return pairFor(uniLikeExchange, _vaultToken, _pairedToken);
   }
 

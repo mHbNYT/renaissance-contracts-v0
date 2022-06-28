@@ -86,14 +86,14 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
     mapping(address => uint256) public override userReservePrice;
 
     function __FNFTSingle_init(
+        string memory _name,
+        string memory _symbol,
         address _curator,
         address _token,
         uint256 _id,
         uint256 _supply,
         uint256 _listPrice,
-        uint256 _fee,
-        string memory _name,
-        string memory _symbol
+        uint256 _fee
     ) external override initializer {
         // initialize inherited contracts
         __ERC20_init(_name, _symbol);
@@ -576,19 +576,25 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         return success;
     }
 
-    function flashFee(address loanToken, uint256 amount) public view returns (uint256) {
-        if (loanToken != address(this)) revert WrongToken();
+    function flashFee(address borrowedToken, uint256 amount) public view override (
+        IERC3156FlashLenderUpgradeable,
+        IFNFTSingle
+    ) returns (uint256) {
+        if (borrowedToken != address(this)) revert WrongToken();
         return IFNFTSingleFactory(factory).flashLoanFee() * amount / 10000;
     }
 
     function flashLoan(
         IERC3156FlashBorrowerUpgradeable receiver,
-        address loanToken,
+        address borrowedToken,
         uint256 amount,
         bytes calldata data
-    ) public override virtual returns (bool) {
-        uint256 flashLoanFee = flashFee(loanToken, amount);
-        return _flashLoan(receiver, loanToken, amount, flashLoanFee, data);
+    ) public virtual override (
+        IERC3156FlashLenderUpgradeable,
+        IFNFTSingle
+    ) returns (bool) {
+        uint256 flashLoanFee = vaultManager.excludedFromFees(address(receiver)) ? 0 : flashFee(borrowedToken, amount);
+        return _flashLoan(receiver, borrowedToken, amount, flashLoanFee, data);
     }
 
     function _chargeAndDistributeFees(address user, uint256 amount) internal override virtual {
