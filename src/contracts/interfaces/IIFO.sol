@@ -86,13 +86,13 @@ interface IIFO {
 
     function fnftLocked() external view returns (bool);
 
-    event Deposit(address indexed buyer, uint256 amount, uint256 payout);
-    event Start();
-    event End();
-    event Pause(bool paused);
-    event AdminProfitWithdrawal(address FNFT, uint256 amount);
-    event AdminFNFTWithdrawal(address FNFT, uint256 amount);
-    event EmergencyFNFTWithdrawal(address FNFT, uint256 amount);
+    event FNFTSold(address indexed buyer, uint256 amount, uint256 payout);
+    event SaleStarted();
+    event SaleEnded();
+    event PausedToggled(bool paused);
+    event AdminProfitWithdrawn(address FNFT, uint256 amount);
+    event AdminFNFTWithdrawn(address FNFT, uint256 amount);
+    event EmergencyFNFTWithdrawn(address FNFT, uint256 amount);
 
     error NotGov();
     error NotCurator();
