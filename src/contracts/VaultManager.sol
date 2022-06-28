@@ -63,19 +63,19 @@ contract VaultManager is
     }
 
     function setPriceOracle(address _newOracle) external override onlyOwner {
-        emit UpdatePriceOracle(priceOracle, _newOracle);
+        emit PriceOracleUpdated(priceOracle, _newOracle);
         priceOracle = _newOracle;
     }
 
 
     function setFeeDistributor(address _feeDistributor) public override onlyOwner {
         if (_feeDistributor == address(0)) revert ZeroAddressDisallowed();
-        emit NewFeeDistributor(feeDistributor, _feeDistributor);
+        emit FeeDistributorUpdated(feeDistributor, _feeDistributor);
         feeDistributor = _feeDistributor;
     }
 
     function setFeeExclusion(address _excludedAddr, bool excluded) public override onlyOwner {
-        emit FeeExclusion(_excludedAddr, excluded);
+        emit FeeExclusionUpdated(_excludedAddr, excluded);
         excludedFromFees[_excludedAddr] = excluded;
     }
 

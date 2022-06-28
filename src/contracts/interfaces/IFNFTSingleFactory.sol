@@ -68,15 +68,15 @@ interface IFNFTSingleFactory {
     event UpdateMinAuctionLength(uint256 _old, uint256 _new);
     event UpdateGovernanceFee(uint256 _old, uint256 _new);
     event UpdateCuratorFee(uint256 _old, uint256 _new);
-    event UpdateSwapFee(uint256 _old, uint256 _new);
+    event SwapFeeUpdated(uint256 _old, uint256 _new);
     event UpdateMinBidIncrease(uint256 _old, uint256 _new);
     event UpdateMinVotePercentage(uint256 _old, uint256 _new);
     event UpdateMaxReserveFactor(uint256 _old, uint256 _new);
     event UpdateMinReserveFactor(uint256 _old, uint256 _new);
     event UpdateLiquidityThreshold(uint256 _old, uint256 _new);
     event UpdateInstantBuyMultiplier(uint256 _old, uint256 _new);
-    event UpdateFlashLoanFee(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
-    event FeeExclusion(address target, bool excluded);
+    event FlashLoanFeeUpdated(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
+    event FeeExclusionUpdated(address target, bool excluded);
     event FNFTSingleCreated(
         address indexed token,
         address fnftSingle,

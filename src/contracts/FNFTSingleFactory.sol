@@ -132,7 +132,7 @@ contract FNFTSingleFactory is
             maxCuratorFee = _fee;
         } else if (feeType == FeeType.SwapFee) {
             if (_fee > 500) revert FeeTooHigh();
-            emit UpdateSwapFee(swapFee, _fee);
+            emit SwapFeeUpdated(swapFee, _fee);
             swapFee = _fee;
         }
     }
@@ -182,7 +182,7 @@ contract FNFTSingleFactory is
 
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
         if (_flashLoanFee > 500) revert FeeTooHigh();
-        emit UpdateFlashLoanFee(flashLoanFee, _flashLoanFee);
+        emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
         flashLoanFee = _flashLoanFee;
     }
 

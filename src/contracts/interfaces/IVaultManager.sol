@@ -29,14 +29,14 @@ interface IVaultManager {
     function vaults(uint256) external view returns (address);
     function numVaults() external view returns (uint);
 
-    event UpdatePriceOracle(address _old, address _new);
+    event PriceOracleUpdated(address _old, address _new);
     event UpdateFeeReceiver(address _old, address _new);
     event UpdateZapContract(address _old, address _new);
     event UpdateFNFTCollectionFactory(address _old, address _new);
     event UpdateFNFTSingleFactory(address _old, address _new);
     event VaultSet(uint256 _vaultId, address _fnft);
-    event NewFeeDistributor(address oldDistributor, address newDistributor);
-    event FeeExclusion(address target, bool excluded);
+    event FeeDistributorUpdated(address oldDistributor, address newDistributor);
+    event FeeExclusionUpdated(address target, bool excluded);
 
     error MaxAuctionLengthOutOfBounds();
     error MinAuctionLengthOutOfBounds();
