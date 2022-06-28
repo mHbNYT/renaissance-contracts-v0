@@ -31,13 +31,13 @@ contract StakingTokenProvider is IStakingTokenProvider, OwnableUpgradeable {
 
   function setPairedTokenForVaultToken(address _vaultToken, address _newPairedToken, string calldata _newPrefix) external override onlyOwner {
     if (_newPairedToken == address(0)) revert ZeroAddress();
-    emit NewPairedTokenForVault(_vaultToken, pairedToken[_vaultToken], _newPairedToken);
+    emit PairedTokenForVaultUpdated(_vaultToken, pairedToken[_vaultToken], _newPairedToken);
     pairedToken[_vaultToken] = _newPairedToken;
     pairedPrefix[_vaultToken] = _newPrefix;
   }
 
   function setDefaultPairedToken(address _newDefaultPaired, string calldata _newDefaultPrefix) external override onlyOwner {
-    emit NewDefaultPaired(defaultPairedToken, _newDefaultPaired);
+    emit DefaultPairedTokenUpdated(defaultPairedToken, _newDefaultPaired);
     defaultPairedToken = _newDefaultPaired;
     defaultPrefix = _newDefaultPrefix;
   }

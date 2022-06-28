@@ -55,7 +55,7 @@ interface IPriceOracle {
     function getFNFTPriceETH(address _FNFT, uint256 _amountIn) external view returns (uint256 amountOut);
 
     event PeriodUpdated(uint256 _old, uint256 _new);
-    event UpdateMinimumPairInfoUpdate(uint256 _old, uint256 _new);
+    event MinimumPairInfoUpdateUpdated(uint256 _old, uint256 _new);
 
     error PairInfoDoesNotExist();
     error InvalidToken();

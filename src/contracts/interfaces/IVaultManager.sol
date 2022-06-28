@@ -31,9 +31,9 @@ interface IVaultManager {
 
     event PriceOracleUpdated(address _old, address _new);
     event FeeReceiverUpdated(address _old, address _new);
-    event UpdateZapContract(address _old, address _new);
-    event UpdateFNFTCollectionFactory(address _old, address _new);
-    event UpdateFNFTSingleFactory(address _old, address _new);
+    event ZapContractUpdated(address _old, address _new);
+    event FNFTCollectionFactoryUpdated(address _old, address _new);
+    event FNFTSingleFactoryUpdated(address _old, address _new);
     event VaultSet(uint256 _vaultId, address _fnft);
     event FeeDistributorUpdated(address oldDistributor, address newDistributor);
     event FeeExclusionUpdated(address target, bool excluded);

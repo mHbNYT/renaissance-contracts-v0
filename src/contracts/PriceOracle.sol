@@ -45,7 +45,7 @@ contract PriceOracle is IPriceOracle, OwnableUpgradeable {
 
     // Set minimum pair info info update required to get fNFT-WETH TWAP price.
     function setMinimumPairInfoUpdate(uint256 _newMinimumPairInfoUpdate) external override onlyOwner {
-        emit UpdateMinimumPairInfoUpdate(minimumPairInfoUpdate, _newMinimumPairInfoUpdate);
+        emit MinimumPairInfoUpdateUpdated(minimumPairInfoUpdate, _newMinimumPairInfoUpdate);
         minimumPairInfoUpdate = _newMinimumPairInfoUpdate;
     }
 

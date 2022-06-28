@@ -48,13 +48,13 @@ contract VaultManager is
 
     function setFNFTCollectionFactory(address _fnftCollectionFactory) external override onlyOwner {
         if (_fnftCollectionFactory == address(0)) revert ZeroAddressDisallowed();
-        emit UpdateFNFTCollectionFactory(fnftCollectionFactory, _fnftCollectionFactory);
+        emit FNFTCollectionFactoryUpdated(fnftCollectionFactory, _fnftCollectionFactory);
         fnftCollectionFactory = _fnftCollectionFactory;
     }
 
     function setFNFTSingleFactory(address _fnftSingleFactory) external override onlyOwner {
         if (_fnftSingleFactory == address(0)) revert ZeroAddressDisallowed();
-        emit UpdateFNFTSingleFactory(fnftSingleFactory, _fnftSingleFactory);
+        emit FNFTSingleFactoryUpdated(fnftSingleFactory, _fnftSingleFactory);
         fnftSingleFactory = _fnftSingleFactory;
     }
 
@@ -87,7 +87,7 @@ contract VaultManager is
 
     function setZapContract(address _zapContract) external override onlyOwner {
         if (_zapContract == address(0)) revert ZeroAddressDisallowed();
-        emit UpdateZapContract(zapContract, _zapContract);
+        emit ZapContractUpdated(zapContract, _zapContract);
         zapContract = _zapContract;
     }
 
