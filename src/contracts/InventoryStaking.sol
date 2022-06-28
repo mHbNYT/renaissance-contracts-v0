@@ -101,7 +101,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         (IERC20Upgradeable baseToken, XTokenUpgradeable xToken, uint256 xTokensMinted) = _timelockMintFor(vaultId, msg.sender, _amount, timelockTime);
         // Lock the base token in the xtoken contract
         baseToken.safeTransferFrom(msg.sender, address(xToken), _amount);
-        emit Deposit(vaultId, _amount, xTokensMinted, timelockTime, msg.sender);
+        emit BaseTokenDeposited(vaultId, _amount, xTokensMinted, timelockTime, msg.sender);
     }
 
     function timelockMintFor(uint256 vaultId, uint256 amount, address to, uint256 timelockLength) external virtual override returns (uint256) {
@@ -111,7 +111,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         if (!vaultManager.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
 
         (, , uint256 xTokensMinted) = _timelockMintFor(vaultId, to, amount, timelockLength);
-        emit Deposit(vaultId, amount, xTokensMinted, timelockLength, to);
+        emit BaseTokenDeposited(vaultId, amount, xTokensMinted, timelockLength, to);
         return xTokensMinted;
     }
 
@@ -122,7 +122,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
 
         uint256 baseTokensRedeemed = xToken.burnXTokens(msg.sender, _share);
-        emit Withdraw(vaultId, baseTokensRedeemed, _share, msg.sender);
+        emit BaseTokenWithdrawn(vaultId, baseTokensRedeemed, _share, msg.sender);
     }
 
    function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
