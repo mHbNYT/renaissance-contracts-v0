@@ -117,15 +117,15 @@ interface IFNFTSingle  is IERC20Upgradeable {
     /// @notice An event emitted when a user updates their price
     event PriceUpdated(address indexed user, uint256 price);
     /// @notice An event emitted when an auction starts
-    event Start(address indexed buyer, uint256 price);
+    event AuctionStarted(address indexed buyer, uint256 price);
     /// @notice An event emitted when a bid is made
-    event Bid(address indexed buyer, uint256 price);
+    event BidMade(address indexed buyer, uint256 price);
     /// @notice An event emitted when an auction is won
-    event Won(address indexed buyer, uint256 price);
+    event AuctionWon(address indexed buyer, uint256 price);
     /// @notice An event emitted when someone redeems all tokens for the NFT
-    event Redeem(address indexed redeemer);
+    event TokenRedeemed(address indexed redeemer);
     /// @notice An event emitted when someone cashes in ERC20 tokens for ETH from an ERC721 token sale
-    event Cash(address indexed owner, uint256 shares);
+    event CashWithdrawn(address indexed owner, uint256 shares);
     event AuctionLengthUpdated(uint256 length);
     event CuratorFeeUpdated(uint256 fee);
     event FeeClaimed(uint256 fee);

@@ -275,7 +275,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Ended;
 
-        emit Won(msg.sender, price);
+        emit AuctionWon(msg.sender, price);
     }
 
     function buyItNowPrice() public view override returns (uint256) {
@@ -479,7 +479,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         livePrice = msg.value;
         winning = payable(msg.sender);
 
-        emit Start(msg.sender, msg.value);
+        emit AuctionStarted(msg.sender, msg.value);
     }
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
@@ -499,7 +499,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         livePrice = msg.value;
         winning = payable(msg.sender);
 
-        emit Bid(msg.sender, msg.value);
+        emit BidMade(msg.sender, msg.value);
     }
 
     /// @notice an external function to end an auction after the timer has run out
@@ -514,7 +514,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Ended;
 
-        emit Won(winning, livePrice);
+        emit AuctionWon(winning, livePrice);
     }
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
@@ -527,7 +527,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Redeemed;
 
-        emit Redeem(msg.sender);
+        emit TokenRedeemed(msg.sender);
     }
 
     /// @notice an external function to burn ERC20 tokens to receive ETH from ERC721 token purchase
@@ -541,7 +541,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         _sendETHOrWETH(payable(msg.sender), share);
 
-        emit Cash(msg.sender, share);
+        emit CashWithdrawn(msg.sender, share);
     }
 
     function setVaultMetadata(
