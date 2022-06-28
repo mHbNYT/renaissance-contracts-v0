@@ -90,7 +90,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
     allocTotal -= feeReceiver.allocPoint;
     feeReceiver.allocPoint = _allocPoint;
     allocTotal += _allocPoint;
-    emit UpdateFeeReceiverAlloc(feeReceiver.receiver, _allocPoint);
+    emit FeeReceiverAllocUpdated(feeReceiver.receiver, _allocPoint);
   }
 
   function changeReceiverAddress(uint256 _receiverIdx, address _address, bool _isContract) public override virtual onlyOwner {
@@ -98,13 +98,13 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
     address oldReceiver = feeReceiver.receiver;
     feeReceiver.receiver = _address;
     feeReceiver.isContract = _isContract;
-    emit UpdateFeeReceiverAddress(oldReceiver, _address);
+    emit FeeReceiverAddressUpdated(oldReceiver, _address);
   }
 
   function removeReceiver(uint256 _receiverIdx) external override virtual onlyOwner {
     uint256 arrLength = feeReceivers.length;
     if (_receiverIdx >= arrLength) revert OutOfBounds();
-    emit RemoveFeeReceiver(feeReceivers[_receiverIdx].receiver);
+    emit FeeReceiverRemoved(feeReceivers[_receiverIdx].receiver);
     allocTotal -= feeReceivers[_receiverIdx].allocPoint;
     // Copy the last element to what is being removed and remove the last element.
     feeReceivers[_receiverIdx] = feeReceivers[arrLength-1];
@@ -114,23 +114,23 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
   function setTreasuryAddress(address _treasury) public override onlyOwner {
     if (_treasury == address(0)) revert ZeroAddress();
     treasury = _treasury;
-    emit UpdateTreasuryAddress(_treasury);
+    emit TreasuryAddressUpdated(_treasury);
   }
 
   function setLPStakingAddress(address _lpStaking) public override onlyOwner {
     if (_lpStaking == address(0)) revert ZeroAddress();
     lpStaking = ILPStaking(_lpStaking);
-    emit UpdateLPStakingAddress(_lpStaking);
+    emit LPStakingAddressUpdated(_lpStaking);
   }
 
   function setInventoryStakingAddress(address _inventoryStaking) public override onlyOwner {
     inventoryStaking = IInventoryStaking(_inventoryStaking);
-    emit UpdateInventoryStakingAddress(_inventoryStaking);
+    emit InventoryStakingAddressUpdated(_inventoryStaking);
   }
 
   function pauseFeeDistribution(bool _pause) external override onlyOwner {
     distributionPaused = _pause;
-    emit PauseDistribution(_pause);
+    emit DistributionPaused(_pause);
   }
 
   function rescueTokens(address _address) external override onlyOwner {
@@ -142,7 +142,7 @@ contract FeeDistributor is IFeeDistributor, ReentrancyGuardUpgradeable, Pausable
     FeeReceiver memory _feeReceiver = FeeReceiver(_allocPoint, _receiver, _isContract);
     feeReceivers.push(_feeReceiver);
     allocTotal += _allocPoint;
-    emit AddFeeReceiver(_receiver, _allocPoint);
+    emit FeeReceiverAdded(_receiver, _allocPoint);
   }
 
   function _sendForReceiver(FeeReceiver memory _receiver, uint256 _vaultId, address _vault, uint256 amountToSend) internal virtual returns (bool) {
