@@ -47,7 +47,7 @@ interface IIFOFactory {
     event UpdateMinimumDuration(uint256 _old, uint256 _new);
     event UpdateMaximumDuration(uint256 _old, uint256 _new);
     event UpdateCreatorUtilityContract(address _old, address _new);
-    event UpdateGovernanceFee(uint256 _old, uint256 _new);
+    event GovernanceFeeUpdated(uint256 _old, uint256 _new);
     event UpdateFeeReceiver(address _old, address _new);
     event IFOCreated(
         address indexed IFO,

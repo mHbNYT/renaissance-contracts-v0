@@ -113,11 +113,11 @@ contract FNFTSingleFactory is
     function setAuctionLength(Boundary boundary, uint256 _length) external override onlyOwner {
         if (boundary == Boundary.Min) {
             if (_length < 1 days || _length >= maxAuctionLength) revert MinAuctionLengthOutOfBounds();
-            emit UpdateMinAuctionLength(minAuctionLength, _length);
+            emit MinAuctionLengthUpdated(minAuctionLength, _length);
             minAuctionLength = _length;
         } else if (boundary == Boundary.Max) {
             if (_length > 8 weeks || _length <= minAuctionLength) revert MaxAuctionLengthOutOfBounds();
-            emit UpdateMaxAuctionLength(maxAuctionLength, _length);
+            emit MaxAuctionLengthUpdated(maxAuctionLength, _length);
             maxAuctionLength = _length;
         }
     }
@@ -125,10 +125,10 @@ contract FNFTSingleFactory is
     function setFee(FeeType feeType, uint256 _fee) external override onlyOwner {
         if (feeType == FeeType.GovernanceFee) {
             if (_fee > 1000) revert FeeTooHigh();
-            emit UpdateGovernanceFee(governanceFee, _fee);
+            emit GovernanceFeeUpdated(governanceFee, _fee);
             governanceFee = _fee;
         } else if (feeType == FeeType.MaxCuratorFee) {
-            emit UpdateCuratorFee(maxCuratorFee, _fee);
+            emit CuratorFeeUpdated(maxCuratorFee, _fee);
             maxCuratorFee = _fee;
         } else if (feeType == FeeType.SwapFee) {
             if (_fee > 500) revert FeeTooHigh();
@@ -140,7 +140,7 @@ contract FNFTSingleFactory is
     function setMinBidIncrease(uint256 _min) external override onlyOwner {
         if (_min > 1000 || _min < 100) revert MinBidIncreaseOutOfBounds();
 
-        emit UpdateMinBidIncrease(minBidIncrease, _min);
+        emit MinBidIncreaseUpdated(minBidIncrease, _min);
 
         minBidIncrease = _min;
     }
@@ -149,7 +149,7 @@ contract FNFTSingleFactory is
         // 10000 is 100%
         if (_min > 10000) revert MinVotePercentageTooHigh();
 
-        emit UpdateMinVotePercentage(minVotePercentage, _min);
+        emit MinVotePercentageUpdated(minVotePercentage, _min);
 
         minVotePercentage = _min;
     }
@@ -157,17 +157,17 @@ contract FNFTSingleFactory is
     function setReserveFactor(Boundary boundary, uint256 _factor) external override onlyOwner {
         if (boundary == Boundary.Min) {
             if (_factor >= maxReserveFactor) revert MinReserveFactorTooHigh();
-            emit UpdateMinReserveFactor(minReserveFactor, _factor);
+            emit MinReserveFactorUpdated(minReserveFactor, _factor);
             minReserveFactor = _factor;
         } else if (boundary == Boundary.Max) {
             if (_factor <= minReserveFactor) revert MaxReserveFactorTooLow();
-            emit UpdateMaxReserveFactor(maxReserveFactor, _factor);
+            emit MaxReserveFactorUpdated(maxReserveFactor, _factor);
             maxReserveFactor = _factor;
         }
     }
 
     function setLiquidityThreshold(uint256 _threshold) external override onlyOwner {
-        emit UpdateLiquidityThreshold(liquidityThreshold, _threshold);
+        emit LiquidityThresholdUpdated(liquidityThreshold, _threshold);
 
         liquidityThreshold = _threshold;
     }
@@ -175,7 +175,7 @@ contract FNFTSingleFactory is
     function setInstantBuyMultiplier(uint256 _multiplier) external override onlyOwner {
         if (_multiplier < 10) revert MultiplierTooLow();
 
-        emit UpdateInstantBuyMultiplier(instantBuyMultiplier, _multiplier);
+        emit InstantBuyMultiplierUpdated(instantBuyMultiplier, _multiplier);
 
         instantBuyMultiplier = _multiplier;
     }

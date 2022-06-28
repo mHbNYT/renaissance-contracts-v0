@@ -153,16 +153,16 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertTrue(!fnftSingle.verified());
     }
 
-    event KickCurator(address indexed oldCurator, address indexed newCurator);
-    event UpdateCurator(address indexed oldCurator, address indexed newCurator);
+    event CuratorKicked(address indexed oldCurator, address indexed newCurator);
+    event CuratorUpdated(address indexed oldCurator, address indexed newCurator);
 
     function testKickCurator() public {
         vm.expectEmit(true, true, false, true);
-        emit UpdateCurator(fnftSingle.curator(), address(curator));
+        emit CuratorUpdated(fnftSingle.curator(), address(curator));
         fnftSingle.updateCurator(address(curator));
         assertTrue(fnftSingle.curator() == address(curator));
         vm.expectEmit(true, true, false, true);
-        emit KickCurator(address(curator), address(this));
+        emit CuratorKicked(address(curator), address(this));
         fnftSingle.kickCurator(address(this));
         assertTrue(fnftSingle.curator() == address(this));
     }
@@ -260,7 +260,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
 
     function testUpdateCurator() public {
         vm.expectEmit(true, true, false, true);
-        emit UpdateCurator(fnftSingle.curator(), address(curator));
+        emit CuratorUpdated(fnftSingle.curator(), address(curator));
         fnftSingle.updateCurator(address(curator));
         assertTrue(fnftSingle.curator() == address(curator));
     }

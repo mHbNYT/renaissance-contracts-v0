@@ -115,7 +115,7 @@ interface IFNFTSingle  is IERC20Upgradeable {
     ) external;
 
     /// @notice An event emitted when a user updates their price
-    event PriceUpdate(address indexed user, uint256 price);
+    event PriceUpdated(address indexed user, uint256 price);
     /// @notice An event emitted when an auction starts
     event Start(address indexed buyer, uint256 price);
     /// @notice An event emitted when a bid is made
@@ -126,12 +126,12 @@ interface IFNFTSingle  is IERC20Upgradeable {
     event Redeem(address indexed redeemer);
     /// @notice An event emitted when someone cashes in ERC20 tokens for ETH from an ERC721 token sale
     event Cash(address indexed owner, uint256 shares);
-    event UpdateAuctionLength(uint256 length);
-    event UpdateCuratorFee(uint256 fee);
+    event AuctionLengthUpdated(uint256 length);
+    event CuratorFeeUpdated(uint256 fee);
     event FeeClaimed(uint256 fee);
     event Verified(bool verified);
-    event KickCurator(address indexed oldCurator, address indexed newCurator);
-    event UpdateCurator(address indexed oldCurator, address indexed newCurator);
+    event CuratorKicked(address indexed oldCurator, address indexed newCurator);
+    event CuratorUpdated(address indexed oldCurator, address indexed newCurator);
 
     error NotGov();
     error NotCurator();

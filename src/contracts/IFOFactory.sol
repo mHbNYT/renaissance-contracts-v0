@@ -111,7 +111,7 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     function setGovernanceFee(uint256 _fee) external override onlyOwner {
         if (_fee > MAX_GOV_FEE) revert FeeTooHigh();
 
-        emit UpdateGovernanceFee(governanceFee, _fee);
+        emit GovernanceFeeUpdated(governanceFee, _fee);
 
         governanceFee = _fee;
     }
