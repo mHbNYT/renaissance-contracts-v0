@@ -81,7 +81,7 @@ contract VaultManager is
 
     function setFeeReceiver(address payable _receiver) external override onlyOwner {
         if (_receiver == address(0)) revert ZeroAddressDisallowed();
-        emit UpdateFeeReceiver(feeReceiver, _receiver);
+        emit FeeReceiverUpdated(feeReceiver, _receiver);
         feeReceiver = _receiver;
     }
 

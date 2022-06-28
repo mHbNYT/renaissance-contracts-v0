@@ -30,7 +30,7 @@ interface IVaultManager {
     function numVaults() external view returns (uint);
 
     event PriceOracleUpdated(address _old, address _new);
-    event UpdateFeeReceiver(address _old, address _new);
+    event FeeReceiverUpdated(address _old, address _new);
     event UpdateZapContract(address _old, address _new);
     event UpdateFNFTCollectionFactory(address _old, address _new);
     event UpdateFNFTSingleFactory(address _old, address _new);

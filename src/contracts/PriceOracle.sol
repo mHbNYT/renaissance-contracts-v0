@@ -39,7 +39,7 @@ contract PriceOracle is IPriceOracle, OwnableUpgradeable {
 
     // Set minimum period to wait for the next pair info update.
     function setPeriod(uint256 _newPeriod) external override onlyOwner {
-        emit UpdatePeriod(period, _newPeriod);
+        emit PeriodUpdated(period, _newPeriod);
         period = _newPeriod;
     }
 
