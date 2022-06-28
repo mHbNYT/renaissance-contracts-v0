@@ -3,9 +3,10 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "./IFO.sol";
 import "./interfaces/IIFOFactory.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./proxy/BeaconUpgradeable.sol";
 import "./proxy/BeaconProxy.sol";
 

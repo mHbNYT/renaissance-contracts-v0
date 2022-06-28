@@ -3,10 +3,11 @@
 pragma experimental ABIEncoderV2;
 pragma solidity 0.8.13;
 
-import "./interfaces/IEligibilityManager.sol";
-import "./interfaces/IEligibility.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
+
+import "./interfaces/IEligibilityManager.sol";
+import "./interfaces/IEligibility.sol";
 
 contract EligibilityManager is IEligibilityManager, OwnableUpgradeable {
     EligibilityModule[] public override modules;

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "./interfaces/IIFO.sol";
-import "./interfaces/IIFOFactory.sol";
-import "./interfaces/IFNFTSingle.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+
+import "./interfaces/IIFO.sol";
+import "./interfaces/IIFOFactory.sol";
+import "./interfaces/IFNFTSingle.sol";
 
 contract IFO is IIFO, Initializable {
     address public override curator;

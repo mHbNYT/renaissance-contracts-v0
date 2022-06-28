@@ -1,6 +1,12 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+
 import "./interfaces/IFNFTSingleFactory.sol";
 import "./interfaces/IVaultManager.sol";
 import "./interfaces/IWETH.sol";
@@ -9,11 +15,6 @@ import "./interfaces/IIFOFactory.sol";
 import "./interfaces/IIFO.sol";
 import "./interfaces/IUniswapV2Pair.sol";
 import "./interfaces/IFeeDistributor.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IPriceOracle} from "./PriceOracle.sol";
 import "./token/ERC20FlashMintUpgradeable.sol";
 

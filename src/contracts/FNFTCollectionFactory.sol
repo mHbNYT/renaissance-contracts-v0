@@ -3,7 +3,6 @@
 pragma solidity 0.8.13;
 
 import "./util/Pausable.sol";
-
 import "./interfaces/IFNFTCollectionFactory.sol";
 import "./interfaces/IVaultManager.sol";
 import "./FNFTCollection.sol";
