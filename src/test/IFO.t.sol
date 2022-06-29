@@ -96,7 +96,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         ifo = IFO(ifoFactory.getIFO(address(fnft)));
     }
 
-    function createValidFNFTCollectionIFO() private returns(IFO fnftCollectionIfo) {
+    function createValidFNFTCollectionIFO() private returns(IFO ifo) {
         uint balance = fnftCollection.balanceOf(address(this));
         fnftCollection.approve(address(ifoFactory), balance);
         ifoFactory.create(
@@ -107,7 +107,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
             ifoFactory.minimumDuration(), //sale duration
             false // allow whitelist
         );
-        fnftCollectionIfo = IFO(ifoFactory.getIFO(address(fnftCollection)));
+        ifo = IFO(ifoFactory.getIFO(address(fnftCollection)));
     }
 
     function createValidAllowWhitelistIFO() private returns(IFO ifo) {
@@ -152,13 +152,13 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testCreateFNFTCollectionIFO() public {
-        IFO fnftCollectionIfo = createValidFNFTCollectionIFO();
+        IFO ifo = createValidFNFTCollectionIFO();
 
         assertEq(
-            fnftCollection.balanceOf(address(fnftCollectionIfo)),
+            fnftCollection.balanceOf(address(ifo)),
             4500000000000000000
         );
-        assertEq(fnftCollectionIfo.duration(), 86400);
+        assertEq(ifo.duration(), 86400);
     }
 
     function testCreateIFOInvalidAddress() public {
