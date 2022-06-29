@@ -27,7 +27,7 @@ contract FNFTCollectionFactory is
     uint64 public override factoryTargetSwapFee;
 
     address public override eligibilityManager;
-    uint64 public override flashLoanFee;
+    uint256 public override flashLoanFee;
 
     uint256 public override swapFee;
 
@@ -59,7 +59,7 @@ contract FNFTCollectionFactory is
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
         if (_flashLoanFee > 500) revert FeeTooHigh();
         emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
-        flashLoanFee = uint64(_flashLoanFee);
+        flashLoanFee = _flashLoanFee;
     }
 
     function setSwapFee(uint256 _swapFee) external virtual override onlyOwner {
