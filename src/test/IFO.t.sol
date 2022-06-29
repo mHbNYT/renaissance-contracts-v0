@@ -532,7 +532,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         assertTrue(ifo.ended());
     }
 
-    function testFail_startDoesNotHaveFNFT() public {
+    function testFailStartDoesNotHaveFNFT() public {
         fnftSingle.approve(address(ifoFactory), fnftSingle.balanceOf(address(this)));
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
@@ -989,7 +989,7 @@ contract IFOTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnftSingle.balanceOf(address(user2)), originalBalance);
     }
 
-    function testFail_approveUtilityContractZeroAddress() public {
+    function testFailApproveUtilityContractZeroAddress() public {
         IFO ifo = createValidIFO();
 
         vm.startPrank(address(user2));

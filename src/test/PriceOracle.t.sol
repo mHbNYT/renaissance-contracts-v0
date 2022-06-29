@@ -125,7 +125,7 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
     /**
     Test updatePairInfo when uniswap pair does not exist.
      */
-    function testUpdatePairInfo_pairDoesNotExist() public {
+    function testUpdatePairInfoPairDoesNotExist() public {
         // ACTION
         // Update pair info with tokens which uniswap pair does not exist.
         address token0 = address(new MockERC20Upgradeable());
@@ -141,7 +141,7 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
     /**
     Test updatePairInfo when period has not elapsed.
      */
-    function testUpdatePairInfo_periodNotElapsed() public {
+    function testUpdatePairInfoPeriodNotElapsed() public {
         // SETUP
         address pairAddress = address(pair.uPair());
         address token0 = address(pair.token0());
