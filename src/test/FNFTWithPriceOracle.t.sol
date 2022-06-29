@@ -66,7 +66,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         payable(address(user3)).transfer(10 ether);
     }
 
-    function testGetAuctionPrice_whenVotingBelowQuorumAndLiquidityBelowThreshold_returnInitialReserve() public {
+    function testGetAuctionPriceWhenVotingBelowQuorumAndLiquidityBelowThresholdReturnInitialReserve() public {
         /**
         SETUP
          */
@@ -97,7 +97,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(auctionPrice, fnftSingle.initialReserve());
     }
 
-    function testGetAuctionPrice_whenVotingAboveQuorumAndLiquidityBelowThreshold_returnUserReservePrice() public {
+    function testGetAuctionPriceWhenVotingAboveQuorumAndLiquidityBelowThresholdReturnUserReservePrice() public {
         /**
         SETUP
          */
@@ -131,7 +131,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(auctionPrice, userPrice);
     }
 
-    function testGetAuctionPrice_whenVotingBelowQuorumAndLiquidityAboveThreshold_compareTWAPAndInitialReserve() public {
+    function testGetAuctionPriceWhenVotingBelowQuorumAndLiquidityAboveThresholdCompareTWAPAndInitialReserve() public {
         /**
         SETUP
          */
@@ -175,7 +175,7 @@ contract FNFTWithPriceOracleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(auctionPrice, twapPrice > initialReservePrice ? twapPrice : initialReservePrice);
     }
 
-    function testGetAuctionPrice_whenVotingAboveQuorumAndLiquidityAboveThreshold_compareTWAPAndUserReservePrice() public {
+    function testGetAuctionPriceWhenVotingAboveQuorumAndLiquidityAboveThresholdCompareTWAPAndUserReservePrice() public {
         /**
         SETUP
          */

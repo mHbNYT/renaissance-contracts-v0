@@ -462,7 +462,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnftSingle.votingTokens(), 0);
     }
 
-    function testFail_listPriceZeroNoAuction() public {
+    function testFailListPriceZeroNoAuction() public {
         token.mint(address(this), 2);
 
         fnftSingle = FNFTSingle(fnftSingleFactory.createVault("testName", "TEST", address(token), 2, 100e18, 0, 500));
