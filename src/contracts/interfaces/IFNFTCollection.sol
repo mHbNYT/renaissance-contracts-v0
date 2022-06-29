@@ -178,21 +178,21 @@ interface IFNFTCollection is IERC20Upgradeable {
         address to
     );
 
-    error ZeroAddress();
-    error IneligibleNFTs();
-    error ZeroTransferAmount();
-    error NotOwner();
-    error NotManager();
-    error Paused();
-    error TooManyNFTs();
     error EligibilityAlreadySet();
-    error MintDisabled();
-    error RandomRedeemDisabled();
-    error TargetRedeemDisabled();
-    error RandomSwapDisabled();
-    error TargetSwapDisabled();
-    error NFTAlreadyInCollection();
-    error NotNFTOwner();
     error FeeTooHigh();
+    error IneligibleNFTs();
+    error MintDisabled();
+    error NFTAlreadyInCollection();
+    error NotManager();
+    error NotNFTOwner();
+    error NotOwner();
+    error Paused();
+    error RandomRedeemDisabled();
+    error RandomSwapDisabled();
+    error TargetRedeemDisabled();
+    error TargetSwapDisabled();
+    error TooManyNFTs();
     error WrongToken();
+    error ZeroAddress();
+    error ZeroTransferAmount();
 }

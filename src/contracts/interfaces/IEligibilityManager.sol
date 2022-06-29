@@ -35,6 +35,6 @@ interface IEligibilityManager {
         bool finalizedOnDeploy
     );
 
-    error OutOfBounds();
     error NoImplementation();
+    error OutOfBounds();
 }

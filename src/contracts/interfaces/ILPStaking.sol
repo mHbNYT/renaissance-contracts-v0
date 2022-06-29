@@ -66,15 +66,15 @@ interface ILPStaking {
     event PoolUpdated(uint256 vaultId, address pool);
     event FeesReceived(uint256 vaultId, uint256 amount);
 
-    error VaultManagerAlreadySet();
-    error VaultManagerNotSet();
     error NotAPool();
     error NotDeployingProperDistro();
     error NotExcludedFromFees();
     error NothingToMigrate();
     error PoolAlreadyExists();
     error PoolDoesNotExist();
-    error TimelockTooLong();
     error TimelockRewardDistTokenImplAlreadySet();
+    error TimelockTooLong();
+    error VaultManagerAlreadySet();
+    error VaultManagerNotSet();
     error ZeroAddress();
 }

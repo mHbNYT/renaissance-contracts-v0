@@ -59,8 +59,8 @@ interface IIFOFactory {
         bool allowWhitelisting
     );
 
-    error ZeroAddressDisallowed();
     error FeeTooHigh();
-    error InvalidDuration();
     error IFOExists(address nft);
+    error InvalidDuration();
+    error ZeroAddressDisallowed();
 }
