@@ -62,7 +62,7 @@ interface IFeeDistributor {
   event FeeReceiverRemoved(address receiver);
 
   error CallerIsNotVaultManager();
-  error VaultManagerIsImmutable();
   error OutOfBounds();
+  error VaultManagerIsImmutable();
   error ZeroAddress();
 }

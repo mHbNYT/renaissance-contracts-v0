@@ -133,23 +133,23 @@ interface IFNFTSingle  is IERC20Upgradeable {
     event CuratorKicked(address indexed oldCurator, address indexed newCurator);
     event CuratorUpdated(address indexed oldCurator, address indexed newCurator);
 
-    error NotGov();
-    error NotCurator();
-    error SameCurator();
+    error AuctionEnded();
     error AuctionLive();
-    error NotAnUpdate();
-    error InvalidAuctionLength();
+    error AuctionNotEnded();
+    error AuctionNotLive();
+    error BidTooLow();
     error CanNotRaise();
     error FeeTooHigh();
-    error AuctionEnded();
-    error AuctionNotEnded();
+    error InvalidAuctionLength();
+    error NotAnUpdate();
+    error NotCurator();
     error NotEnoughETH();
-    error PriceTooLow();
-    error PriceTooHigh();
-    error BidTooLow();
     error NotEnoughVoters();
-    error AuctionNotLive();
+    error NotGov();
     error NoTokens();
+    error PriceTooHigh();
+    error PriceTooLow();
+    error SameCurator();
     error WrongToken();
     error ZeroAddress();
 }

@@ -57,8 +57,8 @@ interface IPriceOracle {
     event PeriodUpdated(uint256 oldPeriod, uint256 newPeriod);
     event MinimumPairInfoUpdateUpdated(uint256 oldMinimumPairInfoUpdate, uint256 newMinimumPairInfoUpdate);
 
-    error PairInfoDoesNotExist();
     error InvalidToken();
     error NotEnoughUpdates();
     error PairInfoAlreadyExists();
+    error PairInfoDoesNotExist();
 }

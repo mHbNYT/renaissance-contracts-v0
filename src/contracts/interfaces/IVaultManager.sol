@@ -38,14 +38,14 @@ interface IVaultManager {
     event FeeDistributorUpdated(address oldFeeDistributor, address newFeeDistributor);
     event FeeExclusionUpdated(address target, bool excluded);
 
-    error MaxAuctionLengthOutOfBounds();
-    error MinAuctionLengthOutOfBounds();
     error FeeTooHigh();
-    error MinBidIncreaseOutOfBounds();
-    error MinVotePercentageTooHigh();
+    error MaxAuctionLengthOutOfBounds();
     error MaxReserveFactorTooLow();
+    error MinAuctionLengthOutOfBounds();
+    error MinBidIncreaseOutOfBounds();
     error MinReserveFactorTooHigh();
-    error ZeroAddressDisallowed();
+    error MinVotePercentageTooHigh();
     error MultiplierTooLow();
     error OnlyFactory();
+    error ZeroAddressDisallowed();
 }

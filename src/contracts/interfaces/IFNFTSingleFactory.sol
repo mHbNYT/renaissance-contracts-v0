@@ -87,13 +87,13 @@ interface IFNFTSingleFactory {
         string symbol
     );
 
+    error FeeTooHigh();
     error MaxAuctionLengthOutOfBounds();
     error MinAuctionLengthOutOfBounds();
-    error FeeTooHigh();
     error MinBidIncreaseOutOfBounds();
-    error MinVotePercentageTooHigh();
-    error MaxReserveFactorTooLow();
     error MinReserveFactorTooHigh();
-    error ZeroAddressDisallowed();
+    error MaxReserveFactorTooLow();
+    error MinVotePercentageTooHigh();
     error MultiplierTooLow();
+    error ZeroAddressDisallowed();
 }

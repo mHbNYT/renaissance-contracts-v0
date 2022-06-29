@@ -47,8 +47,8 @@ interface IInventoryStaking {
     event FeesReceived(uint256 vaultId, uint256 amount);
 
     error LockTooLong();
-    error NotZapContract();
     error NotExcludedFromFees();
+    error NotZapContract();
     error XTokenNotDeployed();
 
 }
