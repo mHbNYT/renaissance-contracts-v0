@@ -19,7 +19,7 @@ interface IIFOFactory {
     function __IFOFactory_init() external;
 
     function create(
-        address _FNFT,
+        address _fnft,
         uint256 _amountForSale,
         uint256 _price,
         uint256 _cap,
