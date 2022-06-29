@@ -50,8 +50,8 @@ interface IIFOFactory {
     event GovernanceFeeUpdated(uint256 oldGovernanceFee, uint256 newGovernanceFee);
     event FeeReceiverUpdated(address oldFeeReceiver, address newFeeReceiver);
     event IFOCreated(
-        address indexed IFO,
-        address indexed FNFT,
+        address indexed ifo,
+        address indexed fnft,
         uint256 amountForSale,
         uint256 price,
         uint256 cap,
