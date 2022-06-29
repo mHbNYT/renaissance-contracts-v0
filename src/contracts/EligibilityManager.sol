@@ -6,13 +6,13 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 
-import "./interfaces/IEligibilityManager.sol";
 import "./interfaces/IEligibility.sol";
+import "./interfaces/IEligibilityManager.sol";
 
 contract EligibilityManager is IEligibilityManager, OwnableUpgradeable {
     EligibilityModule[] public override modules;
 
-    function __EligibilityManager_init() public override initializer {
+    function __EligibilityManager_init() external override initializer {
         __Ownable_init();
     }
 
@@ -35,12 +35,17 @@ contract EligibilityManager is IEligibilityManager, OwnableUpgradeable {
         );
     }
 
-    function updateModule(uint256 moduleIndex, address implementation) external override onlyOwner {
-        if (moduleIndex >= modules.length) revert OutOfBounds();
-        if (implementation == address(0)) revert NoImplementation();
-        modules[moduleIndex].implementation = implementation;
-        IEligibility elig = IEligibility(implementation);
-        emit ModuleUpdated(implementation, elig.name(), elig.finalized());
+    function allModules() external view override returns (EligibilityModule[] memory) {
+        return modules;
+    }
+
+    function allModuleNames() external view override returns (string[] memory) {
+        EligibilityModule[] memory modulesCopy = modules;
+        string[] memory names = new string[](modulesCopy.length);
+        for (uint256 i = 0; i < modulesCopy.length; i++) {
+            names[i] = modulesCopy[i].name;
+        }
+        return names;
     }
 
     function deployEligibility(uint256 moduleIndex, bytes calldata configData)
@@ -58,16 +63,11 @@ contract EligibilityManager is IEligibilityManager, OwnableUpgradeable {
         return eligibilityClone;
     }
 
-    function allModules() external view override returns (EligibilityModule[] memory) {
-        return modules;
-    }
-
-    function allModuleNames() external view override returns (string[] memory) {
-        EligibilityModule[] memory modulesCopy = modules;
-        string[] memory names = new string[](modulesCopy.length);
-        for (uint256 i = 0; i < modulesCopy.length; i++) {
-            names[i] = modulesCopy[i].name;
-        }
-        return names;
+    function updateModule(uint256 moduleIndex, address implementation) external override onlyOwner {
+        if (moduleIndex >= modules.length) revert OutOfBounds();
+        if (implementation == address(0)) revert NoImplementation();
+        modules[moduleIndex].implementation = implementation;
+        IEligibility elig = IEligibility(implementation);
+        emit ModuleUpdated(implementation, elig.name(), elig.finalized());
     }
 }
