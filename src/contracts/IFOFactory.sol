@@ -81,7 +81,7 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     }
 
     function setCreatorIFOLock(bool _lock) external override onlyOwner {
-        emit UpdateCreatorIFOLock(creatorIFOLock, _lock);
+        emit CreatorIFOLockUpdated(creatorIFOLock, _lock);
 
         creatorIFOLock = _lock;
     }
@@ -89,7 +89,7 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     function setMinimumDuration(uint256 _blocks) external override onlyOwner {
         if (_blocks > maximumDuration) revert InvalidDuration();
 
-        emit UpdateMinimumDuration(minimumDuration, _blocks);
+        emit MinimumDurationUpdated(minimumDuration, _blocks);
 
         minimumDuration = _blocks;
     }
@@ -97,13 +97,13 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     function setMaximumDuration(uint256 _blocks) external override onlyOwner {
         if (minimumDuration > _blocks) revert InvalidDuration();
 
-        emit UpdateMaximumDuration(maximumDuration, _blocks);
+        emit MaximumDurationUpdated(maximumDuration, _blocks);
 
         maximumDuration = _blocks;
     }
 
     function setCreatorUtilityContract(address _utility) external override onlyOwner {
-        emit UpdateCreatorUtilityContract(creatorUtilityContract, _utility);
+        emit CreatorUtilityContractUpdated(creatorUtilityContract, _utility);
 
         creatorUtilityContract = _utility;
     }
@@ -111,7 +111,7 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     function setGovernanceFee(uint256 _fee) external override onlyOwner {
         if (_fee > MAX_GOV_FEE) revert FeeTooHigh();
 
-        emit UpdateGovernanceFee(governanceFee, _fee);
+        emit GovernanceFeeUpdated(governanceFee, _fee);
 
         governanceFee = _fee;
     }
@@ -119,7 +119,7 @@ contract IFOFactory is IIFOFactory, OwnableUpgradeable, PausableUpgradeable, Bea
     function setFeeReceiver(address payable _receiver) external override onlyOwner {
         if (_receiver == address(0)) revert ZeroAddressDisallowed();
 
-        emit UpdateFeeReceiver(feeReceiver, _receiver);
+        emit FeeReceiverUpdated(feeReceiver, _receiver);
 
         feeReceiver = _receiver;
     }

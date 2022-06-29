@@ -64,19 +64,19 @@ interface IFNFTSingleFactory {
 
     function setFlashLoanFee(uint256 fee) external;
 
-    event UpdateMaxAuctionLength(uint256 _old, uint256 _new);
-    event UpdateMinAuctionLength(uint256 _old, uint256 _new);
-    event UpdateGovernanceFee(uint256 _old, uint256 _new);
-    event UpdateCuratorFee(uint256 _old, uint256 _new);
-    event UpdateSwapFee(uint256 _old, uint256 _new);
-    event UpdateMinBidIncrease(uint256 _old, uint256 _new);
-    event UpdateMinVotePercentage(uint256 _old, uint256 _new);
-    event UpdateMaxReserveFactor(uint256 _old, uint256 _new);
-    event UpdateMinReserveFactor(uint256 _old, uint256 _new);
-    event UpdateLiquidityThreshold(uint256 _old, uint256 _new);
-    event UpdateInstantBuyMultiplier(uint256 _old, uint256 _new);
-    event UpdateFlashLoanFee(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
-    event FeeExclusion(address target, bool excluded);
+    event MaxAuctionLengthUpdated(uint256 _old, uint256 _new);
+    event MinAuctionLengthUpdated(uint256 _old, uint256 _new);
+    event GovernanceFeeUpdated(uint256 _old, uint256 _new);
+    event CuratorFeeUpdated(uint256 _old, uint256 _new);
+    event SwapFeeUpdated(uint256 _old, uint256 _new);
+    event MinBidIncreaseUpdated(uint256 _old, uint256 _new);
+    event MinVotePercentageUpdated(uint256 _old, uint256 _new);
+    event MaxReserveFactorUpdated(uint256 _old, uint256 _new);
+    event MinReserveFactorUpdated(uint256 _old, uint256 _new);
+    event LiquidityThresholdUpdated(uint256 _old, uint256 _new);
+    event InstantBuyMultiplierUpdated(uint256 _old, uint256 _new);
+    event FlashLoanFeeUpdated(uint256 oldFlashLoanFee, uint256 newFlashLoanFee);
+    event FeeExclusionUpdated(address target, bool excluded);
     event FNFTSingleCreated(
         address indexed token,
         address fnftSingle,

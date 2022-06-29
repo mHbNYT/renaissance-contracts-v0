@@ -249,11 +249,11 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
         priceOracle.getFNFTPriceETH(fakeToken, 50 ether);
     }
 
-    event UpdatePeriod(uint256 _old, uint256 _new);
+    event PeriodUpdated(uint256 _old, uint256 _new);
 
     function testSetPeriod() public {
         vm.expectEmit(true, false, false, true);
-        emit UpdatePeriod(10 minutes, 20 minutes);
+        emit PeriodUpdated(10 minutes, 20 minutes);
         priceOracle.setPeriod(20 minutes);
         assertEq(priceOracle.period(), 20 minutes);
     }
@@ -264,11 +264,11 @@ contract PriceOracleTest is DSTest, SetupEnvironment {
         priceOracle.setPeriod(20 minutes);
     }
 
-    event UpdateMinimumPairInfoUpdate(uint256 _old, uint256 _new);
+    event MinimumPairInfoUpdateUpdated(uint256 _old, uint256 _new);
 
     function testSetMinimumPairInfoUpdate() public {
         vm.expectEmit(true, false, false, true);
-        emit UpdateMinimumPairInfoUpdate(10, 20);
+        emit MinimumPairInfoUpdateUpdated(10, 20);
         priceOracle.setMinimumPairInfoUpdate(20);
         assertEq(priceOracle.minimumPairInfoUpdate(), 20);
     }

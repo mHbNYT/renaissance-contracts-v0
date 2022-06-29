@@ -162,7 +162,7 @@ contract IFO is IIFO, Initializable {
         startBlock = block.number;
 
         started = true;
-        emit Start();
+        emit SaleStarted();
     }
 
     //TODO: Add a circute breaker controlled by the DAO
@@ -179,7 +179,7 @@ contract IFO is IIFO, Initializable {
             pauseBlock = block.number;
             paused = true;
         }
-        emit Pause(paused);
+        emit PausedToggled(paused);
         return paused;
     }
 
@@ -194,10 +194,10 @@ contract IFO is IIFO, Initializable {
 
         ended = true;
         lockedSupply = IERC20MetadataUpgradeable(address(fnft)).balanceOf(address(this));
-        emit End();
+        emit SaleEnded();
     }
 
-    ///@notice it deposits ETH for the sale
+    /// @notice it deposits ETH for the sale
     function deposit() external payable override checkPaused checkDeadline {
         if (!started) revert SaleUnstarted();
         if (ended) revert SaleAlreadyEnded();
@@ -230,7 +230,7 @@ contract IFO is IIFO, Initializable {
         IERC20MetadataUpgradeable(fnftAddress).transfer(msg.sender, payout);
         _safeTransferETH(govAddress, fee);
 
-        emit Deposit(msg.sender, msg.value, payout);
+        emit FNFTSold(msg.sender, msg.value, payout);
     }
 
     /** @notice it checks a users ETH allocation remaining
@@ -258,7 +258,7 @@ contract IFO is IIFO, Initializable {
 
         _safeTransferETH(msg.sender, profit);
 
-        emit AdminProfitWithdrawal(address(fnft), profit);
+        emit AdminProfitWithdrawn(address(fnft), profit);
     }
 
     /// @notice withdraws FNFT from sale only after IFO. Can only withdraw after NFT redemption if IFOLock enabled
@@ -275,7 +275,7 @@ contract IFO is IIFO, Initializable {
         lockedSupply -= fNFTBalance;
         _fnft.transfer(msg.sender, fNFTBalance);
 
-        emit AdminFNFTWithdrawal(fnftAddress, fNFTBalance);
+        emit AdminFNFTWithdrawn(fnftAddress, fNFTBalance);
     }
 
     /// @notice approve fNFT usage by creator utility contract, to deploy LP pool or stake if IFOLock enabled
@@ -292,10 +292,10 @@ contract IFO is IIFO, Initializable {
         lockedSupply = 0;
         _fnft.transfer(curator, fNFTBalance);
 
-        emit EmergencyFNFTWithdrawal(address(_fnft), fNFTBalance);
+        emit EmergencyFNFTWithdrawn(address(_fnft), fNFTBalance);
     }
 
-    //Helper functions
+    // Helper functions
 
     /** @notice transfer ETH using call
     *   @param _to: address to transfer ETH to

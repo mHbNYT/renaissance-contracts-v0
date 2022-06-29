@@ -52,14 +52,14 @@ interface IFeeDistributor {
 
   function pauseFeeDistribution(bool _pause) external;
 
-  event UpdateTreasuryAddress(address newTreasury);
-  event UpdateLPStakingAddress(address newLPStaking);
-  event UpdateInventoryStakingAddress(address newInventoryStaking);
-  event PauseDistribution(bool paused);
-  event AddFeeReceiver(address receiver, uint256 allocPoint);
-  event UpdateFeeReceiverAlloc(address receiver, uint256 allocPoint);
-  event UpdateFeeReceiverAddress(address oldReceiver, address newReceiver);
-  event RemoveFeeReceiver(address receiver);
+  event TreasuryAddressUpdated(address newTreasury);
+  event LPStakingAddressUpdated(address newLPStaking);
+  event InventoryStakingAddressUpdated(address newInventoryStaking);
+  event DistributionPaused(bool paused);
+  event FeeReceiverAdded(address receiver, uint256 allocPoint);
+  event FeeReceiverAllocUpdated(address receiver, uint256 allocPoint);
+  event FeeReceiverAddressUpdated(address oldReceiver, address newReceiver);
+  event FeeReceiverRemoved(address receiver);
 
   error CallerIsNotVaultManager();
   error VaultManagerIsImmutable();

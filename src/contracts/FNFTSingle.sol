@@ -152,7 +152,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
     /// @param _curator the new curator
     function kickCurator(address _curator) external override onlyGov {
         if (curator == _curator) revert SameCurator();
-        emit KickCurator(curator, _curator);
+        emit CuratorKicked(curator, _curator);
         curator = _curator;
     }
 
@@ -170,7 +170,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         userReservePrice[_user] = 0;
 
-        emit PriceUpdate(_user, 0);
+        emit PriceUpdated(_user, 0);
     }
 
     function toggleVerified() external override onlyGov {
@@ -187,7 +187,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
     /// @param _curator the new curator
     function updateCurator(address _curator) external override onlyCurator {
         if (curator == _curator) revert SameCurator();
-        emit UpdateCurator(curator, _curator);
+        emit CuratorUpdated(curator, _curator);
         curator = _curator;
     }
 
@@ -199,7 +199,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         ) revert InvalidAuctionLength();
 
         auctionLength = _length;
-        emit UpdateAuctionLength(_length);
+        emit AuctionLengthUpdated(_length);
     }
 
     /// @notice allow the curator to change their fee
@@ -211,7 +211,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         _claimFees();
 
         fee = _fee;
-        emit UpdateCuratorFee(fee);
+        emit CuratorFeeUpdated(fee);
     }
 
     /// @notice external function to claim fees for the curator and governance
@@ -275,7 +275,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Ended;
 
-        emit Won(msg.sender, price);
+        emit AuctionWon(msg.sender, price);
     }
 
     function buyItNowPrice() public view override returns (uint256) {
@@ -328,7 +328,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         userReservePrice[msg.sender] = newUserReserve;
 
-        emit PriceUpdate(msg.sender, newUserReserve);
+        emit PriceUpdated(msg.sender, newUserReserve);
     }
 
     function getQuorum() external view override returns (uint256) {
@@ -479,7 +479,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         livePrice = msg.value;
         winning = payable(msg.sender);
 
-        emit Start(msg.sender, msg.value);
+        emit AuctionStarted(msg.sender, msg.value);
     }
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
@@ -499,7 +499,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
         livePrice = msg.value;
         winning = payable(msg.sender);
 
-        emit Bid(msg.sender, msg.value);
+        emit BidMade(msg.sender, msg.value);
     }
 
     /// @notice an external function to end an auction after the timer has run out
@@ -514,7 +514,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Ended;
 
-        emit Won(winning, livePrice);
+        emit AuctionWon(winning, livePrice);
     }
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
@@ -527,7 +527,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         auctionState = State.Redeemed;
 
-        emit Redeem(msg.sender);
+        emit TokenRedeemed(msg.sender);
     }
 
     /// @notice an external function to burn ERC20 tokens to receive ETH from ERC721 token purchase
@@ -541,7 +541,7 @@ contract FNFTSingle is IFNFTSingle, IERC165, ERC20FlashMintUpgradeable, ERC721Ho
 
         _sendETHOrWETH(payable(msg.sender), share);
 
-        emit Cash(msg.sender, share);
+        emit CashWithdrawn(msg.sender, share);
     }
 
     function setVaultMetadata(

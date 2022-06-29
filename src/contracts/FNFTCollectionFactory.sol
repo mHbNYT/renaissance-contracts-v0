@@ -52,19 +52,19 @@ contract FNFTCollectionFactory is
         IVaultManager _vaultManager = vaultManager;
         address fnftCollection = deployVault(name, symbol, _assetAddress, is1155, allowAllItems);
         uint vaultId = _vaultManager.addVault(fnftCollection);
-        emit NewVault(vaultId, fnftCollection, _assetAddress);
+        emit VaultCreated(vaultId, fnftCollection, _assetAddress);
         return fnftCollection;
     }
 
     function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
         if (_flashLoanFee > 500) revert FeeTooHigh();
-        emit UpdateFlashLoanFee(flashLoanFee, _flashLoanFee);
+        emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
         flashLoanFee = uint64(_flashLoanFee);
     }
 
     function setSwapFee(uint256 _swapFee) external virtual override onlyOwner {
         if (_swapFee > 500) revert FeeTooHigh();
-        emit UpdateSwapFee(swapFee, _swapFee);
+        emit SwapFeeUpdated(swapFee, _swapFee);
         swapFee = _swapFee;
     }
 
@@ -87,7 +87,7 @@ contract FNFTCollectionFactory is
         factoryRandomSwapFee = uint64(randomSwapFee);
         factoryTargetSwapFee = uint64(targetSwapFee);
 
-        emit UpdateFactoryFees(mintFee, randomRedeemFee, targetRedeemFee, randomSwapFee, targetSwapFee);
+        emit FactoryFeesUpdated(mintFee, randomRedeemFee, targetRedeemFee, randomSwapFee, targetSwapFee);
     }
 
     function setVaultFees(
@@ -116,7 +116,7 @@ contract FNFTCollectionFactory is
             uint64(randomSwapFee),
             uint64(targetSwapFee)
         );
-        emit UpdateVaultFees(vaultId, mintFee, randomRedeemFee, targetRedeemFee, randomSwapFee, targetSwapFee);
+        emit VaultFeesUpdated(vaultId, mintFee, randomRedeemFee, targetRedeemFee, randomSwapFee, targetSwapFee);
     }
 
     function disableVaultFees(uint256 vaultId) public virtual override {
@@ -125,11 +125,11 @@ contract FNFTCollectionFactory is
             if (msg.sender != vaultAddr) revert CallerIsNotVault();
         }
         delete _vaultFees[vaultId];
-        emit DisableVaultFees(vaultId);
+        emit VaultFeesDisabled(vaultId);
     }
 
     function setEligibilityManager(address _eligibilityManager) external onlyOwner virtual override {
-        emit NewEligibilityManager(eligibilityManager, _eligibilityManager);
+        emit EligibilityManagerUpdated(eligibilityManager, _eligibilityManager);
         eligibilityManager = _eligibilityManager;
     }
 
