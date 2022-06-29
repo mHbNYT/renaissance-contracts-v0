@@ -80,7 +80,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         payable(address(user4)).transfer(10 ether);
     }
 
-    function test_InitializeFeeTooHigh() public {
+    function testInitializeFeeTooHigh() public {
         uint256 maxCuratorFee = fnftSingleFactory.maxCuratorFee();
         token.mint(address(this), 2);
         vm.expectRevert(IFNFTSingle.FeeTooHigh.selector);
