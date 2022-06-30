@@ -106,80 +106,65 @@ contract FNFTSingleFactory is
         return fnftSingle;
     }
 
-    function setAuctionLength(Boundary boundary, uint256 _auctionLength) external override onlyOwner {
-        if (boundary == Boundary.Min) {
-            if (_auctionLength < 1 days || _auctionLength >= maxAuctionLength) revert MinAuctionLengthOutOfBounds();
-            emit MinAuctionLengthUpdated(minAuctionLength, _auctionLength);
-            minAuctionLength = _auctionLength;
-        } else if (boundary == Boundary.Max) {
-            if (_auctionLength > 8 weeks || _auctionLength <= minAuctionLength) revert MaxAuctionLengthOutOfBounds();
-            emit MaxAuctionLengthUpdated(maxAuctionLength, _auctionLength);
-            maxAuctionLength = _auctionLength;
-        }
-    }
-
-    function setFee(FeeType feeType, uint256 _fee) external override onlyOwner {
-        if (feeType == FeeType.GovernanceFee) {
-            if (_fee > 1000) revert FeeTooHigh();
-            emit GovernanceFeeUpdated(governanceFee, _fee);
-            governanceFee = _fee;
-        } else if (feeType == FeeType.MaxCuratorFee) {
-            emit CuratorFeeUpdated(maxCuratorFee, _fee);
-            maxCuratorFee = _fee;
-        } else if (feeType == FeeType.SwapFee) {
-            if (_fee > 500) revert FeeTooHigh();
-            emit SwapFeeUpdated(swapFee, _fee);
-            swapFee = _fee;
-        }
-    }
-
-    function setFlashLoanFee(uint256 _flashLoanFee) external virtual override onlyOwner {
+    function setFactoryFees(
+        uint256 _governanceFee,
+        uint256 _maxCuratorFee,
+        uint256 _flashLoanFee,
+        uint256 _swapFee
+    ) public virtual override onlyOwner {
+        if (_governanceFee > 1000) revert FeeTooHigh();
+        if (_swapFee > 500) revert FeeTooHigh();
         if (_flashLoanFee > 500) revert FeeTooHigh();
-        emit FlashLoanFeeUpdated(flashLoanFee, _flashLoanFee);
+        if (_maxCuratorFee > 2000) revert FeeTooHigh();
+
+        governanceFee = _governanceFee;
+        maxCuratorFee = _maxCuratorFee;
         flashLoanFee = _flashLoanFee;
+        swapFee = _swapFee;
+
+        emit FactoryFeesUpdated(_governanceFee, _maxCuratorFee, _flashLoanFee, _swapFee);
     }
 
-    function setInstantBuyMultiplier(uint256 _instantBuyMultiplier) external override onlyOwner {
-        if (_instantBuyMultiplier < 10) revert MultiplierTooLow();
+    function setFactoryThresholds(
+        uint256 _maxAuctionLength,
+        uint256 _minAuctionLength,
+        uint256 _minReserveFactor,
+        uint256 _maxReserveFactor,
+        uint256 _minBidIncrease,
+        uint256 _minVotePercentage,
+        uint256 _liquidityThreshold,
+        uint256 _instantBuyMultiplier
+    ) public virtual override onlyOwner {
+        if (_minAuctionLength < 1 days || _minAuctionLength >= maxAuctionLength) revert MinAuctionLengthOutOfBounds();
+        if (_maxAuctionLength > 8 weeks || _maxAuctionLength <= minAuctionLength) revert MaxAuctionLengthOutOfBounds();
 
-        emit InstantBuyMultiplierUpdated(instantBuyMultiplier, _instantBuyMultiplier);
+        if (_minReserveFactor >= maxReserveFactor) revert MinReserveFactorTooHigh();
+        if (_maxReserveFactor <= minReserveFactor) revert MaxReserveFactorTooLow();
 
-        instantBuyMultiplier = _instantBuyMultiplier;
-    }
-
-    function setLiquidityThreshold(uint256 _liquidityThreshold) external override onlyOwner {
-        emit LiquidityThresholdUpdated(liquidityThreshold, _liquidityThreshold);
-
-        liquidityThreshold = _liquidityThreshold;
-    }
-
-    function setMinBidIncrease(uint256 _minBidIncrease) external override onlyOwner {
         if (_minBidIncrease > 1000 || _minBidIncrease < 100) revert MinBidIncreaseOutOfBounds();
-
-        emit MinBidIncreaseUpdated(minBidIncrease, _minBidIncrease);
-
-        minBidIncrease = _minBidIncrease;
-    }
-
-    function setMinVotePercentage(uint256 _minVotePercentage) external override onlyOwner {
-        // 10000 is 100%
         if (_minVotePercentage > 10000) revert MinVotePercentageTooHigh();
 
-        emit MinVotePercentageUpdated(minVotePercentage, _minVotePercentage);
+        if (_instantBuyMultiplier < 10) revert MultiplierTooLow();
 
+        maxAuctionLength = _maxAuctionLength;
+        minAuctionLength = _minAuctionLength;
+        minReserveFactor = _minReserveFactor;
+        maxReserveFactor = _maxReserveFactor;
+        minBidIncrease = _minBidIncrease;
         minVotePercentage = _minVotePercentage;
-    }
+        liquidityThreshold = _liquidityThreshold;
+        instantBuyMultiplier = _instantBuyMultiplier;
 
-    function setReserveFactor(Boundary boundary, uint256 _reserveFactor) external override onlyOwner {
-        if (boundary == Boundary.Min) {
-            if (_reserveFactor >= maxReserveFactor) revert MinReserveFactorTooHigh();
-            emit MinReserveFactorUpdated(minReserveFactor, _reserveFactor);
-            minReserveFactor = _reserveFactor;
-        } else if (boundary == Boundary.Max) {
-            if (_reserveFactor <= minReserveFactor) revert MaxReserveFactorTooLow();
-            emit MaxReserveFactorUpdated(maxReserveFactor, _reserveFactor);
-            maxReserveFactor = _reserveFactor;
-        }
+        emit FactoryThresholdsUpdated(
+            _maxAuctionLength,
+            _minAuctionLength,
+            _minReserveFactor,
+            _maxReserveFactor,
+            _minBidIncrease,
+            _minVotePercentage,
+            _liquidityThreshold,
+            _instantBuyMultiplier
+        );
     }
 
     function togglePaused() external override onlyOwner {

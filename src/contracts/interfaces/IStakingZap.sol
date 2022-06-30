@@ -10,7 +10,7 @@ import "./IUniswapV2Router.sol";
 
 interface IStakingZap {
     function WETH() external returns(IWETH);
-    
+
     function vaultManager() external returns(IVaultManager);
 
     function router() external returns(IUniswapV2Router);
