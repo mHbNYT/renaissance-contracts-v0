@@ -10,14 +10,14 @@ import "./IUniswapV2Router.sol";
 
 interface IStakingZap {
     function WETH() external returns(IWETH);
+    
+    function vaultManager() external returns(IVaultManager);
+
+    function router() external returns(IUniswapV2Router);
 
     function lpStaking() external returns(ILPStaking);
 
     function inventoryStaking() external returns(IInventoryStaking);
-
-    function vaultManager() external returns(IVaultManager);
-
-    function router() external returns(IUniswapV2Router);
 
     function lpLockTime() external returns(uint256);
 
