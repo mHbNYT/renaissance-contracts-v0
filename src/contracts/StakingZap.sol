@@ -24,15 +24,17 @@ import "./interfaces/IWETH.sol";
 contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
-  IInventoryStaking public override inventoryStaking;
-  ILPStaking public override lpStaking;
+  uint256 constant BASE = 1e18;
+
   IUniswapV2Router public immutable override router;
   IVaultManager public immutable override vaultManager;
   IWETH public immutable override WETH;
 
+  IInventoryStaking public override inventoryStaking;
+  ILPStaking public override lpStaking;
+
   uint256 public override inventoryLockTime = 7 days;
   uint256 public override lpLockTime = 48 hours;
-  uint256 constant BASE = 1e18;
 
   constructor(address _vaultManager, address _router) Ownable() ReentrancyGuard() {
     router = IUniswapV2Router(_router);
@@ -99,8 +101,8 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
     address assetAddress = vault.assetAddress();
     uint256 length = tokenIds.length;
     for (uint256 i; i < length;) {
-      transferFromERC721(assetAddress, tokenIds[i], address(vault));
-      approveERC721(assetAddress, address(vault), tokenIds[i]);
+      _transferFromERC721(assetAddress, tokenIds[i], address(vault));
+      _approveERC721(assetAddress, address(vault), tokenIds[i]);
       unchecked {
         ++i;
       }
@@ -271,8 +273,8 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
     address assetAddress = IFNFTCollection(vault).assetAddress();
     uint256 length = ids.length;
     for (uint256 i; i < length; i++) {
-      transferFromERC721(assetAddress, ids[i], vault);
-      approveERC721(assetAddress, vault, ids[i]);
+      _transferFromERC721(assetAddress, ids[i], vault);
+      _approveERC721(assetAddress, vault, ids[i]);
     }
     uint256[] memory emptyIds;
     IFNFTCollection(vault).mint(ids, emptyIds);
@@ -303,7 +305,7 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
     );
 
     // Stake in LP rewards contract
-    address lpToken = pairFor(vault, address(WETH));
+    address lpToken = _pairFor(vault, address(WETH));
     IERC20Upgradeable(lpToken).safeApprove(address(lpStaking), liquidity);
     lpStaking.timelockDepositFor(vaultId, to, liquidity, lpLockTime);
 
@@ -317,7 +319,7 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
     return (amountToken, amountEth, liquidity);
   }
 
-  function approveERC721(address assetAddr, address to, uint256 tokenId) internal virtual {
+  function _approveERC721(address assetAddr, address to, uint256 tokenId) internal virtual {
     address kitties = 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d;
     address punks = 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB;
     bytes memory data;
@@ -338,8 +340,8 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
   }
 
   // calculates the CREATE2 address for a pair without making any external calls
-  function pairFor(address tokenA, address tokenB) internal view returns (address pair) {
-    (address token0, address token1) = sortTokens(tokenA, tokenB);
+  function _pairFor(address tokenA, address tokenB) internal view returns (address pair) {
+    (address token0, address token1) = _sortTokens(tokenA, tokenB);
     pair = address(uint160(uint256(keccak256(abi.encodePacked(
       hex'ff',
       router.factory(),
@@ -387,7 +389,7 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
     );
 
     // Stake in LP rewards contract
-    address lpToken = pairFor(vault, address(WETH));
+    address lpToken = _pairFor(vault, address(WETH));
     IERC20Upgradeable(lpToken).safeApprove(address(lpStaking), liquidity);
     lpStaking.timelockDepositFor(vaultId, to, liquidity, lpLockTime);
 
@@ -402,13 +404,13 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
   }
 
   // returns sorted token addresses, used to handle return values from pairs sorted in this order
-  function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
+  function _sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
     if (tokenA == tokenB) revert IdenticalAddress();
     (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
     if (token0 == address(0)) revert ZeroAddress();
   }
 
-  function transferFromERC721(address assetAddr, uint256 tokenId, address to) internal virtual {
+  function _transferFromERC721(address assetAddr, uint256 tokenId, address to) internal virtual {
     address kitties = 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d;
     address punks = 0xb47e3cd837dDF8e4c57F05d70Ab865de6e193BBB;
     bytes memory data;
