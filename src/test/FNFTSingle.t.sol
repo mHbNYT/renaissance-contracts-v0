@@ -179,7 +179,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
     function testKickCurator() public {
         vm.expectEmit(true, true, false, true);
         emit CuratorUpdated(fnftSingle.curator(), address(curator));
-        fnftSingle.updateCurator(address(curator));
+        fnftSingle.setCurator(address(curator));
         assertTrue(fnftSingle.curator() == address(curator));
         vm.expectEmit(true, true, false, true);
         emit CuratorKicked(address(curator), address(this));
@@ -188,13 +188,13 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testKickSameCurator() public {
-        fnftSingle.updateCurator(address(curator));
+        fnftSingle.setCurator(address(curator));
         vm.expectRevert(IFNFTSingle.SameCurator.selector);
         fnftSingle.kickCurator(address(curator));
     }
 
     function testKickCuratorNotGov() public {
-        vm.expectRevert(IFNFTSingle.NotGov.selector);
+        vm.expectRevert("Ownable: caller is not the owner");
         curator.call_kickCurator(address(curator));
     }
 
@@ -229,7 +229,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         user1.call_updatePrice(2 ether);
         assertEq(fnftSingle.reservePrice(), 1.5 ether);
 
-        vm.expectRevert(IFNFTSingle.NotGov.selector);
+        vm.expectRevert("Ownable: caller is not the owner");
         // user1 is not gov so cannot do anything
         user1.call_remove(address(this));
     }
@@ -281,40 +281,40 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
     function testUpdateCurator() public {
         vm.expectEmit(true, true, false, true);
         emit CuratorUpdated(fnftSingle.curator(), address(curator));
-        fnftSingle.updateCurator(address(curator));
+        fnftSingle.setCurator(address(curator));
         assertTrue(fnftSingle.curator() == address(curator));
     }
 
     function testUpdateSameCurator() public {
-        fnftSingle.updateCurator(address(curator));
+        fnftSingle.setCurator(address(curator));
         vm.prank(address(curator));
         vm.expectRevert(IFNFTSingle.SameCurator.selector);
-        fnftSingle.updateCurator(address(curator));
+        fnftSingle.setCurator(address(curator));
     }
 
     function testUpdateAuctionLength() public {
-        fnftSingle.updateAuctionLength(2 weeks);
+        fnftSingle.setAuctionLength(2 weeks);
         assertTrue(fnftSingle.auctionLength() == 2 weeks);
     }
 
     function testUpdateAuctionLengthTooShort() public {
         vm.expectRevert(IFNFTSingle.InvalidAuctionLength.selector);
-        fnftSingle.updateAuctionLength(0.1 days);
+        fnftSingle.setAuctionLength(0.1 days);
     }
 
     function testUpdateAuctionLengthTooLong() public {
         vm.expectRevert(IFNFTSingle.InvalidAuctionLength.selector);
-        fnftSingle.updateAuctionLength(100 weeks);
+        fnftSingle.setAuctionLength(100 weeks);
     }
 
     function testUpdateFee() public {
-        fnftSingle.updateFee(250);
+        fnftSingle.setFee(250);
         assertEq(fnftSingle.curatorFee(), 250);
     }
 
     function testUpdateFeeCanNotRaise() public {
         vm.expectRevert(IFNFTSingle.CanNotRaise.selector);
-        fnftSingle.updateFee(1001);
+        fnftSingle.setFee(1001);
     }
 
     function testClaimFees() public {
@@ -497,8 +497,8 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
     }
 
     function testAuctionEndCurator0() public {
-        fnftSingle.updateFee(0);
-        fnftSingle.updateCurator(address(0));
+        fnftSingle.setFee(0);
+        fnftSingle.setCurator(address(0));
         //set governance fee to 0
         fnftSingleFactory.setFactoryFees(0, 1000, 0, 0);
         fnftSingle.transfer(address(user1), 25e18);

@@ -59,10 +59,6 @@ contract FNFTCollectionFactory is
         return fnftCollection;
     }
 
-    function isLocked(uint256 lockId) external view override virtual returns (bool) {
-        return isPaused[lockId];
-    }
-
     function setEligibilityManager(address _eligibilityManager) external virtual override onlyOwner {
         emit EligibilityManagerUpdated(eligibilityManager, _eligibilityManager);
         eligibilityManager = _eligibilityManager;
@@ -168,6 +164,7 @@ contract FNFTCollectionFactory is
             FNFTCollection.__FNFTCollection_init.selector,
             name,
             symbol,
+            msg.sender,
             _assetAddress,
             is1155,
             allowAllItems
@@ -175,10 +172,9 @@ contract FNFTCollectionFactory is
 
         address newBeaconProxy = address(new BeaconProxy(address(this), _initializationCalldata));
 
-        // Curator for configuration.
-        FNFTCollection(newBeaconProxy).setCurator(msg.sender);
         // Owner for administrative functions.
         FNFTCollection(newBeaconProxy).transferOwnership(owner());
+
         return newBeaconProxy;
     }
 }

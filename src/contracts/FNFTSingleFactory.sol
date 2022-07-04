@@ -189,6 +189,11 @@ contract FNFTSingleFactory is
             _fee
         );
 
-        return address(new BeaconProxy(address(this), _initializationCalldata));
+        address newBeaconProxy = address(new BeaconProxy(address(this), _initializationCalldata));
+
+        // Owner for administrative functions.
+        FNFTSingle(newBeaconProxy).transferOwnership(owner());
+
+        return newBeaconProxy;
     }
 }

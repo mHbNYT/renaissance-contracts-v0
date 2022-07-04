@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/interfaces/IERC3156FlashBorrowerUpgr
 
 import "./IVaultManager.sol";
 import "./IUniswapV2Pair.sol";
+import "./IFNFTSingleFactory.sol";
 import "../token/ERC20Upgradeable.sol";
 
 interface IFNFTSingle  is IERC20Upgradeable {
@@ -35,7 +36,7 @@ interface IFNFTSingle  is IERC20Upgradeable {
 
     function auctionState() external returns (State);
 
-    function factory() external returns (address);
+    function factory() external returns (IFNFTSingleFactory);
 
     function vaultManager() external returns (IVaultManager);
 
@@ -72,11 +73,11 @@ interface IFNFTSingle  is IERC20Upgradeable {
 
     function toggleVerified() external;
 
-    function updateCurator(address _curator) external;
+    function setCurator(address _curator) external;
 
-    function updateAuctionLength(uint256 _length) external;
+    function setAuctionLength(uint256 _length) external;
 
-    function updateFee(uint256 _fee) external;
+    function setFee(uint256 _fee) external;
 
     function claimCuratorFees() external;
 
@@ -145,8 +146,9 @@ interface IFNFTSingle  is IERC20Upgradeable {
     error NotCurator();
     error NotEnoughETH();
     error NotEnoughVoters();
-    error NotGov();
+    error NotOwner();
     error NoTokens();
+    error Paused();
     error PriceTooHigh();
     error PriceTooLow();
     error SameCurator();

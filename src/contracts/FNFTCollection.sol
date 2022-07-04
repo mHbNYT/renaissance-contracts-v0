@@ -18,6 +18,7 @@ import "./interfaces/IEligibilityManager.sol";
 import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IFNFTCollection.sol";
 import "./interfaces/IFNFTCollectionFactory.sol";
+import "./interfaces/IPausable.sol";
 import "./interfaces/IVaultManager.sol";
 import "./token/ERC20FlashMintUpgradeable.sol";
 
@@ -60,6 +61,7 @@ contract FNFTCollection is
     function __FNFTCollection_init(
         string memory _name,
         string memory _symbol,
+        address _curator,
         address _assetAddress,
         bool _is1155,
         bool _allowAllItems
@@ -67,16 +69,17 @@ contract FNFTCollection is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
         if (_assetAddress == address(0)) revert ZeroAddress();
+        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/);
         IFNFTCollectionFactory _factory = IFNFTCollectionFactory(msg.sender);
         vaultManager = IVaultManager(_factory.vaultManager());
         assetAddress = _assetAddress;
+        curator = _curator;
         factory = _factory;
         vaultId = vaultManager.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
         pair = IPriceOracle(vaultManager.priceOracle()).createFNFTPair(address(this));
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
-        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/);
     }
 
     function allHoldings() external view override virtual returns (uint256[] memory) {
@@ -285,8 +288,9 @@ contract FNFTCollection is
     // The curator has control over options like fees and features
     function setCurator(address _curator) public override virtual {
         _onlyPrivileged();
+        if (curator == _curator) revert SameCurator();
+        emit CuratorUpdated(curator, _curator);
         curator = _curator;
-        emit CuratorUpdated(_curator);
     }
 
     function setVaultFeatures(
@@ -477,7 +481,7 @@ contract FNFTCollection is
 
     function _onlyOwnerIfPaused(uint256 lockId) internal view {
         // TODO: compare gas usage on the order of logic
-        if (msg.sender != owner() && factory.isLocked(lockId)) revert Paused();
+        if (msg.sender != owner() && IPausable(address(factory)).isPaused(lockId)) revert Paused();
     }
 
 

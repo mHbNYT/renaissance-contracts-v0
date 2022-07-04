@@ -67,6 +67,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     function __FNFTCollection_init(
         string calldata _name,
         string calldata _symbol,
+        address _curator,
         address _assetAddress,
         bool _is1155,
         bool _allowAllItems
@@ -161,7 +162,7 @@ interface IFNFTCollection is IERC20Upgradeable {
         bool is1155,
         bool allowAllItems
     );
-    event CuratorUpdated(address curator);
+    event CuratorUpdated(address oldCurator, address newCurator);
     event EligibilityDeployed(uint256 moduleIndex, address eligibilityAddr);
     event EnableMintUpdated(bool enabled);
     event EnableRandomRedeemUpdated(bool enabled);
@@ -193,6 +194,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     error TargetSwapDisabled();
     error TooManyNFTs();
     error InvalidToken();
+    error SameCurator();
     error ZeroAddress();
     error ZeroTransferAmount();
 }
