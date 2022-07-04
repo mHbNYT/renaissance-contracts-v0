@@ -1,21 +1,18 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "./FNFTSingle.sol";
-import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/IFNFTSingleFactory.sol";
 import "./interfaces/IVaultManager.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
+import "./util/Pausable.sol";
 
 contract FNFTSingleFactory is
     IFNFTSingleFactory,
-    OwnableUpgradeable,
-    PausableUpgradeable,
+    Pausable,
     BeaconUpgradeable
 {
     IVaultManager public override vaultManager;
@@ -57,10 +54,9 @@ contract FNFTSingleFactory is
     uint256 public override swapFee;
 
     function __FNFTSingleFactory_init(address _vaultManager) external override initializer {
-        __Ownable_init();
+        if (_vaultManager == address(0)) revert ZeroAddress();
         __Pausable_init();
         __BeaconUpgradeable__init(address(new FNFTSingle()));
-
         vaultManager = IVaultManager(_vaultManager);
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;
@@ -88,7 +84,10 @@ contract FNFTSingleFactory is
         uint256 _supply,
         uint256 _listPrice,
         uint256 _fee
-    ) external override whenNotPaused returns (address) {
+    ) external virtual override returns (address) {
+        onlyOwnerIfPaused(0);
+        if (childImplementation() == address(0)) revert ZeroAddress();
+        IVaultManager _vaultManager = vaultManager;
         address fnftSingle = _deployVault(
             _name,
             _symbol,
@@ -98,12 +97,14 @@ contract FNFTSingleFactory is
             _listPrice,
             _fee
         );
-        IVaultManager _vaultManager = vaultManager;
-        _vaultManager.addVault(fnftSingle);
+        uint vaultId = _vaultManager.addVault(fnftSingle);
         IERC721(_nft).safeTransferFrom(msg.sender, fnftSingle, _tokenId);
-
-        emit FNFTSingleCreated(_nft, fnftSingle, msg.sender, _listPrice, _name, _symbol);
+        emit VaultCreated(vaultId, fnftSingle, _nft, _tokenId, _name, _symbol);
         return fnftSingle;
+    }
+
+    function isLocked(uint256 lockId) external view override virtual returns (bool) {
+        return isPaused[lockId];
     }
 
     function setFactoryFees(
@@ -165,10 +166,6 @@ contract FNFTSingleFactory is
             _liquidityThreshold,
             _instantBuyMultiplier
         );
-    }
-
-    function togglePaused() external override onlyOwner {
-        paused() ? _unpause() : _pause();
     }
 
     function _deployVault(

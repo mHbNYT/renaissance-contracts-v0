@@ -34,7 +34,6 @@ contract FNFTCollectionFactory is
     function __FNFTCollectionFactory_init(address _vaultManager) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
         __Pausable_init();
-        // We use a beacon proxy so that every child contract follows the same implementation code.
         __BeaconUpgradeable__init(address(new FNFTCollection()));
         vaultManager = IVaultManager(_vaultManager);
         factoryMintFee = uint64(0.1 ether);
@@ -56,7 +55,7 @@ contract FNFTCollectionFactory is
         IVaultManager _vaultManager = vaultManager;
         address fnftCollection = _deployVault(_name, _symbol, _assetAddress, is1155, allowAllItems);
         uint vaultId = _vaultManager.addVault(fnftCollection);
-        emit VaultCreated(vaultId, fnftCollection, _assetAddress);
+        emit VaultCreated(vaultId, msg.sender, fnftCollection, _assetAddress, _name, _symbol);
         return fnftCollection;
     }
 
@@ -64,7 +63,7 @@ contract FNFTCollectionFactory is
         return isPaused[lockId];
     }
 
-    function setEligibilityManager(address _eligibilityManager) external onlyOwner virtual override {
+    function setEligibilityManager(address _eligibilityManager) external virtual override onlyOwner {
         emit EligibilityManagerUpdated(eligibilityManager, _eligibilityManager);
         eligibilityManager = _eligibilityManager;
     }
