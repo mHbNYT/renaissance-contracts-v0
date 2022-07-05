@@ -77,7 +77,7 @@ contract SetupEnvironment {
 
     function setupFNFTSingleFactory(address _vaultManager) public returns (FNFTSingleFactory fnftSingleFactory) {
         fnftSingleFactory = FNFTSingleFactory(
-            deployer.deployFNFTSingleFactory(address(new FNFTSingleFactory()), _vaultManager)
+            deployer.deployFNFTSingleFactory(address(new FNFTSingleFactory()), _vaultManager, address(new FNFTSingle()))
         );
     }
 
