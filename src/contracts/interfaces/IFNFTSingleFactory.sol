@@ -32,7 +32,7 @@ interface IFNFTSingleFactory {
 
     function instantBuyMultiplier() external view returns (uint256);
 
-    function __FNFTSingleFactory_init(address _vaultManager) external;
+    function __FNFTSingleFactory_init(address _vaultManager, address _fnftSingle) external;
 
     function createVault(
         string memory _name,

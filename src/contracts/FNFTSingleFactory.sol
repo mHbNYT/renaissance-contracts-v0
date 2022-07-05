@@ -53,10 +53,11 @@ contract FNFTSingleFactory is
     /// @notice fee exclusion for swaps
     uint256 public override swapFee;
 
-    function __FNFTSingleFactory_init(address _vaultManager) external override initializer {
+    function __FNFTSingleFactory_init(address _vaultManager, address _fnftSingle) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
+        if (_fnftSingle == address(0)) revert ZeroAddress();
         __Pausable_init();
-        __BeaconUpgradeable__init(address(new FNFTSingle()));
+        __BeaconUpgradeable__init(_fnftSingle);
         vaultManager = IVaultManager(_vaultManager);
         maxAuctionLength = 2 weeks;
         minAuctionLength = 3 days;

@@ -128,13 +128,15 @@ contract Deployer is Ownable {
     /// @param _vaultManager variable needed for FNFTSingleFactory
     function deployFNFTSingleFactory(
         address _logic,
-        address _vaultManager
+        address _vaultManager,
+        address _fnftSingle
     ) external onlyOwner returns (address fnftSingleFactory) {
         if (address(proxyController) == address(0)) revert NoController();
 
         bytes memory _initializationCalldata = abi.encodeWithSelector(
             FNFTSingleFactory.__FNFTSingleFactory_init.selector,
-            _vaultManager
+            _vaultManager,
+            _fnftSingle
         );
 
         fnftSingleFactory = address(new AdminUpgradeabilityProxy(_logic, msg.sender, _initializationCalldata));
