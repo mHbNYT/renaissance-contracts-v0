@@ -98,7 +98,8 @@ contract SetupEnvironment {
         fnftCollectionFactory = FNFTCollectionFactory(
             deployer.deployFNFTCollectionFactory(
                 address(new FNFTCollectionFactory()),
-                vaultManager
+                vaultManager,
+                address(new FNFTCollection())
             )
         );
     }

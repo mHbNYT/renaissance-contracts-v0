@@ -26,6 +26,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
   });
 
+  const fnftCollectionImpl = await deploy('FNFTCollection', {
+    from: deployer,
+    log: true,
+  });
+
   // deploy proxy contract
   const deployerInfo = await get('Deployer')
   const deployerContract = new ethers.Contract(
@@ -35,7 +40,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
   await deployerContract.deployFNFTCollectionFactory(
     fnftCollectionFactoryImpl.address,
-    vaultManagerAddress
+    vaultManagerAddress,
+    fnftCollectionImpl.address
   );
 
 };
