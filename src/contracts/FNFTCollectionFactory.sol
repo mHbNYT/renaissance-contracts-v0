@@ -31,10 +31,11 @@ contract FNFTCollectionFactory is
 
     uint256 public override swapFee;
 
-    function __FNFTCollectionFactory_init(address _vaultManager) external override initializer {
+    function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
+        if (_fnftCollection == address(0)) revert ZeroAddress();
         __Pausable_init();
-        __BeaconUpgradeable__init(address(new FNFTCollection()));
+        __BeaconUpgradeable__init(_fnftCollection);
         vaultManager = IVaultManager(_vaultManager);
         factoryMintFee = uint64(0.1 ether);
         factoryRandomRedeemFee = uint64(0.05 ether);

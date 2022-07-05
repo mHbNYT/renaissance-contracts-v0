@@ -37,7 +37,7 @@ interface IFNFTCollectionFactory is IBeacon {
   function flashLoanFee() external view returns (uint256);
 
   // Write functions.
-  function __FNFTCollectionFactory_init(address _vaultManager) external;
+  function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external;
 
   function createVault(
       string calldata _name,
