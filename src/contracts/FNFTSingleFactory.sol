@@ -3,8 +3,8 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
-import "./FNFTSingle.sol";
 import "./interfaces/IFNFTSingleFactory.sol";
+import "./interfaces/IOwnable.sol";
 import "./interfaces/IVaultManager.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
@@ -165,6 +165,7 @@ contract FNFTSingleFactory is
         );
     }
 
+    /// @dev 0x86a777ab == FNFTSingle.__FNFTSingle_init.selector
     function _deployVault(
         string memory _name,
         string memory _symbol,
@@ -175,7 +176,7 @@ contract FNFTSingleFactory is
         uint256 _fee
     ) internal returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTSingle.__FNFTSingle_init.selector,
+            0x86a777ab,
             _name,
             _symbol,
             msg.sender,
@@ -189,7 +190,7 @@ contract FNFTSingleFactory is
         address newBeaconProxy = address(new BeaconProxy(address(this), _initializationCalldata));
 
         // Owner for administrative functions.
-        FNFTSingle(newBeaconProxy).transferOwnership(owner());
+        IOwnable(newBeaconProxy).transferOwnership(owner());
 
         return newBeaconProxy;
     }
