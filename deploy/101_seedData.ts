@@ -403,7 +403,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   await fnftSingle12.approve(IFOFactory.address, await fnftSingle12.balanceOf(deployer));
   await fnftSingle13.approve(IFOFactory.address, await fnftSingle13.balanceOf(deployer));
 
-
   // NFT2 IFO - NFT2 scenario is done here.
   await IFOFactory.create(
     fnftSingle2Address, // fNft
@@ -415,7 +414,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT3 IFO
-  const IFO3Address = await IFOFactory.create(
+  const IFO3Receipt = await IFOFactory.create(
     fnftSingle3Address, // fNft
     await fnftSingle3.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -425,7 +424,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT4 IFO
-  const IFO4Address = await IFOFactory.create(
+  const IFO4Receipt = await IFOFactory.create(
     fnftSingle4Address, // fNft
     await fnftSingle4.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -435,7 +434,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT5 IFO
-  const IFO5Address = await IFOFactory.create(
+  const IFO5Receipt = await IFOFactory.create(
     fnftSingle5Address, // fNft
     await fnftSingle5.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -445,7 +444,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT6 IFO
-  const IFO6Address = await IFOFactory.create(
+  const IFO6Receipt = await IFOFactory.create(
     fnftSingle6Address, // fNft
     await fnftSingle6.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -455,7 +454,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT7 IFO
-  const IFO7Address = await IFOFactory.create(
+  const IFO7Receipt = await IFOFactory.create(
     fnftSingle7Address, // fNft
     await fnftSingle7.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -465,7 +464,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT8 IFO
-  const IFO8Address = await IFOFactory.create(
+  const IFO8Receipt = await IFOFactory.create(
     fnftSingle8Address, // fNft
     await fnftSingle8.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -475,7 +474,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT9 IFO
-  const IFO9Address = await IFOFactory.create(
+  const IFO9Receipt = await IFOFactory.create(
     fnftSingle9Address, // fNft
     await fnftSingle9.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -485,7 +484,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT10 IFO
-  const IFO10Address = await IFOFactory.create(
+  const IFO10Receipt = await IFOFactory.create(
     fnftSingle10Address, // fNft
     await fnftSingle10.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -497,7 +496,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // NFT11 No IFO
 
   // NFT12 IFO
-  const IFO12Address = await IFOFactory.create(
+  const IFO12Receipt = await IFOFactory.create(
     fnftSingle12Address, // fNft
     await fnftSingle12.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -507,7 +506,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // NFT13 IFO
-  const IFO13Address = await IFOFactory.create(
+  const IFO13Receipt = await IFOFactory.create(
     fnftSingle13Address, // fNft
     await fnftSingle13.totalSupply(), // amount for sale
     parseFixed('1', 18), // price
@@ -516,6 +515,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     false // allow whitelisting
   );
 
+  const IFO3Address = await getIFOAddress(IFO3Receipt);
+  const IFO4Address = await getIFOAddress(IFO4Receipt);
+  const IFO5Address = await getIFOAddress(IFO5Receipt);
+  const IFO6Address = await getIFOAddress(IFO6Receipt);
+  const IFO7Address = await getIFOAddress(IFO7Receipt);
+  const IFO8Address = await getIFOAddress(IFO8Receipt);
+  const IFO9Address = await getIFOAddress(IFO9Receipt);
+  const IFO10Address = await getIFOAddress(IFO10Receipt);
+  const IFO12Address = await getIFOAddress(IFO12Receipt);
+  const IFO13Address = await getIFOAddress(IFO13Receipt);
 
   // start IFOs
   const IFO3 = await ethers.getContractAt('IFO', IFO3Address);
@@ -713,13 +722,21 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 async function getFNFTSingleAddress(transactionReceipt: any) {
-  const vaultCreatedAbi = ["event VaultCreated(uint256 indexed vaultId, address vaultAddress, address assetAddress, uint256 tokenId, string name, string symbol);"];
-  const vaultCreatedInterface = new ethers.utils.Interface(vaultCreatedAbi);
-  const vaultCreatedTopic = "0xd921958b16a38675933674b8408a1365f4dcafd2dffd570a6a1c93003035466d";
+  const abi = ["event VaultCreated(uint256 indexed vaultId, address vaultAddress, address assetAddress, uint256 tokenId, string name, string symbol);"];
+  const _interface = new ethers.utils.Interface(abi);
+  const topic = "0xd921958b16a38675933674b8408a1365f4dcafd2dffd570a6a1c93003035466d";
   const receipt = await transactionReceipt.wait();
-  const vaultCreatedEvent = receipt.logs.find((log: any) => log.topics[0] === vaultCreatedTopic);
-  console.log(vaultCreatedInterface.parseLog(vaultCreatedEvent).args[1]);
-  return vaultCreatedInterface.parseLog(vaultCreatedEvent).args[1];
+  const event = receipt.logs.find((log: any) => log.topics[0] === topic);
+  return _interface.parseLog(event).args[1];
+}
+
+async function getIFOAddress(transactionReceipt: any) {
+  const abi = ["event IFOCreated(address indexed ifo, address indexed fnft, uint256 amountForSale, uint256 price, uint256 cap, uint256 duration, bool allowWhitelisting);"];
+  const _interface = new ethers.utils.Interface(abi);
+  const topic = "0x1bb72b46985d7a3abad1d345d856e8576c1d4842b34a5373f3533a4c72970352";
+  const receipt = await transactionReceipt.wait();
+  const event = receipt.logs.find((log: any) => log.topics[0] === topic);
+  return _interface.parseLog(event).args[0];
 }
 
 async function mineNBlocks(n:number) {
