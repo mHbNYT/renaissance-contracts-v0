@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.13;
 
-import "./FNFTCollection.sol";
 import "./interfaces/IFNFTCollectionFactory.sol";
+import "./interfaces/IOwnable.sol";
 import "./interfaces/IVaultManager.sol";
 import "./proxy/BeaconProxy.sol";
 import "./proxy/BeaconUpgradeable.sol";
@@ -154,6 +154,7 @@ contract FNFTCollectionFactory is
         emit VaultFeesUpdated(vaultId, _mintFee, _randomRedeemFee, _targetRedeemFee, _randomSwapFee, _targetSwapFee);
     }
 
+    /// @dev 0x042f186c == FNFTCollection.__FNFTCollection_init.selector
     function _deployVault(
         string memory name,
         string memory symbol,
@@ -162,7 +163,7 @@ contract FNFTCollectionFactory is
         bool allowAllItems
     ) internal returns (address) {
         bytes memory _initializationCalldata = abi.encodeWithSelector(
-            FNFTCollection.__FNFTCollection_init.selector,
+            0x042f186c,
             name,
             symbol,
             msg.sender,
@@ -174,7 +175,7 @@ contract FNFTCollectionFactory is
         address newBeaconProxy = address(new BeaconProxy(address(this), _initializationCalldata));
 
         // Owner for administrative functions.
-        FNFTCollection(newBeaconProxy).transferOwnership(owner());
+        IOwnable(newBeaconProxy).transferOwnership(owner());
 
         return newBeaconProxy;
     }
