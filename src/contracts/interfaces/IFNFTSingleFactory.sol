@@ -35,13 +35,13 @@ interface IFNFTSingleFactory {
     function __FNFTSingleFactory_init(address _vaultManager, address _fnftSingle) external;
 
     function createVault(
-        string memory _name,
-        string memory _symbol,
         address _nft,
         uint256 _tokenId,
         uint256 _supply,
         uint256 _listPrice,
-        uint256 _fee
+        uint256 _fee,
+        string memory _name,
+        string memory _symbol
     ) external returns (address);
 
     function flashLoanFee() external view returns (uint256);
@@ -78,9 +78,12 @@ interface IFNFTSingleFactory {
     event FeeExclusionUpdated(address target, bool excluded);
     event VaultCreated(
         uint256 indexed vaultId,
+        address curator,
         address vaultAddress,
         address assetAddress,
         uint256 tokenId,
+        uint256 supply,
+        uint256 listPrice,
         string name,
         string symbol
     );
