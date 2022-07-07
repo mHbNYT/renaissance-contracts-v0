@@ -30,8 +30,6 @@ interface IFNFTCollectionFactory is IBeacon {
 
   function factoryTargetSwapFee() external view returns (uint64);
 
-  function swapFee() external view returns (uint256);
-
   function vaultFees(uint256 vaultId) external view returns (uint256, uint256, uint256, uint256, uint256);
 
   function flashLoanFee() external view returns (uint256);
@@ -55,8 +53,7 @@ interface IFNFTCollectionFactory is IBeacon {
     uint256 _factoryTargetRedeemFee,
     uint256 _factoryRandomSwapFee,
     uint256 _factoryTargetSwapFee,
-    uint256 _flashLoanFee,
-    uint256 _swapFee
+    uint256 _flashLoanFee
   ) external;
 
   function setVaultFees(
@@ -77,7 +74,7 @@ interface IFNFTCollectionFactory is IBeacon {
   event VaultCreated(uint256 indexed vaultId, address curator, address vaultAddress, address assetAddress, string name, string symbol);
   event VaultFeesUpdated(uint256 vaultId, uint256 mintFee, uint256 randomRedeemFee, uint256 targetRedeemFee, uint256 randomSwapFee, uint256 targetSwapFee);
   event VaultFeesDisabled(uint256 vaultId);
-  event FactoryFeesUpdated(uint256 mintFee, uint256 randomRedeemFee, uint256 targetRedeemFee, uint256 randomSwapFee, uint256 targetSwapFee, uint256 flashLoanFee, uint256 swapFee);
+  event FactoryFeesUpdated(uint256 mintFee, uint256 randomRedeemFee, uint256 targetRedeemFee, uint256 randomSwapFee, uint256 targetSwapFee, uint256 flashLoanFee);
 
   error NotVault();
   error FeeTooHigh();

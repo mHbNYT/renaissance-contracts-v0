@@ -29,8 +29,6 @@ contract FNFTCollectionFactory is
     address public override eligibilityManager;
     uint256 public override flashLoanFee;
 
-    uint256 public override swapFee;
-
     function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
         if (_fnftCollection == address(0)) revert ZeroAddress();
@@ -95,8 +93,7 @@ contract FNFTCollectionFactory is
         uint256 _factoryTargetRedeemFee,
         uint256 _factoryRandomSwapFee,
         uint256 _factoryTargetSwapFee,
-        uint256 _flashLoanFee,
-        uint256 _swapFee
+        uint256 _flashLoanFee
     ) public virtual override onlyOwner {
         if (_factoryMintFee > 0.5 ether) revert FeeTooHigh();
         if (_factoryRandomRedeemFee > 0.5 ether) revert FeeTooHigh();
@@ -104,7 +101,6 @@ contract FNFTCollectionFactory is
         if (_factoryRandomSwapFee > 0.5 ether) revert FeeTooHigh();
         if (_factoryTargetSwapFee > 0.5 ether) revert FeeTooHigh();
         if (_flashLoanFee > 500) revert FeeTooHigh();
-        if (_swapFee > 500) revert FeeTooHigh();
 
         factoryMintFee = uint64(_factoryMintFee);
         factoryRandomRedeemFee = uint64(_factoryRandomRedeemFee);
@@ -112,7 +108,6 @@ contract FNFTCollectionFactory is
         factoryRandomSwapFee = uint64(_factoryRandomSwapFee);
         factoryTargetSwapFee = uint64(_factoryTargetSwapFee);
         flashLoanFee = _flashLoanFee;
-        swapFee = _swapFee;
 
         emit FactoryFeesUpdated(
             _factoryMintFee,
@@ -120,8 +115,7 @@ contract FNFTCollectionFactory is
             _factoryTargetRedeemFee,
             _factoryRandomSwapFee,
             _factoryTargetSwapFee,
-            _flashLoanFee,
-            _swapFee
+            _flashLoanFee
         );
     }
 

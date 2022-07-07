@@ -53,7 +53,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
             ,
         ) = setupContracts();
         //set governance fee to 100
-        fnftSingleFactory.setFactoryFees(100, 1000, 0, 0);
+        fnftSingleFactory.setFactoryFees(100, 1000, 0);
         fnftSingleFactory.setIsGuardian(address(this), true);
         token = new MockNFT();
         token.mint(address(this), 1);
@@ -500,7 +500,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         fnftSingle.setFee(0);
         fnftSingle.setCurator(address(0));
         //set governance fee to 0
-        fnftSingleFactory.setFactoryFees(0, 1000, 0, 0);
+        fnftSingleFactory.setFactoryFees(0, 1000, 0);
         fnftSingle.transfer(address(user1), 25e18);
         user1.call_updatePrice(1 ether);
         fnftSingle.transfer(address(user2), 25e18);
@@ -657,26 +657,9 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnftSingle.allowance(address(flashBorrower), address(fnftSingle)), 0);
     }
 
-    function testSwapFee() public {
-        //set swap fee to 100
-        fnftSingleFactory.setFactoryFees(100, 1000, 0, 100);
-
-        uint originalBalance = fnftSingle.balanceOf(address(this));
-        uint transferAmount = 1 ether;
-        uint swapFeeAmount = 0.01 ether;
-        address distributor = vaultManager.feeDistributor();
-        address pairAddress = address(fnftSingle.pair());
-
-        fnftSingle.transfer(pairAddress, transferAmount);
-
-        assertEq(fnftSingle.balanceOf(pairAddress), transferAmount - swapFeeAmount);
-        assertEq(fnftSingle.balanceOf(address(this)), originalBalance - transferAmount);
-        assertEq(fnftSingle.balanceOf(distributor), swapFeeAmount);
-    }
-
     function testExcludeSwapFeeFromFeeExclusion() public {
         //set swap fee to 100
-        fnftSingleFactory.setFactoryFees(100, 1000, 0, 100);
+        fnftSingleFactory.setFactoryFees(100, 1000, 0);
         vaultManager.setFeeExclusion(address(this), true);
         assertTrue(vaultManager.excludedFromFees(address(this)));
 
@@ -694,7 +677,7 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
 
     function testExcludeSwapFeeForNormalTransfers() public {
         //set swap fee to 100
-        fnftSingleFactory.setFactoryFees(100, 1000, 0, 100);
+        fnftSingleFactory.setFactoryFees(100, 1000, 0);
 
         uint originalBalance = fnftSingle.balanceOf(address(this));
         uint transferAmount = 1 ether;

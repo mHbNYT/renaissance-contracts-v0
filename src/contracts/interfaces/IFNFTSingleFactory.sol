@@ -5,12 +5,7 @@ import {IWETH} from "./IWETH.sol";
 import {IVaultManager} from "./IVaultManager.sol";
 
 interface IFNFTSingleFactory {
-    enum FeeType { GovernanceFee, MaxCuratorFee, SwapFee }
-    enum Boundary { Min, Max }
-
     function vaultManager() external view returns (IVaultManager);
-
-    function swapFee() external view returns (uint256);
 
     function maxAuctionLength() external view returns (uint256);
 
@@ -49,8 +44,7 @@ interface IFNFTSingleFactory {
     function setFactoryFees(
         uint256 _governanceFee,
         uint256 _maxCuratorFee,
-        uint256 _flashLoanFee,
-        uint256 _swapFee
+        uint256 _flashLoanFee
     ) external;
 
     function setFactoryThresholds(
@@ -64,7 +58,7 @@ interface IFNFTSingleFactory {
         uint256 _instantBuyMultiplier
     ) external;
 
-    event FactoryFeesUpdated(uint256 governanceFee, uint256 maxCuratorFee, uint256 flashLoanFee, uint256 swapFee);
+    event FactoryFeesUpdated(uint256 governanceFee, uint256 maxCuratorFee, uint256 flashLoanFee);
     event FactoryThresholdsUpdated(
         uint256 maxAuctionLength,
         uint256 minAuctionLength,

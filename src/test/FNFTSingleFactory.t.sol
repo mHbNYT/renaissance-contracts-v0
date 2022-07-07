@@ -67,13 +67,13 @@ contract FNFTSingleFactoryTest is DSTest, SetupEnvironment {
     }
 
     function testSetFactoryFees() public {
-        fnftSingleFactory.setFactoryFees(1000, 1000, 500, 500);
+        fnftSingleFactory.setFactoryFees(1000, 1000, 500);
     }
 
     // too high
     function testSetGovernanceFeeTooHigh() public {
         vm.expectRevert(IFNFTSingleFactory.FeeTooHigh.selector);
-        fnftSingleFactory.setFactoryFees(1001, 1000, 500, 500);
+        fnftSingleFactory.setFactoryFees(1001, 1000, 500);
     }
 
     function testSetMinBidIncrease() public {
@@ -112,17 +112,17 @@ contract FNFTSingleFactoryTest is DSTest, SetupEnvironment {
 
     function testSetFlashLoanFeeTooHigh() public {
         vm.expectRevert(IFNFTSingleFactory.FeeTooHigh.selector);
-        fnftSingleFactory.setFactoryFees(1000, 1000, 501, 500);
+        fnftSingleFactory.setFactoryFees(1000, 1000, 501);
     }
 
     function testSetMaxCuratorFeeTooHigh() public {
         vm.expectRevert(IFNFTSingleFactory.FeeTooHigh.selector);
-        fnftSingleFactory.setFactoryFees(1000, 2001, 501, 500);
+        fnftSingleFactory.setFactoryFees(1000, 2001, 501);
     }
 
     function testSetFactoryFeesNotOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(1));
-        fnftSingleFactory.setFactoryFees(1000, 1000, 500, 500);
+        fnftSingleFactory.setFactoryFees(1000, 1000, 500);
     }
 }
