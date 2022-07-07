@@ -572,23 +572,6 @@ contract FNFTSingle is
         }
     }
 
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {
-        if (to == address(pair)) {
-            uint256 swapFee = factory.swapFee();
-            if (swapFee > 0 && !vaultManager.excludedFromFees(address(msg.sender))) {
-                uint256 feeAmount = amount * swapFee / 10000;
-                _chargeAndDistributeFees(from, feeAmount);
-                amount = amount - feeAmount;
-            }
-        }
-
-        super._transfer(from, to, amount);
-    }
-
     /// @notice makes sure that the new price does not impact the reserve drastically
     function _validateUserPrice(uint256 prevUserReserve, uint256 newUserReserve) private view {
         uint256 reservePriceMin = (prevUserReserve * factory.minReserveFactor()) / 10000;

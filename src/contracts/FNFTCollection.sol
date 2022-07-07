@@ -44,7 +44,6 @@ contract FNFTCollection is
     IFNFTCollectionFactory public override factory;
     IVaultManager public override vaultManager;
     address public override curator;
-    address public override pair;
 
     uint256 public override vaultId;
     uint256 private randNonce;
@@ -78,7 +77,6 @@ contract FNFTCollection is
         vaultId = vaultManager.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
-        pair = IPriceOracle(vaultManager.priceOracle()).createFNFTPair(address(this));
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
     }
 
@@ -491,23 +489,6 @@ contract FNFTCollection is
         } else {
             if (msg.sender != curator) revert NotCurator();
         }
-    }
-
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {
-        if (to == pair) {
-            uint256 swapFee = IFNFTCollectionFactory(factory).swapFee();
-            if (swapFee > 0 && !vaultManager.excludedFromFees(msg.sender)) {
-                uint256 feeAmount = amount * swapFee / 10000;
-                _chargeAndDistributeFees(from, feeAmount);
-                amount = amount - feeAmount;
-            }
-        }
-
-        super._transfer(from, to, amount);
     }
 
     function _transferERC721(address assetAddr, address to, uint256 tokenId) internal virtual {

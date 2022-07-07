@@ -50,9 +50,6 @@ contract FNFTSingleFactory is
     /// @notice the % of tokens required to be voting for an auction to start
     uint256 public override minVotePercentage;
 
-    /// @notice fee exclusion for swaps
-    uint256 public override swapFee;
-
     function __FNFTSingleFactory_init(address _vaultManager, address _fnftSingle) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
         if (_fnftSingle == address(0)) revert ZeroAddress();
@@ -110,20 +107,17 @@ contract FNFTSingleFactory is
     function setFactoryFees(
         uint256 _governanceFee,
         uint256 _maxCuratorFee,
-        uint256 _flashLoanFee,
-        uint256 _swapFee
+        uint256 _flashLoanFee
     ) public virtual override onlyOwner {
         if (_governanceFee > 1000) revert FeeTooHigh();
-        if (_swapFee > 500) revert FeeTooHigh();
         if (_flashLoanFee > 500) revert FeeTooHigh();
         if (_maxCuratorFee > 2000) revert FeeTooHigh();
 
         governanceFee = _governanceFee;
         maxCuratorFee = _maxCuratorFee;
         flashLoanFee = _flashLoanFee;
-        swapFee = _swapFee;
 
-        emit FactoryFeesUpdated(_governanceFee, _maxCuratorFee, _flashLoanFee, _swapFee);
+        emit FactoryFeesUpdated(_governanceFee, _maxCuratorFee, _flashLoanFee);
     }
 
     function setFactoryThresholds(

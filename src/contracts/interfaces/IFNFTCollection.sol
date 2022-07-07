@@ -14,8 +14,6 @@ interface IFNFTCollection is IERC20Upgradeable {
 
     function curator() external view returns (address);
 
-    function pair() external view returns (address);
-
     function assetAddress() external view returns (address);
 
     function factory() external view returns (IFNFTCollectionFactory);

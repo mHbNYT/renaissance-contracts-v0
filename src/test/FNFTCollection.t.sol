@@ -514,20 +514,20 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   function testSetFlashLoanFeeTooHigh() public {
     vm.expectRevert(IFNFTCollectionFactory.FeeTooHigh.selector);
     // set flashLoanFee to 501
-    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 501, 0);
+    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 501);
   }
 
   function testSetFlashLoanFeeNotOwner() public {
     vm.expectRevert("Ownable: caller is not the owner");
     vm.prank(address(1));
     // set flashLoanFee to 499
-    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 499, 0);
+    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 499);
   }
 
   function testFlashLoanGood() public {
     mintVaultTokens(1);
     // set flashLoanFee to 100 (1%)
-    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100, 0);
+    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100);
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
@@ -552,7 +552,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   function testFlashLoanGoodFeeExcluded() public {
     mintVaultTokens(1);
     // set flashLoanFee to 100 (1%)
-    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100, 0);
+    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100);
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vaultManager.setFeeExclusion(address(flashBorrower), true);
@@ -574,7 +574,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   function testFlashLoanBad() public {
     mintVaultTokens(1);
     // set flashLoanFee to 100 (1%)
-    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100, 0);
+    fnftCollectionFactory.setFactoryFees(0.1 ether, 0.05 ether, 0.1 ether, 0.05 ether, 0.1 ether, 100);
 
     FlashBorrower flashBorrower = new FlashBorrower(address(vault));
     vault.transfer(address(flashBorrower), 0.01 ether); // for fees
