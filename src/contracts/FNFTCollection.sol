@@ -56,6 +56,11 @@ contract FNFTCollection is
     bool public override enableTargetRedeem;
     bool public override enableRandomSwap;
     bool public override enableTargetSwap;
+    bool public override enableBid;
+
+    /// @notice only used for ERC-721 tokens
+    mapping (uint256 => address) public depositors;
+    mapping (uint256 => Auction) public auctions;
 
     function __FNFTCollection_init(
         string memory _name,
@@ -253,6 +258,7 @@ contract FNFTCollection is
         returns (uint256[] memory)
     {
         _onlyOwnerIfPaused(2);
+        if (enableBid) revert BidEnabled();
         if (amount != specificIds.length && !enableRandomRedeem) revert RandomRedeemDisabled();
         if (specificIds.length != 0 && !enableTargetRedeem) revert TargetRedeemDisabled();
 
@@ -334,6 +340,8 @@ contract FNFTCollection is
         address to
     ) public override virtual nonReentrant returns (uint256[] memory) {
         _onlyOwnerIfPaused(3);
+        if (enableBid) revert BidEnabled();
+
         uint256 count;
         if (is1155) {
             for (uint256 i; i < tokenIds.length; ++i) {
@@ -361,6 +369,72 @@ contract FNFTCollection is
 
         emit Swapped(tokenIds, amounts, specificIds, ids, to);
         return ids;
+    }
+
+    function startAuction(uint256 tokenId, uint256 price) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Inactive) revert AuctionLive();
+        if (price < BASE) revert BidTooLow();
+
+        _burn(msg.sender, price);
+
+        auctions[tokenId] = Auction({
+            livePrice: price,
+            end: block.timestamp + 3 days,
+            state: AuctionState.Live,
+            winning: msg.sender
+        });
+
+        emit AuctionStarted(msg.sender, price);
+    }
+
+    function bid(uint256 tokenId, uint256 price) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
+        // TODO: min bid increase?
+        uint256 livePrice = auctions[tokenId].livePrice;
+        if (price <= livePrice) revert BidTooLow();
+
+        uint256 auctionEnd = auctions[tokenId].end;
+        if (block.timestamp >= auctionEnd) revert AuctionEnded();
+
+        _burn(msg.sender, price);
+        _mint(auctions[tokenId].winning, livePrice);
+
+        auctions[tokenId].livePrice = price;
+        auctions[tokenId].winning = msg.sender;
+
+        if (auctionEnd - block.timestamp <= 15 minutes) {
+            auctions[tokenId].end += 15 minutes;
+        }
+
+        emit BidMade(msg.sender, price);
+    }
+
+    function endAuction(uint256 tokenId) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
+        if (block.timestamp < auctions[tokenId].end) revert AuctionNotEnded();
+
+        address winner = auctions[tokenId].winning;
+        uint256 price = auctions[tokenId].livePrice;
+
+        auctions[tokenId].livePrice = 0;
+        auctions[tokenId].end = 0;
+        auctions[tokenId].state = AuctionState.Inactive;
+        auctions[tokenId].winning = address(0);
+
+        uint256 premium = price - BASE;
+        if (premium > 0) _mint(depositors[tokenId], premium);
+
+        uint256[] memory withdrawTokenIds = new uint256[](1);
+        withdrawTokenIds[0] = tokenId;
+        _withdrawNFTsTo(1, withdrawTokenIds, winner);
+
+        emit AuctionWon(winner, price);
     }
 
     function targetRedeemFee() public view override virtual returns (uint256) {
@@ -471,6 +545,7 @@ contract FNFTCollection is
                 //      - If not, it means we have not yet accounted for this NFT, so we continue.
                 //   -If not, we "pull" it from the msg.sender and add to holdings.
                 _transferFromERC721(_assetAddress, tokenId);
+                depositors[tokenId] = msg.sender;
                 holdings.add(tokenId);
             }
             return length;
@@ -569,6 +644,7 @@ contract FNFTCollection is
                 );
             } else {
                 holdings.remove(tokenId);
+                delete depositors[tokenId];
                 _transferERC721(_assetAddress, to, tokenId);
             }
         }

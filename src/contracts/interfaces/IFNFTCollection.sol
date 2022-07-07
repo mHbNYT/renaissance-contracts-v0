@@ -10,6 +10,15 @@ import "./IVaultManager.sol";
 import "../token/ERC20Upgradeable.sol";
 
 interface IFNFTCollection is IERC20Upgradeable {
+    enum AuctionState { Inactive, Live, Ended }
+
+    struct Auction {
+        uint256 livePrice;
+        uint256 end;
+        AuctionState state;
+        address winning;
+    }
+
     function vaultManager() external view returns (IVaultManager);
 
     function curator() external view returns (address);
@@ -33,6 +42,8 @@ interface IFNFTCollection is IERC20Upgradeable {
     function enableRandomSwap() external view returns (bool);
 
     function enableTargetSwap() external view returns (bool);
+
+    function enableBid() external view returns (bool);
 
     function quantity1155(uint256) external view returns (uint256);
 
@@ -59,8 +70,6 @@ interface IFNFTCollection is IERC20Upgradeable {
     function shutdown(address recipient) external;
 
     function version() external returns (string memory);
-
-    event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
     function __FNFTCollection_init(
         string calldata _name,
@@ -140,6 +149,10 @@ interface IFNFTCollection is IERC20Upgradeable {
         address to
     ) external returns (uint256[] calldata);
 
+    function startAuction(uint256 tokenId, uint256 price) external;
+    function bid(uint256 tokenId, uint256 price) external;
+    function endAuction(uint256 tokenId) external;
+
     function flashFee(address borrowedToken, uint256 amount) external view returns (uint256);
 
     function flashLoan(
@@ -154,12 +167,15 @@ interface IFNFTCollection is IERC20Upgradeable {
         view
         returns (bool);
 
-    event VaultInit(
-        uint256 indexed vaultId,
-        address assetAddress,
-        bool is1155,
-        bool allowAllItems
-    );
+    // /// @notice An event emitted when someone redeems all tokens for the NFT
+    // event TokenRedeemed(address indexed redeemer);
+
+    /// @notice An event emitted when an auction starts
+    event AuctionStarted(address indexed buyer, uint256 price);
+    /// @notice An event emitted when an auction is won
+    event AuctionWon(address indexed buyer, uint256 price);
+    /// @notice An event emitted when a bid is made
+    event BidMade(address indexed buyer, uint256 price);
     event CuratorUpdated(address oldCurator, address newCurator);
     event EligibilityDeployed(uint256 moduleIndex, address eligibilityAddr);
     event EnableMintUpdated(bool enabled);
@@ -176,7 +192,21 @@ interface IFNFTCollection is IERC20Upgradeable {
         uint256[] redeemedIds,
         address to
     );
+    event VaultInit(
+        uint256 indexed vaultId,
+        address assetAddress,
+        bool is1155,
+        bool allowAllItems
+    );
+    event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
+    error AuctionEnded();
+    error AuctionLive();
+    error AuctionNotEnded();
+    error AuctionNotLive();
+    error BidDisabled();
+    error BidEnabled();
+    error BidTooLow();
     error EligibilityAlreadySet();
     error FeeTooHigh();
     error IneligibleNFTs();
