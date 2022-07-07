@@ -17,7 +17,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1,  // FIXME: make FNFTSingleFactory compile w/ 2m runs
+            runs: 200,
           },
         },
       },
@@ -26,7 +26,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 2_000_000,
+            runs: 200,
           },
         },
       },
