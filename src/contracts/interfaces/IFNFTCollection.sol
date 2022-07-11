@@ -173,7 +173,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     /// @notice An event emitted when an auction starts
     event AuctionStarted(address indexed buyer, uint256 price);
     /// @notice An event emitted when an auction is won
-    event AuctionWon(address indexed buyer, uint256 price);
+    event AuctionWon(address indexed buyer, uint256 tokenId, uint256 price);
     /// @notice An event emitted when a bid is made
     event BidMade(address indexed buyer, uint256 price);
     event CuratorUpdated(address oldCurator, address newCurator);

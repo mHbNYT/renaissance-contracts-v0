@@ -434,7 +434,7 @@ contract FNFTCollection is
         withdrawTokenIds[0] = tokenId;
         _withdrawNFTsTo(1, withdrawTokenIds, winner);
 
-        emit AuctionWon(winner, price);
+        emit AuctionWon(winner, tokenId, price);
     }
 
     function targetRedeemFee() public view override virtual returns (uint256) {
