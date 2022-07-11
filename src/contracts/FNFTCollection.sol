@@ -62,6 +62,9 @@ contract FNFTCollection is
     mapping (uint256 => address) public depositors;
     mapping (uint256 => Auction) public auctions;
 
+    /// @notice the length of auctions
+    uint256 public override auctionLength;
+
     function __FNFTCollection_init(
         string memory _name,
         string memory _symbol,
@@ -82,6 +85,7 @@ contract FNFTCollection is
         vaultId = vaultManager.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
+        auctionLength = 3 days;
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
     }
 
@@ -318,6 +322,18 @@ contract FNFTCollection is
         emit EnableTargetSwapUpdated(_enableTargetSwap);
     }
 
+    /// @notice allow curator to update the auction length
+    /// @param _length the new base price
+    function setAuctionLength(uint256 _auctionLength) external override {
+        _onlyPrivileged();
+        if (
+            _auctionLength < factory.minAuctionLength() || _auctionLength > factory.maxAuctionLength()
+        ) revert InvalidAuctionLength();
+
+        auctionLength = _auctionLength;
+        emit AuctionLengthUpdated(_auctionLength);
+    }
+
     function shutdown(address recipient) public override onlyOwner {
         uint256 numItems = totalSupply() / BASE;
         if (numItems >= 4) revert TooManyNFTs();
@@ -381,7 +397,7 @@ contract FNFTCollection is
 
         auctions[tokenId] = Auction({
             livePrice: price,
-            end: block.timestamp + 3 days,
+            end: block.timestamp + auctionLength,
             state: AuctionState.Live,
             winning: msg.sender
         });

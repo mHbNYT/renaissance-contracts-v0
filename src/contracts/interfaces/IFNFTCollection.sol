@@ -45,6 +45,8 @@ interface IFNFTCollection is IERC20Upgradeable {
 
     function enableBid() external view returns (bool);
 
+    function auctionLength() external view returns (uint256);
+
     function quantity1155(uint256) external view returns (uint256);
 
     function vaultId() external view returns (uint256);
@@ -102,6 +104,9 @@ interface IFNFTCollection is IERC20Upgradeable {
         uint256 _randomSwapFee,
         uint256 _targetSwapFee
     ) external;
+
+    function setAuctionLength(uint256 _auctionLength) external;
+
     function disableVaultFees() external;
 
     // This function allows for an easy setup of any eligibility module contract from the EligibilityManager.
@@ -170,6 +175,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     // /// @notice An event emitted when someone redeems all tokens for the NFT
     // event TokenRedeemed(address indexed redeemer);
 
+    event AuctionLengthUpdated(uint256 length);
     /// @notice An event emitted when an auction starts
     event AuctionStarted(address indexed buyer, uint256 price);
     /// @notice An event emitted when an auction is won
@@ -210,6 +216,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     error EligibilityAlreadySet();
     error FeeTooHigh();
     error IneligibleNFTs();
+    error InvalidAuctionLength();
     error MintDisabled();
     error NFTAlreadyInCollection();
     error NotCurator();
