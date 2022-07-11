@@ -38,6 +38,8 @@ interface IFNFTCollectionFactory is IBeacon {
 
   function minAuctionLength() external view returns (uint256);
 
+  function minBidIncrease() external view returns (uint256);
+
   // Write functions.
   function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external;
 

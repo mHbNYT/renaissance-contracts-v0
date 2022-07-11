@@ -409,9 +409,9 @@ contract FNFTCollection is
         _onlyOwnerIfPaused(1);
         if (!enableBid || is1155) revert BidDisabled();
         if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
-        // TODO: min bid increase?
         uint256 livePrice = auctions[tokenId].livePrice;
-        if (price <= livePrice) revert BidTooLow();
+        uint256 increase = factory.minBidIncrease() + 10000;
+        if (price * 10000 < livePrice * increase) revert BidTooLow();
 
         uint256 auctionEnd = auctions[tokenId].end;
         if (block.timestamp >= auctionEnd) revert AuctionEnded();
