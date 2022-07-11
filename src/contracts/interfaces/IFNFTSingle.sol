@@ -115,8 +115,6 @@ interface IFNFTSingle  is IERC20Upgradeable {
         string calldata symbol_
     ) external;
 
-    function setAuctionLength(uint256 _auctionLength) external;
-
     /// @notice An event emitted when a user updates their price
     event PriceUpdated(address indexed user, uint256 price);
     /// @notice An event emitted when an auction starts

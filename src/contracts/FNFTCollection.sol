@@ -323,7 +323,7 @@ contract FNFTCollection is
     }
 
     /// @notice allow curator to update the auction length
-    /// @param _length the new base price
+    /// @param _auctionLength the new base price
     function setAuctionLength(uint256 _auctionLength) external override {
         _onlyPrivileged();
         if (

@@ -79,6 +79,7 @@ interface IFNFTCollectionFactory is IBeacon {
 
   function disableVaultFees(uint256 vaultId) external;
 
+  event FactoryThresholdsUpdated(uint256 maxAuctionLength, uint256 minAuctionLength, uint256 minBidIncrease);
   event FeeDistributorUpdated(address oldFeeDistributor, address newFeeDistributor);
   event FeeExclusionUpdated(address target, bool excluded);
   event PriceOracleUpdated(address oldPriceOracle, address newPriceOracle);
