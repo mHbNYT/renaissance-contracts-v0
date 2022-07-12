@@ -353,6 +353,17 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
     vault = FNFTCollection(vaultManager.vault(uint256(0)));
   }
 
+  function testSetMinBidIncrease() public {
+    vm.expectRevert(IFNFTCollectionFactory.MinBidIncreaseOutOfBounds.selector);
+    fnftCollectionFactory.setFactoryThresholds(8 weeks, 1 days, 99);
+
+    vm.expectRevert(IFNFTCollectionFactory.MinBidIncreaseOutOfBounds.selector);
+    fnftCollectionFactory.setFactoryThresholds(8 weeks, 1 days, 1001);
+
+    fnftCollectionFactory.setFactoryThresholds(8 weeks, 1 days, 1000);
+    assertEq(fnftCollectionFactory.minBidIncrease(), 1000);
+  }
+
   function mintVaultTokens(uint256 numberOfTokens) private {
     createVault();
 
