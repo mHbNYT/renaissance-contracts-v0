@@ -48,6 +48,9 @@ contract FNFTCollection is
     uint256 public override vaultId;
     uint256 private randNonce;
 
+    /// @notice the length of auctions
+    uint256 public override auctionLength;
+
     address public override assetAddress;
     bool public override is1155;
     bool public override allowAllItems;
@@ -56,6 +59,11 @@ contract FNFTCollection is
     bool public override enableTargetRedeem;
     bool public override enableRandomSwap;
     bool public override enableTargetSwap;
+    bool public override enableBid;
+
+    /// @notice only used for ERC-721 tokens
+    mapping (uint256 => address) public depositors;
+    mapping (uint256 => Auction) public auctions;
 
     function __FNFTCollection_init(
         string memory _name,
@@ -68,7 +76,7 @@ contract FNFTCollection is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
         if (_assetAddress == address(0)) revert ZeroAddress();
-        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/);
+        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/, false /*enableBid*/);
         IFNFTCollectionFactory _factory = IFNFTCollectionFactory(msg.sender);
         vaultManager = IVaultManager(_factory.vaultManager());
         assetAddress = _assetAddress;
@@ -77,6 +85,7 @@ contract FNFTCollection is
         vaultId = vaultManager.numVaults();
         is1155 = _is1155;
         allowAllItems = _allowAllItems;
+        auctionLength = 3 days;
         emit VaultInit(vaultId, _assetAddress, _is1155, _allowAllItems);
     }
 
@@ -253,6 +262,7 @@ contract FNFTCollection is
         returns (uint256[] memory)
     {
         _onlyOwnerIfPaused(2);
+        if (enableBid) revert BidEnabled();
         if (amount != specificIds.length && !enableRandomRedeem) revert RandomRedeemDisabled();
         if (specificIds.length != 0 && !enableTargetRedeem) revert TargetRedeemDisabled();
 
@@ -296,7 +306,8 @@ contract FNFTCollection is
         bool _enableRandomRedeem,
         bool _enableTargetRedeem,
         bool _enableRandomSwap,
-        bool _enableTargetSwap
+        bool _enableTargetSwap,
+        bool _enableBid
     ) public override virtual {
         _onlyPrivileged();
         enableMint = _enableMint;
@@ -304,12 +315,26 @@ contract FNFTCollection is
         enableTargetRedeem = _enableTargetRedeem;
         enableRandomSwap = _enableRandomSwap;
         enableTargetSwap = _enableTargetSwap;
+        enableBid = _enableBid;
 
         emit EnableMintUpdated(_enableMint);
         emit EnableRandomRedeemUpdated(_enableRandomRedeem);
         emit EnableTargetRedeemUpdated(_enableTargetRedeem);
         emit EnableRandomSwapUpdated(_enableRandomSwap);
         emit EnableTargetSwapUpdated(_enableTargetSwap);
+        emit EnableBidUpdated(_enableBid);
+    }
+
+    /// @notice allow curator to update the auction length
+    /// @param _auctionLength the new base price
+    function setAuctionLength(uint256 _auctionLength) external override {
+        _onlyPrivileged();
+        if (
+            _auctionLength < factory.minAuctionLength() || _auctionLength > factory.maxAuctionLength()
+        ) revert InvalidAuctionLength();
+
+        auctionLength = _auctionLength;
+        emit AuctionLengthUpdated(_auctionLength);
     }
 
     function shutdown(address recipient) public override onlyOwner {
@@ -334,6 +359,8 @@ contract FNFTCollection is
         address to
     ) public override virtual nonReentrant returns (uint256[] memory) {
         _onlyOwnerIfPaused(3);
+        if (enableBid) revert BidEnabled();
+
         uint256 count;
         if (is1155) {
             for (uint256 i; i < tokenIds.length; ++i) {
@@ -361,6 +388,89 @@ contract FNFTCollection is
 
         emit Swapped(tokenIds, amounts, specificIds, ids, to);
         return ids;
+    }
+
+    function startAuction(uint256 tokenId, uint256 price) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Inactive) revert AuctionLive();
+        if (price < BASE) revert BidTooLow();
+
+        _burn(msg.sender, price);
+
+        auctions[tokenId] = Auction({
+            livePrice: price,
+            end: block.timestamp + auctionLength,
+            state: AuctionState.Live,
+            winning: msg.sender
+        });
+
+        emit AuctionStarted(msg.sender, tokenId, price);
+    }
+
+    function bid(uint256 tokenId, uint256 price) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
+        uint256 livePrice = auctions[tokenId].livePrice;
+        uint256 increase = factory.minBidIncrease() + 10000;
+        if (price * 10000 < livePrice * increase) revert BidTooLow();
+
+        uint256 auctionEnd = auctions[tokenId].end;
+        if (block.timestamp >= auctionEnd) revert AuctionEnded();
+
+        _burn(msg.sender, price);
+        _mint(auctions[tokenId].winning, livePrice);
+
+        auctions[tokenId].livePrice = price;
+        auctions[tokenId].winning = msg.sender;
+
+        if (auctionEnd - block.timestamp <= 15 minutes) {
+            auctions[tokenId].end += 15 minutes;
+        }
+
+        emit BidMade(msg.sender, tokenId, price);
+    }
+
+    function endAuction(uint256 tokenId) external override {
+        _onlyOwnerIfPaused(1);
+        if (!enableBid || is1155) revert BidDisabled();
+        if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
+        if (block.timestamp < auctions[tokenId].end) revert AuctionNotEnded();
+
+        address winner = auctions[tokenId].winning;
+        uint256 price = auctions[tokenId].livePrice;
+
+        auctions[tokenId].livePrice = 0;
+        auctions[tokenId].end = 0;
+        auctions[tokenId].state = AuctionState.Inactive;
+        auctions[tokenId].winning = address(0);
+
+        uint256 premium = price - BASE;
+        if (premium > 0) _mint(depositors[tokenId], premium);
+
+        uint256[] memory withdrawTokenIds = new uint256[](1);
+        withdrawTokenIds[0] = tokenId;
+        _withdrawNFTsTo(1, withdrawTokenIds, winner);
+
+        emit AuctionWon(winner, tokenId, price);
+    }
+
+    function getAuction(uint256 tokenId) external view override returns (uint256, uint256, AuctionState, address) {
+        AuctionState state = auctions[tokenId].state;
+        if (state == AuctionState.Inactive) revert AuctionNotLive();
+
+        return (
+            auctions[tokenId].livePrice,
+            auctions[tokenId].end,
+            state,
+            auctions[tokenId].winning
+        );
+    }
+
+    function getDepositor(uint256 tokenId) external view override returns (address depositor) {
+        depositor = depositors[tokenId];
+        if (depositor == address(0)) revert NotInVault();
     }
 
     function targetRedeemFee() public view override virtual returns (uint256) {
@@ -471,6 +581,7 @@ contract FNFTCollection is
                 //      - If not, it means we have not yet accounted for this NFT, so we continue.
                 //   -If not, we "pull" it from the msg.sender and add to holdings.
                 _transferFromERC721(_assetAddress, tokenId);
+                depositors[tokenId] = msg.sender;
                 holdings.add(tokenId);
             }
             return length;
@@ -569,6 +680,7 @@ contract FNFTCollection is
                 );
             } else {
                 holdings.remove(tokenId);
+                delete depositors[tokenId];
                 _transferERC721(_assetAddress, to, tokenId);
             }
         }

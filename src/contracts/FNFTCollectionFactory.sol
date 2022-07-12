@@ -29,6 +29,15 @@ contract FNFTCollectionFactory is
     address public override eligibilityManager;
     uint256 public override flashLoanFee;
 
+    /// @notice the maximum auction length
+    uint256 public override maxAuctionLength;
+
+    /// @notice the minimum auction length
+    uint256 public override minAuctionLength;
+
+    /// @notice the % bid increase required for a new bid
+    uint256 public override minBidIncrease;
+
     function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external override initializer {
         if (_vaultManager == address(0)) revert ZeroAddress();
         if (_fnftCollection == address(0)) revert ZeroAddress();
@@ -40,6 +49,9 @@ contract FNFTCollectionFactory is
         factoryTargetRedeemFee = uint64(0.1 ether);
         factoryRandomSwapFee = uint64(0.05 ether);
         factoryTargetSwapFee = uint64(0.1 ether);
+        maxAuctionLength = 2 weeks;
+        minAuctionLength = 3 days;
+        minBidIncrease = 500; // 5%
     }
 
     function createVault(
@@ -117,6 +129,23 @@ contract FNFTCollectionFactory is
             _factoryTargetSwapFee,
             _flashLoanFee
         );
+    }
+
+    function setFactoryThresholds(
+        uint256 _maxAuctionLength,
+        uint256 _minAuctionLength,
+        uint256 _minBidIncrease
+    ) public virtual override onlyOwner {
+        if (_minAuctionLength < 1 days || _minAuctionLength >= maxAuctionLength) revert MinAuctionLengthOutOfBounds();
+        if (_maxAuctionLength > 8 weeks || _maxAuctionLength <= minAuctionLength) revert MaxAuctionLengthOutOfBounds();
+
+        if (_minBidIncrease > 1000 || _minBidIncrease < 100) revert MinBidIncreaseOutOfBounds();
+
+        maxAuctionLength = _maxAuctionLength;
+        minAuctionLength = _minAuctionLength;
+        minBidIncrease = _minBidIncrease;
+
+        emit FactoryThresholdsUpdated(_maxAuctionLength, _minAuctionLength, _minBidIncrease);
     }
 
     function setVaultFees(

@@ -34,6 +34,12 @@ interface IFNFTCollectionFactory is IBeacon {
 
   function flashLoanFee() external view returns (uint256);
 
+  function maxAuctionLength() external view returns (uint256);
+
+  function minAuctionLength() external view returns (uint256);
+
+  function minBidIncrease() external view returns (uint256);
+
   // Write functions.
   function __FNFTCollectionFactory_init(address _vaultManager, address _fnftCollection) external;
 
@@ -56,6 +62,12 @@ interface IFNFTCollectionFactory is IBeacon {
     uint256 _flashLoanFee
   ) external;
 
+  function setFactoryThresholds(
+      uint256 _maxAuctionLength,
+      uint256 _minAuctionLength,
+      uint256 _minBidIncrease
+  ) external;
+
   function setVaultFees(
       uint256 vaultId,
       uint256 _mintFee,
@@ -67,6 +79,7 @@ interface IFNFTCollectionFactory is IBeacon {
 
   function disableVaultFees(uint256 vaultId) external;
 
+  event FactoryThresholdsUpdated(uint256 maxAuctionLength, uint256 minAuctionLength, uint256 minBidIncrease);
   event FeeDistributorUpdated(address oldFeeDistributor, address newFeeDistributor);
   event FeeExclusionUpdated(address target, bool excluded);
   event PriceOracleUpdated(address oldPriceOracle, address newPriceOracle);
@@ -78,5 +91,8 @@ interface IFNFTCollectionFactory is IBeacon {
 
   error NotVault();
   error FeeTooHigh();
+  error MaxAuctionLengthOutOfBounds();
+  error MinAuctionLengthOutOfBounds();
+  error MinBidIncreaseOutOfBounds();
   error ZeroAddress();
 }
