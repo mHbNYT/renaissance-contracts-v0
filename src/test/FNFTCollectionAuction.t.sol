@@ -168,6 +168,14 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testBidBidTooLow() public {
+    startAuction();
+
+    uint256 newBid = 10499e14;
+    vault.transfer(bidderTwo, newBid);
+
+    vm.prank(bidderTwo);
+    vm.expectRevert(IFNFTCollection.BidTooLow.selector);
+    vault.bid(1, newBid);
   }
 
   function testBidAuctionEnded() public {
