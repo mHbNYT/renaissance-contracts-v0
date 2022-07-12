@@ -122,6 +122,27 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testBid() public {
+    mintVaultTokens(3);
+    vault.setVaultFeatures(true, false, false, false, false, true);
+
+    vault.transfer(bidderOne, 1e18);
+    uint256 newBid = 10500e14;
+    vault.transfer(bidderTwo, newBid);
+
+    vm.prank(bidderOne);
+    vault.startAuction(1, 1e18);
+
+    vm.prank(bidderTwo);
+    vault.bid(1, newBid);
+
+    assertEq(vault.balanceOf(bidderOne), 1e18);
+    assertEq(vault.balanceOf(bidderTwo), 0);
+
+    (uint256 livePrice, uint256 end, IFNFTCollection.AuctionState state, address winning) = vault.getAuction(1);
+    assertEq(livePrice, newBid);
+    assertEq(end, block.timestamp + 3 days);
+    assertEq(uint256(state), 1);
+    assertEq(winning, bidderTwo);
   }
 
   function testBidBidDisabled() public {
