@@ -468,6 +468,11 @@ contract FNFTCollection is
         );
     }
 
+    function getDepositor(uint256 tokenId) external view override returns (address depositor) {
+        depositor = depositors[tokenId];
+        if (depositor == address(0)) revert NotInVault();
+    }
+
     function targetRedeemFee() public view override virtual returns (uint256) {
         (, , uint256 _targetRedeemFee, ,) = factory.vaultFees(vaultId);
         return _targetRedeemFee;

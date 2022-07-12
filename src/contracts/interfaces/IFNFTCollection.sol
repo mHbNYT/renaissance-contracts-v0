@@ -174,6 +174,7 @@ interface IFNFTCollection is IERC20Upgradeable {
         returns (bool);
 
     function getAuction(uint256 tokenId) external view returns (uint256, uint256, AuctionState, address);
+    function getDepositor(uint256 tokenId) external view returns (address);
 
     // /// @notice An event emitted when someone redeems all tokens for the NFT
     // event TokenRedeemed(address indexed redeemer);
@@ -225,6 +226,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     error NFTAlreadyInCollection();
     error NotCurator();
     error NotNFTOwner();
+    error NotInVault();
     error NotOwner();
     error Paused();
     error RandomRedeemDisabled();

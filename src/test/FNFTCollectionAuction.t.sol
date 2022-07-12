@@ -213,6 +213,26 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testEndAuction() public {
+    startAuction();
+
+    uint256 newBid = 10500e14;
+    vault.transfer(bidderTwo, newBid);
+
+    address depositor = address(this);
+    uint256 currentDepositorBalance = vault.balanceOf(depositor);
+
+    vm.prank(bidderTwo);
+    vault.bid(1, newBid);
+    vm.warp(block.timestamp + 3 days);
+    vault.endAuction(1);
+
+    vm.expectRevert(IFNFTCollection.AuctionNotLive.selector);
+    vault.getAuction(1);
+
+    assertEq(vault.balanceOf(depositor), currentDepositorBalance + 500e14);
+    assertEq(token.ownerOf(1), bidderTwo);
+    vm.expectRevert(IFNFTCollection.NotInVault.selector);
+    vault.getDepositor(1);
   }
 
   function testEndAuctionBidDisabled() public {
