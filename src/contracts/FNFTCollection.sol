@@ -48,6 +48,9 @@ contract FNFTCollection is
     uint256 public override vaultId;
     uint256 private randNonce;
 
+    /// @notice the length of auctions
+    uint256 public override auctionLength;
+
     address public override assetAddress;
     bool public override is1155;
     bool public override allowAllItems;
@@ -61,9 +64,6 @@ contract FNFTCollection is
     /// @notice only used for ERC-721 tokens
     mapping (uint256 => address) public depositors;
     mapping (uint256 => Auction) public auctions;
-
-    /// @notice the length of auctions
-    uint256 public override auctionLength;
 
     function __FNFTCollection_init(
         string memory _name,
