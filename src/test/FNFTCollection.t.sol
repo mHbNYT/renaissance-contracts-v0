@@ -159,13 +159,14 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
   function testSetVaultFeatures() public {
     createVault();
 
-    vault.setVaultFeatures(false, false, false, false, false);
+    vault.setVaultFeatures(false, false, false, false, false, true);
 
     assertTrue(!vault.enableMint());
     assertTrue(!vault.enableRandomRedeem());
     assertTrue(!vault.enableTargetRedeem());
     assertTrue(!vault.enableRandomSwap());
     assertTrue(!vault.enableTargetSwap());
+    assertTrue(vault.enableBid());
   }
 
   function testVaultMint() public {
@@ -253,7 +254,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     uint256[] memory amounts = new uint256[](0);
 
-    vault.setVaultFeatures(false, true, true, true, true);
+    vault.setVaultFeatures(false, true, true, true, true, false);
 
     vm.expectRevert(IFNFTCollection.MintDisabled.selector);
     vault.mint(tokenIds, amounts);
@@ -302,7 +303,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     redeemTokenIds[0] = 1;
     redeemTokenIds[1] = 3;
 
-    vault.setVaultFeatures(true, true, false, true, true);
+    vault.setVaultFeatures(true, true, false, true, true, false);
 
     vm.prank(address(1));
     vm.expectRevert(IFNFTCollection.TargetRedeemDisabled.selector);
@@ -353,7 +354,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
 
     vault.transfer(address(1), 2.1 ether);
 
-    vault.setVaultFeatures(true, false, true, true, true);
+    vault.setVaultFeatures(true, false, true, true, true, false);
 
     vm.prank(address(1));
     vm.expectRevert(IFNFTCollection.RandomRedeemDisabled.selector);
@@ -425,7 +426,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     uint256[] memory specificIds = new uint256[](1);
     specificIds[0] = 2;
 
-    vault.setVaultFeatures(true, true, true, true, false);
+    vault.setVaultFeatures(true, true, true, true, false, false);
 
     failedSwap(tokenIds, specificIds, IFNFTCollection.TargetSwapDisabled.selector);
   }
@@ -491,7 +492,7 @@ contract FNFTCollectionTest is DSTest, SetupEnvironment {
     tokenIds[0] = 3;
     token.mint(address(1), 3);
 
-    vault.setVaultFeatures(true, true, true, false, true);
+    vault.setVaultFeatures(true, true, true, false, true, false);
 
     failedSwap(tokenIds, new uint256[](0), IFNFTCollection.RandomSwapDisabled.selector);
   }

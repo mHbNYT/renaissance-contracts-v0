@@ -94,7 +94,8 @@ interface IFNFTCollection is IERC20Upgradeable {
         bool _enableRandomRedeem,
         bool _enableTargetRedeem,
         bool _enableRandomSwap,
-        bool _enableTargetSwap
+        bool _enableTargetSwap,
+        bool _enableBid
     ) external;
 
     function setFees(
@@ -184,6 +185,7 @@ interface IFNFTCollection is IERC20Upgradeable {
     event BidMade(address indexed buyer, uint256 tokenId, uint256 price);
     event CuratorUpdated(address oldCurator, address newCurator);
     event EligibilityDeployed(uint256 moduleIndex, address eligibilityAddr);
+    event EnableBidUpdated(bool enabled);
     event EnableMintUpdated(bool enabled);
     event EnableRandomRedeemUpdated(bool enabled);
     event EnableTargetRedeemUpdated(bool enabled);

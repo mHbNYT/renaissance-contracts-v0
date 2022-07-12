@@ -76,7 +76,7 @@ contract FNFTCollection is
         __Ownable_init();
         __ERC20_init(_name, _symbol);
         if (_assetAddress == address(0)) revert ZeroAddress();
-        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/);
+        setVaultFeatures(true /*enableMint*/, true /*enableRandomRedeem*/, true /*enableTargetRedeem*/, true /*enableRandomSwap*/, true /*enableTargetSwap*/, false /*enableBid*/);
         IFNFTCollectionFactory _factory = IFNFTCollectionFactory(msg.sender);
         vaultManager = IVaultManager(_factory.vaultManager());
         assetAddress = _assetAddress;
@@ -306,7 +306,8 @@ contract FNFTCollection is
         bool _enableRandomRedeem,
         bool _enableTargetRedeem,
         bool _enableRandomSwap,
-        bool _enableTargetSwap
+        bool _enableTargetSwap,
+        bool _enableBid
     ) public override virtual {
         _onlyPrivileged();
         enableMint = _enableMint;
@@ -314,12 +315,14 @@ contract FNFTCollection is
         enableTargetRedeem = _enableTargetRedeem;
         enableRandomSwap = _enableRandomSwap;
         enableTargetSwap = _enableTargetSwap;
+        enableBid = _enableBid;
 
         emit EnableMintUpdated(_enableMint);
         emit EnableRandomRedeemUpdated(_enableRandomRedeem);
         emit EnableTargetRedeemUpdated(_enableTargetRedeem);
         emit EnableRandomSwapUpdated(_enableRandomSwap);
         emit EnableTargetSwapUpdated(_enableTargetSwap);
+        emit EnableBidUpdated(_enableBid);
     }
 
     /// @notice allow curator to update the auction length
