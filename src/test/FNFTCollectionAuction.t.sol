@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 import {MockNFT} from "../contracts/mocks/NFT.sol";
+import {Mock1155} from "../contracts/mocks/ERC1155.sol";
 import {console, SetupEnvironment} from "./utils/utils.sol";
 import {FlashBorrower} from "./utils/FlashBorrower.sol";
 import {StakingTokenProvider} from "../contracts/StakingTokenProvider.sol";
@@ -65,6 +66,28 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testStartAuctionFor1155Tokens() public {
+    Mock1155 multiToken = new Mock1155();
+    multiToken.mint(bidderOne, 1, 2);
+    fnftCollectionFactory.createVault(address(multiToken), true, true, "Doodles", "DOODLE");
+    vault = FNFTCollection(vaultManager.vault(uint256(0)));
+
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 1;
+
+    vm.prank(bidderOne);
+    multiToken.setApprovalForAll(address(vault), true);
+
+    uint256[] memory amounts = new uint256[](1);
+    amounts[0] = 2;
+
+    vault.setVaultFeatures(true, true, true, true, true, true);
+
+    vm.prank(bidderOne);
+    vault.mint(tokenIds, amounts);
+
+    vm.prank(bidderOne);
+    vm.expectRevert(IFNFTCollection.BidDisabled.selector);
+    vault.startAuction(1, 1e18);
   }
 
   function testStartAuctionBidDisabled() public {
