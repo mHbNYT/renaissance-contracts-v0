@@ -426,7 +426,7 @@ contract FNFTCollection is
             auctions[tokenId].end += 15 minutes;
         }
 
-        emit BidMade(msg.sender, price);
+        emit BidMade(msg.sender, tokenId, price);
     }
 
     function endAuction(uint256 tokenId) external override {
