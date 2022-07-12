@@ -131,6 +131,16 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testBidBidDisabled() public {
+    startAuction();
+
+    uint256 newBid = 10500e14;
+    vault.transfer(bidderTwo, newBid);
+
+    vault.setVaultFeatures(true, false, false, false, false, false);
+
+    vm.prank(bidderTwo);
+    vm.expectRevert(IFNFTCollection.BidDisabled.selector);
+    vault.bid(1, newBid);
   }
 
   function testBidPaused() public {
