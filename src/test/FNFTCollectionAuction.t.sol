@@ -293,6 +293,36 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testRedeemSwapBidEnabled() public {
+    mintVaultTokens(2);
+    token.mint(address(1), 3);
+    vault.setVaultFeatures(true, true, true, true, true, true);
+
+    vault.transfer(address(1), 1e18);
+
+    vm.startPrank(address(1));
+
+    vm.expectRevert(IFNFTCollection.BidEnabled.selector);
+    vault.redeem(1, new uint256[](0));
+
+    uint256[] memory specificIds = new uint256[](1);
+    specificIds[0] = 1;
+    vm.expectRevert(IFNFTCollection.BidEnabled.selector);
+    vault.redeem(1, specificIds);
+
+    token.setApprovalForAll(address(vault), true);
+    uint256[] memory tokenIds = new uint256[](1);
+    tokenIds[0] = 3;
+
+    uint256[] memory amounts = new uint256[](1);
+    tokenIds[0] = 1;
+
+    vm.expectRevert(IFNFTCollection.BidEnabled.selector);
+    vault.swap(tokenIds, amounts, new uint256[](0));
+
+    vm.expectRevert(IFNFTCollection.BidEnabled.selector);
+    vault.swap(tokenIds, amounts, specificIds);
+
+    vm.stopPrank();
   }
 
   function createVault() private {
