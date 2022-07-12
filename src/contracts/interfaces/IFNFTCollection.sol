@@ -173,6 +173,8 @@ interface IFNFTCollection is IERC20Upgradeable {
         view
         returns (bool);
 
+    function getAuction(uint256 tokenId) external view returns (uint256, uint256, AuctionState, address);
+
     // /// @notice An event emitted when someone redeems all tokens for the NFT
     // event TokenRedeemed(address indexed redeemer);
 

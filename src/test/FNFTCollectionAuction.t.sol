@@ -24,7 +24,10 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   VaultManager private vaultManager;
   FNFTCollectionFactory private fnftCollectionFactory;
   FNFTCollection private vault;
-  MockNFT public token;
+  MockNFT private token;
+
+  address private bidderOne = address(1);
+  address private bidderTwo = address(2);
 
   function setUp() public {
     setupEnvironment(10 ether);
@@ -42,7 +45,31 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
     token = new MockNFT();
   }
 
+  function testGetAuctionInactive() public {
+    mintVaultTokens(1);
+    vault.setVaultFeatures(true, false, false, false, false, true);
+
+    vm.expectRevert(IFNFTCollection.AuctionNotLive.selector);
+    vault.getAuction(1);
+  }
+
   function testStartAuction() public {
+    mintVaultTokens(2);
+    vault.setVaultFeatures(true, false, false, false, false, true);
+
+    vault.transfer(bidderOne, 1e18);
+
+    vm.prank(bidderOne);
+    vault.startAuction(1, 1e18);
+    assertEq(vault.balanceOf(bidderOne), 0);
+    (uint256 livePrice, uint256 end, IFNFTCollection.AuctionState state, address winning) = vault.getAuction(1);
+    assertEq(livePrice, 1e18);
+    assertEq(end, block.timestamp + 3 days);
+    assertEq(uint256(state), 1);
+    assertEq(winning, bidderOne);
+  }
+
+  function testStartAuctionFor1155Tokens() public {
   }
 
   function testStartAuctionBidDisabled() public {

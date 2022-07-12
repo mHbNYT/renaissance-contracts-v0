@@ -456,6 +456,18 @@ contract FNFTCollection is
         emit AuctionWon(winner, tokenId, price);
     }
 
+    function getAuction(uint256 tokenId) external view override returns (uint256, uint256, AuctionState, address) {
+        AuctionState state = auctions[tokenId].state;
+        if (state == AuctionState.Inactive) revert AuctionNotLive();
+
+        return (
+            auctions[tokenId].livePrice,
+            auctions[tokenId].end,
+            state,
+            auctions[tokenId].winning
+        );
+    }
+
     function targetRedeemFee() public view override virtual returns (uint256) {
         (, , uint256 _targetRedeemFee, ,) = factory.vaultFees(vaultId);
         return _targetRedeemFee;
