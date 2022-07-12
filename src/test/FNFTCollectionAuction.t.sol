@@ -73,6 +73,13 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testStartAuctionBidDisabled() public {
+    mintVaultTokens(2);
+
+    vault.transfer(bidderOne, 1e18);
+
+    vm.expectRevert(IFNFTCollection.BidDisabled.selector);
+    vm.prank(bidderOne);
+    vault.startAuction(1, 1e18);
   }
 
   function testStartAuctionPaused() public {
