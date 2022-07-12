@@ -192,6 +192,24 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testBidExtendAuctionDuration() public {
+    startAuction();
+
+    uint256 newBid = 10500e14;
+    vault.transfer(bidderTwo, newBid);
+
+    (,uint256 end,,) = vault.getAuction(1);
+
+    vm.warp(end - 15 minutes);
+    uint256 newEnd = end + 15 minutes;
+
+    vm.prank(bidderTwo);
+    vault.bid(1, newBid);
+
+    (uint256 livePrice, uint256 endAfterBid, IFNFTCollection.AuctionState state, address winning) = vault.getAuction(1);
+    assertEq(livePrice, newBid);
+    assertEq(endAfterBid, newEnd);
+    assertEq(uint256(state), 1);
+    assertEq(winning, bidderTwo);
   }
 
   function testEndAuction() public {
