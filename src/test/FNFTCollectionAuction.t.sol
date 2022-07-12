@@ -54,13 +54,8 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testStartAuction() public {
-    mintVaultTokens(2);
-    vault.setVaultFeatures(true, false, false, false, false, true);
+    startAuction();
 
-    vault.transfer(bidderOne, 1e18);
-
-    vm.prank(bidderOne);
-    vault.startAuction(1, 1e18);
     assertEq(vault.balanceOf(bidderOne), 0);
     (uint256 livePrice, uint256 end, IFNFTCollection.AuctionState state, address winning) = vault.getAuction(1);
     assertEq(livePrice, 1e18);
@@ -95,14 +90,9 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testStartAuctionAuctionLive() public {
-    mintVaultTokens(3);
-    vault.setVaultFeatures(true, false, false, false, false, true);
+    startAuction();
 
-    vault.transfer(bidderOne, 1e18);
     vault.transfer(bidderTwo, 1e18);
-
-    vm.prank(bidderOne);
-    vault.startAuction(1, 1e18);
 
     vm.prank(bidderTwo);
     vm.expectRevert(IFNFTCollection.AuctionLive.selector);
@@ -122,15 +112,10 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testBid() public {
-    mintVaultTokens(3);
-    vault.setVaultFeatures(true, false, false, false, false, true);
+    startAuction();
 
-    vault.transfer(bidderOne, 1e18);
     uint256 newBid = 10500e14;
     vault.transfer(bidderTwo, newBid);
-
-    vm.prank(bidderOne);
-    vault.startAuction(1, 1e18);
 
     vm.prank(bidderTwo);
     vault.bid(1, newBid);
@@ -206,5 +191,15 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   function pauseFeature(uint256 lockId) private {
     fnftCollectionFactory.setIsGuardian(address(this), true);
     fnftCollectionFactory.pause(lockId);
+  }
+
+  function startAuction() private {
+    mintVaultTokens(3);
+    vault.setVaultFeatures(true, false, false, false, false, true);
+
+    vault.transfer(bidderOne, 1e18);
+
+    vm.prank(bidderOne);
+    vault.startAuction(1, 1e18);
   }
 }
