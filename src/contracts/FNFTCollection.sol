@@ -402,7 +402,7 @@ contract FNFTCollection is
             winning: msg.sender
         });
 
-        emit AuctionStarted(msg.sender, price);
+        emit AuctionStarted(msg.sender, tokenId, price);
     }
 
     function bid(uint256 tokenId, uint256 price) external override {
