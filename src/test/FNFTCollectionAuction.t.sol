@@ -101,7 +101,7 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
   }
 
   function testStartAuctionPaused() public {
-    pauseFeature(1);
+    pauseFeature(4);
 
     mintVaultTokens(2);
 
@@ -172,7 +172,7 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
     uint256 newBid = 10500e14;
     vault.transfer(bidderTwo, newBid);
 
-    pauseFeature(1);
+    pauseFeature(4);
 
     vm.prank(bidderTwo);
     vm.expectRevert(IFNFTCollection.Paused.selector);
@@ -282,7 +282,7 @@ contract FNFTCollectionAuctionTest is DSTest, SetupEnvironment {
     vault.bid(1, newBid);
     vm.warp(block.timestamp + 3 days);
 
-    pauseFeature(1);
+    pauseFeature(4);
 
     vm.prank(bidderTwo);
     vm.expectRevert(IFNFTCollection.Paused.selector);
