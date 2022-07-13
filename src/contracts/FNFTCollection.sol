@@ -317,12 +317,14 @@ contract FNFTCollection is
         enableTargetSwap = _enableTargetSwap;
         enableBid = _enableBid;
 
-        emit EnableMintUpdated(_enableMint);
-        emit EnableRandomRedeemUpdated(_enableRandomRedeem);
-        emit EnableTargetRedeemUpdated(_enableTargetRedeem);
-        emit EnableRandomSwapUpdated(_enableRandomSwap);
-        emit EnableTargetSwapUpdated(_enableTargetSwap);
-        emit EnableBidUpdated(_enableBid);
+        emit VaultFeaturesUpdated(
+            _enableMint,
+            _enableRandomRedeem,
+            _enableTargetRedeem,
+            _enableRandomSwap,
+            _enableTargetSwap,
+            _enableBid
+        );
     }
 
     /// @notice allow curator to update the auction length
