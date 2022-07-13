@@ -92,8 +92,11 @@ contract FNFTCollection is
     function allHoldings() external view override virtual returns (uint256[] memory) {
         uint256 len = holdings.length();
         uint256[] memory idArray = new uint256[](len);
-        for (uint256 i; i < len; ++i) {
+        for (uint256 i; i < len;) {
             idArray[i] = holdings.at(i);
+            unchecked {
+                ++i;
+            }
         }
         return idArray;
     }
@@ -365,10 +368,13 @@ contract FNFTCollection is
 
         uint256 count;
         if (is1155) {
-            for (uint256 i; i < tokenIds.length; ++i) {
+            for (uint256 i; i < tokenIds.length;) {
                 uint256 amount = amounts[i];
                 if (amount == 0) revert ZeroTransferAmount();
                 count += amount;
+                unchecked {
+                    ++i;
+                }
             }
         } else {
             count = tokenIds.length;
@@ -561,7 +567,7 @@ contract FNFTCollection is
             );
 
             uint256 count;
-            for (uint256 i; i < length; ++i) {
+            for (uint256 i; i < length;) {
                 uint256 tokenId = tokenIds[i];
                 uint256 amount = amounts[i];
                 if (amount == 0) revert ZeroTransferAmount();
@@ -570,11 +576,14 @@ contract FNFTCollection is
                 }
                 quantity1155[tokenId] += amount;
                 count += amount;
+                unchecked {
+                    ++i;
+                }
             }
             return count;
         } else {
             address _assetAddress = assetAddress;
-            for (uint256 i; i < length; ++i) {
+            for (uint256 i; i < length;) {
                 uint256 tokenId = tokenIds[i];
                 // We may already own the NFT here so we check in order:
                 // Does the vault own it?
@@ -585,6 +594,9 @@ contract FNFTCollection is
                 _transferFromERC721(_assetAddress, tokenId);
                 depositors[tokenId] = msg.sender;
                 holdings.add(tokenId);
+                unchecked {
+                    ++i;
+                }
             }
             return length;
         }
@@ -661,7 +673,7 @@ contract FNFTCollection is
         address _assetAddress = assetAddress;
         uint256[] memory redeemedIds = new uint256[](amount);
         uint256 specificLength = specificIds.length;
-        for (uint256 i; i < amount; ++i) {
+        for (uint256 i; i < amount;) {
             // This will always be fine considering the validations made above.
             uint256 tokenId = i < specificLength ?
                 specificIds[i] : _getRandomTokenIdFromVault();
@@ -684,6 +696,9 @@ contract FNFTCollection is
                 holdings.remove(tokenId);
                 delete depositors[tokenId];
                 _transferERC721(_assetAddress, to, tokenId);
+            }
+            unchecked {
+                ++i;
             }
         }
         _afterRedeemHook(redeemedIds);
