@@ -188,12 +188,6 @@ interface IFNFTCollection is IERC20Upgradeable {
     event BidMade(address indexed buyer, uint256 tokenId, uint256 price);
     event CuratorUpdated(address oldCurator, address newCurator);
     event EligibilityDeployed(uint256 moduleIndex, address eligibilityAddr);
-    event EnableBidUpdated(bool enabled);
-    event EnableMintUpdated(bool enabled);
-    event EnableRandomRedeemUpdated(bool enabled);
-    event EnableTargetRedeemUpdated(bool enabled);
-    event EnableRandomSwapUpdated(bool enabled);
-    event EnableTargetSwapUpdated(bool enabled);
     event Minted(uint256[] nftIds, uint256[] amounts, address to);
     event Redeemed(uint256[] nftIds, uint256[] specificIds, address to);
     event Swapped(
@@ -208,6 +202,14 @@ interface IFNFTCollection is IERC20Upgradeable {
         address assetAddress,
         bool is1155,
         bool allowAllItems
+    );
+    event VaultFeaturesUpdated(
+      bool enableMint,
+      bool enableRandomRedeem,
+      bool enableTargetRedeem,
+      bool enableRandomSwap,
+      bool enableTargetSwap,
+      bool enableBid
     );
     event VaultShutdown(address assetAddress, uint256 numItems, address recipient);
 
