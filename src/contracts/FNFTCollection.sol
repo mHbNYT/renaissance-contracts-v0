@@ -245,7 +245,7 @@ contract FNFTCollection is
         IERC3156FlashLenderUpgradeable,
         IFNFTCollection
     ) returns (bool) {
-        _onlyOwnerIfPaused(4);
+        _onlyOwnerIfPaused(5);
 
         uint256 flashLoanFee = vaultManager.excludedFromFees(address(receiver)) ? 0 : flashFee(borrowedToken, amount);
         return _flashLoan(receiver, borrowedToken, amount, flashLoanFee, data);
@@ -427,7 +427,7 @@ contract FNFTCollection is
     }
 
     function startAuction(uint256 tokenId, uint256 price) external override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (!enableBid || is1155) revert BidDisabled();
         if (auctions[tokenId].state != AuctionState.Inactive) revert AuctionLive();
         if (price < BASE) revert BidTooLow();
@@ -445,7 +445,7 @@ contract FNFTCollection is
     }
 
     function bid(uint256 tokenId, uint256 price) external override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (!enableBid || is1155) revert BidDisabled();
         if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
         uint256 livePrice = auctions[tokenId].livePrice;
@@ -469,7 +469,7 @@ contract FNFTCollection is
     }
 
     function endAuction(uint256 tokenId) external override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (!enableBid || is1155) revert BidDisabled();
         if (auctions[tokenId].state != AuctionState.Live) revert AuctionNotLive();
         if (block.timestamp < auctions[tokenId].end) revert AuctionNotEnded();
