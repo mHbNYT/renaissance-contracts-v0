@@ -148,6 +148,34 @@ contract FNFTCollection is
         return redeemTo(amount, specificIds, msg.sender);
     }
 
+    function withdraw(uint256[] calldata tokenIds) external override virtual returns (uint256[] memory) {
+        _onlyOwnerIfPaused(2);
+        if (!enableBid) revert BidDisabled();
+
+        uint256 amount = tokenIds.length;
+
+        for (uint256 i; i < amount;) {
+            uint256 tokenId = tokenIds[i];
+            if (depositors[tokenId] != msg.sender) revert NotNFTOwner();
+            unchecked {
+                ++i;
+            }
+        }
+
+        // We burn all from sender and mint to fee receiver to reduce costs.
+        _burn(msg.sender, BASE * amount);
+
+        // Pay the tokens + toll.
+        (,, uint256 _targetRedeemFee,,) = vaultFees();
+        uint256 totalFee = _targetRedeemFee * amount;
+        _chargeAndDistributeFees(msg.sender, totalFee);
+
+        // Withdraw from vault.
+        uint256[] memory redeemedIds = _withdrawNFTsTo(amount, tokenIds, msg.sender);
+        emit Redeemed(redeemedIds, tokenIds, msg.sender);
+        return redeemedIds;
+    }
+
     function setVaultMetadata(
         string calldata name_,
         string calldata symbol_
