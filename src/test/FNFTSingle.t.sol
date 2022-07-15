@@ -621,14 +621,15 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         fnftSingle.setVaultMetadata("Bored Ape", "BAYC");
     }
 
-
-    // TODO: include fees
     function testFlashLoanGood() public {
         FlashBorrower flashBorrower = new FlashBorrower(address(fnftSingle));
+
+        fnftSingle.transfer(address(flashBorrower), 1e16);
 
         assertEq(fnftSingle.totalSupply(), 100 ether);
         assertEq(fnftSingle.balanceOf(address(fnftSingle)), 0);
 
+        fnftSingleFactory.setFactoryFees(0, 0, 100);
         flashBorrower.goodFlashLoan(1 ether);
 
         assertEq(fnftSingle.totalSupply(), 100 ether);
@@ -637,22 +638,37 @@ contract FNFTSingleTest is DSTest, ERC721Holder, SetupEnvironment {
         assertEq(fnftSingle.allowance(address(flashBorrower), address(fnftSingle)), 0);
     }
 
-    // TODO: implement
-    // function testFlashLoanGoodFeeExcluded() public {
-    // }
-
-    // TODO: include fees
-    function testFlashLoanBad() public {
+    function testFlashLoanGoodFeeExcluded() public {
         FlashBorrower flashBorrower = new FlashBorrower(address(fnftSingle));
 
         assertEq(fnftSingle.totalSupply(), 100 ether);
         assertEq(fnftSingle.balanceOf(address(fnftSingle)), 0);
 
+        vaultManager.setFeeExclusion(address(flashBorrower), true);
+        fnftSingleFactory.setFactoryFees(0, 0, 100);
+        flashBorrower.goodFlashLoan(1 ether);
+
+        assertEq(fnftSingle.totalSupply(), 100 ether);
+        assertEq(fnftSingle.balanceOf(address(fnftSingle)), 0);
+        assertEq(fnftSingle.balanceOf(address(flashBorrower)), 0);
+        assertEq(fnftSingle.allowance(address(flashBorrower), address(fnftSingle)), 0);
+    }
+
+    function testFlashLoanBad() public {
+        FlashBorrower flashBorrower = new FlashBorrower(address(fnftSingle));
+
+        fnftSingle.transfer(address(flashBorrower), 1e16);
+
+        assertEq(fnftSingle.totalSupply(), 100 ether);
+        assertEq(fnftSingle.balanceOf(address(fnftSingle)), 0);
+
+        fnftSingleFactory.setFactoryFees(0, 0, 100);
+
         vm.expectRevert(ERC20FlashMintUpgradeable.FlashLoanNotRepaid.selector);
         flashBorrower.badFlashLoan(1 ether);
 
         assertEq(fnftSingle.totalSupply(), 100 ether);
-        assertEq(fnftSingle.balanceOf(address(flashBorrower)), 0);
+        assertEq(fnftSingle.balanceOf(address(flashBorrower)), 1e16);
         assertEq(fnftSingle.balanceOf(address(fnftSingle)), 0);
         assertEq(fnftSingle.allowance(address(flashBorrower), address(fnftSingle)), 0);
     }
