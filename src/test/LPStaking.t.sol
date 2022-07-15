@@ -291,7 +291,6 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     uniswapV2Pair = IUniswapV2Pair(uniswapV2Factory.createPair(address(vault), stakingTokenProvider.defaultPairedToken()));
   }
 
-  // TODO: merge with FNFTCollectionTest.t.sol
   function createVault() private {
     fnftCollectionFactory.createVault(address(token), false, true, "Doodles", "DOODLE");
     vault = FNFTCollection(vaultManager.vault(vaultId));
