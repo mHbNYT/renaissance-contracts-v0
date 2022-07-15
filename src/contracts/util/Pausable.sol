@@ -21,6 +21,8 @@ contract Pausable is OwnableUpgradeable {
     // 3  : swap
     // 4  : auction
     // 5  : flashloan
+    // 6  : fee
+    // 7  : price
     // 10 : stake
 
     error Paused();

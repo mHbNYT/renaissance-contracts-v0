@@ -122,7 +122,7 @@ contract FNFTSingle is
 
     /// @notice an external function to bid on purchasing the vaults NFT. The msg.value is the bid amount
     function bid() external payable override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (auctionState != State.Live) revert AuctionNotLive();
         uint256 increase = factory.minBidIncrease() + 10000;
         if (msg.value * 10000 < livePrice * increase) revert BidTooLow();
@@ -158,12 +158,12 @@ contract FNFTSingle is
 
     /// @notice external function to claim fees for the curator and governance
     function claimCuratorFees() external override {
-        _onlyOwnerIfPaused(3);
+        _onlyOwnerIfPaused(6);
         _claimCuratorFees();
     }
 
     function buyItNow() external payable override {
-        _onlyOwnerIfPaused(2);
+        _onlyOwnerIfPaused(3);
         if (auctionState != State.Inactive) revert AuctionLive();
         uint256 price = buyItNowPrice();
         if (price == 0) revert PriceTooLow();
@@ -184,7 +184,7 @@ contract FNFTSingle is
 
     /// @notice an external function to end an auction after the timer has run out
     function end() external override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (auctionState != State.Live) revert AuctionNotLive();
         if (block.timestamp < auctionEnd) revert AuctionNotEnded();
 
@@ -216,7 +216,7 @@ contract FNFTSingle is
 
     /// @notice an external function to burn all ERC20 tokens to receive the ERC721 token
     function redeem() external override {
-        _onlyOwnerIfPaused(5);
+        _onlyOwnerIfPaused(2);
         if (auctionState != State.Inactive) revert AuctionLive();
         _burn(msg.sender, totalSupply());
 
@@ -255,7 +255,7 @@ contract FNFTSingle is
 
     /// @notice kick off an auction. Must send reservePrice in ETH
     function start() external payable override {
-        _onlyOwnerIfPaused(1);
+        _onlyOwnerIfPaused(4);
         if (auctionState != State.Inactive) revert AuctionLive();
         uint256 _auctionPrice = _getAuctionPrice();
         if (_auctionPrice == 0 || msg.value < _auctionPrice) revert BidTooLow();
@@ -312,7 +312,7 @@ contract FNFTSingle is
     /// @notice a function for an end user to update their desired sale price
     /// @param newUserReserve the desired price in ETH
     function updateUserPrice(uint256 newUserReserve) external override {
-        _onlyOwnerIfPaused(6);
+        _onlyOwnerIfPaused(7);
         if (auctionState != State.Inactive) revert AuctionLive();
         uint256 previousUserReserve = userReservePrice[msg.sender];
         if (newUserReserve == previousUserReserve) revert NotAnUpdate();
@@ -380,7 +380,7 @@ contract FNFTSingle is
         IERC3156FlashLenderUpgradeable,
         IFNFTSingle
     ) returns (bool) {
-        _onlyOwnerIfPaused(7);
+        _onlyOwnerIfPaused(5);
         uint256 flashLoanFee = vaultManager.excludedFromFees(address(receiver)) ? 0 : flashFee(borrowedToken, amount);
         return _flashLoan(receiver, borrowedToken, amount, flashLoanFee, data);
     }
