@@ -631,7 +631,6 @@ contract FNFTCollection is
     }
 
     function _onlyOwnerIfPaused(uint256 lockId) internal view {
-        // TODO: compare gas usage on the order of logic
         if (msg.sender != owner() && IPausable(address(factory)).isPaused(lockId)) revert Paused();
     }
 
