@@ -64,6 +64,7 @@ interface ILPStaking {
 
     event PoolCreated(uint256 vaultId, address pool);
     event PoolUpdated(uint256 vaultId, address pool);
+    event StakingTokenProviderUpdated(address oldStakingTokenProvider, address newStakingTokenProvider);
     event FeesReceived(uint256 vaultId, uint256 amount);
 
     error NotAPool();
