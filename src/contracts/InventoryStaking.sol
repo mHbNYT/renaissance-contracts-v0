@@ -87,15 +87,15 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         return true;
     }
 
-    // TODO: missing event emission
     function setInventoryLockTimeErc20(uint256 _inventoryLockTimeErc20) external override onlyOwner {
         if (_inventoryLockTimeErc20 > 14 days) revert LockTooLong();
+        emit InventoryLockTimeErc20Updated(inventoryLockTimeErc20, _inventoryLockTimeErc20);
         inventoryLockTimeErc20 = _inventoryLockTimeErc20;
     }
 
     // TODO: timelock exclude list is not yet implemented
-    // TODO: missing event emission
     function setTimelockExcludeList(address _timelockExcludeList) external override onlyOwner {
+        emit TimelockExcludeListUpdated(address(timelockExcludeList), _timelockExcludeList);
         timelockExcludeList = ITimelockExcludeList(_timelockExcludeList);
     }
 

@@ -149,9 +149,9 @@ contract LPStaking is ILPStaking, Pausable {
         return rewardDistributionToken(pool);
     }
 
-    // TODO: missing event emission
     function setStakingTokenProvider(address _stakingTokenProvider) external override onlyOwner {
         if (_stakingTokenProvider == address(0)) revert ZeroAddress();
+        emit StakingTokenProviderUpdated(address(stakingTokenProvider), _stakingTokenProvider);
         stakingTokenProvider = IStakingTokenProvider(_stakingTokenProvider);
     }
 

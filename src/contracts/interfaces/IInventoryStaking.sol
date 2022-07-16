@@ -41,10 +41,12 @@ interface IInventoryStaking {
 
     function vaultXToken(uint256 vaultId) external view returns (address);
 
-    event XTokenCreated(uint256 vaultId, address baseToken, address xToken);
     event BaseTokenDeposited(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, uint256 timelockUntil, address sender);
     event BaseTokenWithdrawn(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, address sender);
     event FeesReceived(uint256 vaultId, uint256 amount);
+    event InventoryLockTimeErc20Updated(uint256 oldInventoryLockTimeErc20, uint256 newInventoryLockTimeErc20);
+    event TimelockExcludeListUpdated(address oldTimelockExcludeList, address newTimelockExcludeList);
+    event XTokenCreated(uint256 vaultId, address baseToken, address xToken);
 
     error LockTooLong();
     error NotExcludedFromFees();

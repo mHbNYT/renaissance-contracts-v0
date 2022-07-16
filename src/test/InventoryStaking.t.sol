@@ -43,7 +43,11 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
     assertEq(inventoryStaking.inventoryLockTimeErc20(), 0);
   }
 
+  event InventoryLockTimeErc20Updated(uint256 oldInventoryLockTimeErc20, uint256 newInventoryLockTimeErc20);
+
   function testSetInventoryLockTimeErc20() public {
+    vm.expectEmit(true, false, false, true);
+    emit InventoryLockTimeErc20Updated(0, 14 days);
     inventoryStaking.setInventoryLockTimeErc20(14 days);
     assertEq(inventoryStaking.inventoryLockTimeErc20(), 14 days);
   }
@@ -52,6 +56,15 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
     vm.expectRevert(IInventoryStaking.LockTooLong.selector);
     inventoryStaking.setInventoryLockTimeErc20(14 days + 1 seconds);
     assertEq(inventoryStaking.inventoryLockTimeErc20(), 0);
+  }
+
+  event TimelockExcludeListUpdated(address oldTimelockExcludeList, address newTimelockExcludeList);
+
+  function testSetTimelockExcludeList() public {
+    vm.expectEmit(true, false, false, true);
+    emit TimelockExcludeListUpdated(address(0), address(999));
+    inventoryStaking.setTimelockExcludeList(address(999));
+    assertEq(address(inventoryStaking.timelockExcludeList()), address(999));
   }
 
   function testDeployXTokenForVault() public {

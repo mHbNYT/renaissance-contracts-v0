@@ -58,7 +58,11 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(address(lpStaking.stakingTokenProvider()), address(stakingTokenProvider));
   }
 
+  event StakingTokenProviderUpdated(address oldStakingTokenProvider, address newStakingTokenProvider);
+
   function testSetStakingTokenProvider() public {
+    vm.expectEmit(true, false, false, true);
+    emit StakingTokenProviderUpdated(address(stakingTokenProvider), address(1));
     lpStaking.setStakingTokenProvider(address(1));
     assertEq(address(lpStaking.stakingTokenProvider()), address(1));
   }
