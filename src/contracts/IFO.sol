@@ -10,6 +10,8 @@ import "./interfaces/IFNFTSingle.sol";
 import "./interfaces/IIFO.sol";
 import "./interfaces/IIFOFactory.sol";
 
+import {console} from "../test/utils/console.sol";
+
 contract IFO is IIFO, Initializable {
     mapping(address => UserInfo) public override userInfo;
     mapping(address => bool) public override whitelisted; // True if user is whitelisted
@@ -262,11 +264,20 @@ contract IFO is IIFO, Initializable {
     function start() external override onlyCurator {
         if (started) revert SaleAlreadyStarted();
         if (ended) revert SaleAlreadyEnded();
+
         IFNFT _fnft = fnft;
-        if (_fnft.balanceOf(address(this)) < _fnft.totalSupply()) revert NotEnoughSupply();
-
+        uint256 ifoFNFTBalance = _fnft.balanceOf(address(this));
+        uint256 totalSupply = _fnft.totalSupply();
+        // make sure curator holds 100% of the FNFT before IFO (May change if DAO takes fee on fractionalize)
+        if (IERC165(address(_fnft)).supportsInterface(type(IFNFTSingle).interfaceId)) {
+            // reject if MC of IFO greater than reserve price set by curator. Protects the initial investors
+            //if the requested price of the tokens here is greater than the implied value of each token from the initial reserve, revert
+            if (ifoFNFTBalance < totalSupply) revert NotEnoughSupply();
+        } else {
+            //0.5 ether is the maximum (50%) mint fee for collection.
+            if (totalSupply == 0 || ifoFNFTBalance < totalSupply / 2) revert NotEnoughSupply();
+        }
         startBlock = block.number;
-
         started = true;
         emit SaleStarted();
     }
