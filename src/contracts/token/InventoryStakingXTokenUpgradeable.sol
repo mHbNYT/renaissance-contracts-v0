@@ -10,7 +10,7 @@ import "./ERC20Upgradeable.sol";
 // XTokens let uou come in with some vault tokens, and leave with more! The longer you stay, the more vault tokens you get.
 //
 // This contract handles swapping to and from xSushi, SushiSwap's staking token.
-contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
+contract InventoryStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     uint256 internal constant MAX_TIMELOCK = 2592000;
@@ -23,7 +23,7 @@ contract XTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
     error LockTooLong();
     error UserIsLocked();
 
-    function __XToken_init(address _baseToken, string memory name, string memory symbol) public initializer {
+    function __InventoryStakingXToken_init(address _baseToken, string memory name, string memory symbol) public initializer {
         __Ownable_init();
         // string memory _name = IInventoryStaking(msg.sender).fnftCollectionFactory().vault();
         __ERC20_init(name, symbol);

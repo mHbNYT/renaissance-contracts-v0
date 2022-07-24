@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 /// @dev A mintable ERC20 token that allows anyone to pay and distribute a target token
 ///  to token holders as dividends and allows token holders to withdraw their dividends.
 ///  Reference: the source code of PoWH3D: https://etherscan.io/address/0xB3775fB83F7D12A36E0475aBdD1FCA35c091efBe#code
-contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgradeable {
+contract LPStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
   using SafeCast for uint256;
   using SafeCast for int256;
   using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -48,7 +48,7 @@ contract TimelockRewardDistributionTokenImpl is OwnableUpgradeable, ERC20Upgrade
   error ZeroAmount();
   error ZeroSupply();
 
-  function __TimelockRewardDistributionToken_init(IERC20Upgradeable _target, string memory _name, string memory _symbol) public initializer {
+  function __LPStakingXToken_init(IERC20Upgradeable _target, string memory _name, string memory _symbol) public initializer {
     __Ownable_init();
     __ERC20_init(_name, _symbol);
     target = _target;

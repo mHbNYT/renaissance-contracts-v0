@@ -14,7 +14,7 @@ import "./interfaces/IInventoryStaking.sol";
 import "./util/Pausable.sol";
 import "./proxy/BeaconUpgradeable.sol";
 import "./proxy/Create2BeaconProxy.sol";
-import "./token/XTokenUpgradeable.sol";
+import "./token/InventoryStakingXTokenUpgradeable.sol";
 import "./interfaces/ITimelockExcludeList.sol";
 
 // Author: 0xKiwi.
@@ -37,7 +37,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
     function __InventoryStaking_init(address _vaultManager) external virtual override initializer {
         __Ownable_init();
         vaultManager = IVaultManager(_vaultManager);
-        address xTokenImpl = address(new XTokenUpgradeable());
+        address xTokenImpl = address(new InventoryStakingXTokenUpgradeable());
         __BeaconUpgradeable__init(xTokenImpl);
     }
 
@@ -47,7 +47,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
     }
 
     function balanceOf(uint256 vaultId, address who) external view override returns (uint256) {
-        XTokenUpgradeable xToken = XTokenUpgradeable(vaultXToken(vaultId));
+        InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(vaultXToken(vaultId));
         return xToken.balanceOf(who);
     }
 
@@ -58,10 +58,10 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
 
         uint256 timelockTime = isAddressTimelockExcluded(msg.sender, vaultId) ? 0 : inventoryLockTimeErc20;
 
-        (IERC20Upgradeable baseToken, XTokenUpgradeable xToken, uint256 xTokensMinted) = _timelockMintFor(vaultId, msg.sender, _amount, timelockTime);
+        (IERC20Upgradeable baseToken, InventoryStakingXTokenUpgradeable xToken, uint256 xTokensMinted) = _timelockMintFor(vaultId, msg.sender, _amount, timelockTime);
         // Lock the base token in the xtoken contract
         baseToken.safeTransferFrom(msg.sender, address(xToken), _amount);
-        emit BaseTokenDeposited(vaultId, _amount, xTokensMinted, timelockTime, msg.sender);
+        emit Deposited(vaultId, _amount, xTokensMinted, timelockTime, msg.sender);
     }
 
     function isAddressTimelockExcluded(address addr, uint256 vaultId) public view override returns (bool) {
@@ -78,12 +78,12 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
 
         // Don't distribute rewards unless there are people to distribute to.
         // Also added here if the distribution token is not deployed, just forfeit rewards for now.
-        if (!_isContract(deployedXToken) || XTokenUpgradeable(deployedXToken).totalSupply() == 0) {
+        if (!_isContract(deployedXToken) || InventoryStakingXTokenUpgradeable(deployedXToken).totalSupply() == 0) {
             return false;
         }
         // We "pull" to the dividend tokens so the fee distributor only needs to approve this contract.
         IERC20Upgradeable(baseToken).safeTransferFrom(msg.sender, deployedXToken, amount);
-        emit FeesReceived(vaultId, amount);
+        emit FeesReceived(vaultId, amount, deployedXToken);
         return true;
     }
 
@@ -106,12 +106,12 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         if (!vaultManager.excludedFromFees(msg.sender)) revert NotExcludedFromFees();
 
         (, , uint256 xTokensMinted) = _timelockMintFor(vaultId, to, amount, timelockLength);
-        emit BaseTokenDeposited(vaultId, amount, xTokensMinted, timelockLength, to);
+        emit Deposited(vaultId, amount, xTokensMinted, timelockLength, to);
         return xTokensMinted;
     }
 
     function timelockUntil(uint256 vaultId, address who) external view override returns (uint256) {
-        XTokenUpgradeable xToken = XTokenUpgradeable(vaultXToken(vaultId));
+        InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(vaultXToken(vaultId));
         return xToken.timelockUntil(who);
     }
 
@@ -119,15 +119,15 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
     // Unlocks the staked + gained tokens and burns xTokens.
     function withdraw(uint256 vaultId, uint256 _share) external virtual override {
         IERC20Upgradeable baseToken = IERC20Upgradeable(vaultManager.vault(vaultId));
-        XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
+        InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(xTokenAddr(address(baseToken)));
 
         uint256 baseTokensRedeemed = xToken.burnXTokens(msg.sender, _share);
-        emit BaseTokenWithdrawn(vaultId, baseTokensRedeemed, _share, msg.sender);
+        emit Withdrawn(vaultId, baseTokensRedeemed, _share, msg.sender);
     }
 
    function xTokenShareValue(uint256 vaultId) external view virtual override returns (uint256) {
         IERC20Upgradeable baseToken = IERC20Upgradeable(vaultManager.vault(vaultId));
-        XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddr(address(baseToken)));
+        InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(xTokenAddr(address(baseToken)));
         if (!_isContract(address(xToken))) revert XTokenNotDeployed();
 
         uint256 multiplier = 10 ** 18;
@@ -145,7 +145,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         }
 
         address xToken = _deployXToken(baseToken);
-        emit XTokenCreated(vaultId, baseToken, xToken);
+        emit PoolCreated(vaultId, xToken, baseToken);
     }
 
     function vaultXToken(uint256 vaultId) public view virtual override returns (address) {
@@ -167,7 +167,7 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         symbol = string(abi.encodePacked("x", symbol));
         bytes32 salt = keccak256(abi.encodePacked(baseToken));
         address deployedXToken = Create2.deploy(0, salt, BEACON_CODE);
-        XTokenUpgradeable(deployedXToken).__XToken_init(baseToken, symbol, symbol);
+        InventoryStakingXTokenUpgradeable(deployedXToken).__InventoryStakingXToken_init(baseToken, symbol, symbol);
         return deployedXToken;
     }
 
@@ -182,10 +182,10 @@ contract InventoryStaking is IInventoryStaking, Pausable, BeaconUpgradeable {
         return size != 0;
     }
 
-    function _timelockMintFor(uint256 vaultId, address account, uint256 _amount, uint256 timelockLength) internal returns (IERC20Upgradeable, XTokenUpgradeable, uint256) {
+    function _timelockMintFor(uint256 vaultId, address account, uint256 _amount, uint256 timelockLength) internal returns (IERC20Upgradeable, InventoryStakingXTokenUpgradeable, uint256) {
         deployXTokenForVault(vaultId);
         IERC20Upgradeable baseToken = IERC20Upgradeable(vaultManager.vault(vaultId));
-        XTokenUpgradeable xToken = XTokenUpgradeable((xTokenAddr(address(baseToken))));
+        InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable((xTokenAddr(address(baseToken))));
 
         uint256 xTokensMinted = xToken.mintXTokens(account, _amount, timelockLength);
         return (baseToken, xToken, xTokensMinted);

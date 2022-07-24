@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import "./interfaces/ILPStaking.sol";
 import "./interfaces/IStakingTokenProvider.sol";
 import "./interfaces/IVaultManager.sol";
-import "./token/TimelockRewardDistributionTokenImpl.sol";
+import "./token/LPStakingXTokenUpgradeable.sol";
 import "./util/Pausable.sol";
 
 // Pausing codes for LP staking are:
@@ -23,17 +23,17 @@ contract LPStaking is ILPStaking, Pausable {
     mapping(uint256 => StakingPool) public override vaultStakingInfo;
 
     IStakingTokenProvider public override stakingTokenProvider;
-    TimelockRewardDistributionTokenImpl public override timelockRewardDistTokenImpl;
+    LPStakingXTokenUpgradeable public override timelockXTokenImpl;
     IVaultManager public override vaultManager;
 
     function __LPStaking__init(address _vaultManager, address _stakingTokenProvider) external override initializer {
         __Ownable_init();
         if (_stakingTokenProvider == address(0)) revert ZeroAddress();
-        if (address(timelockRewardDistTokenImpl) != address(0)) revert TimelockRewardDistTokenImplAlreadySet();
+        if (address(timelockXTokenImpl) != address(0)) revert TimelockXTokenImplAlreadySet();
         vaultManager = IVaultManager(_vaultManager);
         stakingTokenProvider = IStakingTokenProvider(_stakingTokenProvider);
-        timelockRewardDistTokenImpl = new TimelockRewardDistributionTokenImpl();
-        timelockRewardDistTokenImpl.__TimelockRewardDistributionToken_init(IERC20Upgradeable(address(0)), "", "");
+        timelockXTokenImpl = new LPStakingXTokenUpgradeable();
+        timelockXTokenImpl.__LPStakingXToken_init(IERC20Upgradeable(address(0)), "", "");
     }
 
     modifier onlyAdmin() {
@@ -44,12 +44,12 @@ contract LPStaking is ILPStaking, Pausable {
     function addPoolForVault(uint256 vaultId) external override onlyAdmin {
         if (address(vaultManager) == address(0)) revert VaultManagerNotSet();
         if (vaultStakingInfo[vaultId].stakingToken != address(0)) revert PoolAlreadyExists();
-        address _rewardToken = vaultManager.vault(vaultId);
-        address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_rewardToken);
-        StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
+        address _baseToken = vaultManager.vault(vaultId);
+        address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(_baseToken);
+        StakingPool memory pool = StakingPool(_stakingToken, _baseToken);
         vaultStakingInfo[vaultId] = pool;
-        address newRewardDistToken = _deployDividendToken(pool);
-        emit PoolCreated(vaultId, newRewardDistToken);
+        address newXToken = _deployDividendToken(pool);
+        emit PoolCreated(vaultId, newXToken, _baseToken);
     }
 
     function deposit(uint256 vaultId, uint256 amount) external override {
@@ -60,19 +60,21 @@ contract LPStaking is ILPStaking, Pausable {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         IERC20Upgradeable(pool.stakingToken).safeTransferFrom(msg.sender, address(this), amount);
-        TimelockRewardDistributionTokenImpl rewardDistToken = rewardDistributionToken(pool);
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
 
         // If the user has an existing timelock, check if it is in the future.
-        uint256 currentTimelock = rewardDistToken.timelockUntil(msg.sender);
+        uint256 currentTimelock = _xToken.timelockUntil(msg.sender);
         if (currentTimelock > block.timestamp) {
             // Maintain the same timelock if they already have one.
             // We do this instead of patching in the token because
             // the reward distribution token contracts as currently deployed are not upgradeable.
-            rewardDistToken.timelockMint(msg.sender, amount, currentTimelock-block.timestamp);
+            _xToken.timelockMint(msg.sender, amount, currentTimelock-block.timestamp);
         } else {
             // Timelock for 2 seconds if they don't already have a timelock to prevent flash loans.
-            rewardDistToken.timelockMint(msg.sender, amount, 2);
+            _xToken.timelockMint(msg.sender, amount, 2);
         }
+
+        emit Deposited(vaultId, amount, address(_xToken), msg.sender);
     }
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external override {
@@ -85,16 +87,16 @@ contract LPStaking is ILPStaking, Pausable {
         }
     }
 
-    function emergencyExit(address _stakingToken, address _rewardToken) external override {
-        StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
-        TimelockRewardDistributionTokenImpl dist = rewardDistributionToken(pool);
+    function emergencyExit(address _stakingToken, address _baseToken) external override {
+        StakingPool memory pool = StakingPool(_stakingToken, _baseToken);
+        LPStakingXTokenUpgradeable dist = xToken(pool);
         if (!_isContract(address(dist))) revert NotAPool();
         _withdraw(pool, dist.balanceOf(msg.sender), msg.sender);
     }
 
-    function emergencyExitAndClaim(address _stakingToken, address _rewardToken) external override {
-        StakingPool memory pool = StakingPool(_stakingToken, _rewardToken);
-        TimelockRewardDistributionTokenImpl dist = rewardDistributionToken(pool);
+    function emergencyExitAndClaim(address _stakingToken, address _baseToken) external override {
+        StakingPool memory pool = StakingPool(_stakingToken, _baseToken);
+        LPStakingXTokenUpgradeable dist = xToken(pool);
         if (!_isContract(address(dist))) revert NotAPool();
         _claimRewards(pool, msg.sender);
         _withdraw(pool, dist.balanceOf(msg.sender), msg.sender);
@@ -108,17 +110,17 @@ contract LPStaking is ILPStaking, Pausable {
 
     function lockedLPBalance(uint256 vaultId, address who) external view override returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        TimelockRewardDistributionTokenImpl dist = rewardDistributionToken(pool);
-        if(block.timestamp > dist.timelockUntil(who)) {
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
+        if(block.timestamp > _xToken.timelockUntil(who)) {
             return 0;
         }
-        return dist.balanceOf(who);
+        return _xToken.balanceOf(who);
     }
 
     function lockedUntil(uint256 vaultId, address who) external view override returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        TimelockRewardDistributionTokenImpl dist = rewardDistributionToken(pool);
-        return dist.timelockUntil(who);
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
+        return _xToken.timelockUntil(who);
     }
 
     function receiveRewards(uint256 vaultId, uint256 amount) external override onlyAdmin returns (bool) {
@@ -128,25 +130,25 @@ contract LPStaking is ILPStaking, Pausable {
             return false;
         }
 
-        TimelockRewardDistributionTokenImpl rewardDistToken = rewardDistributionToken(pool);
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
         // Don't distribute rewards unless there are people to distribute to.
         // Also added here if the distribution token is not deployed, just forfeit rewards for now.
-        if (!_isContract(address(rewardDistToken)) || rewardDistToken.totalSupply() == 0) {
+        if (!_isContract(address(_xToken)) || _xToken.totalSupply() == 0) {
             return false;
         }
         // We "pull" to the dividend tokens so the vault only needs to approve this contract.
-        IERC20Upgradeable(pool.rewardToken).safeTransferFrom(msg.sender, address(rewardDistToken), amount);
-        rewardDistToken.distributeRewards(amount);
-        emit FeesReceived(vaultId, amount);
+        IERC20Upgradeable(pool.baseToken).safeTransferFrom(msg.sender, address(_xToken), amount);
+        _xToken.distributeRewards(amount);
+        emit FeesReceived(vaultId, amount, address(_xToken));
         return true;
     }
 
-    function rewardDistributionToken(uint256 vaultId) external view override returns (TimelockRewardDistributionTokenImpl) {
+    function xToken(uint256 vaultId) external view override returns (LPStakingXTokenUpgradeable) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) {
-            return TimelockRewardDistributionTokenImpl(address(0));
+            return LPStakingXTokenUpgradeable(address(0));
         }
-        return rewardDistributionToken(pool);
+        return xToken(pool);
     }
 
     function setStakingTokenProvider(address _stakingTokenProvider) external override onlyOwner {
@@ -164,7 +166,7 @@ contract LPStaking is ILPStaking, Pausable {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
         IERC20Upgradeable(pool.stakingToken).safeTransferFrom(msg.sender, address(this), amount);
-        rewardDistributionToken(pool).timelockMint(account, amount, timelockLength);
+        xToken(pool).timelockMint(account, amount, timelockLength);
     }
 
     // In case the provider changes, this lets the pool be updated. Anyone can call it.
@@ -172,17 +174,17 @@ contract LPStaking is ILPStaking, Pausable {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         // Not letting people use this function to create new pools.
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
-        address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(pool.rewardToken);
-        StakingPool memory newPool = StakingPool(_stakingToken, pool.rewardToken);
+        address _stakingToken = stakingTokenProvider.stakingTokenForVaultToken(pool.baseToken);
+        StakingPool memory newPool = StakingPool(_stakingToken, pool.baseToken);
         vaultStakingInfo[vaultId] = newPool;
 
         // If the pool is already deployed, ignore the update.
-        address addr = address(rewardDistributionToken(newPool));
+        address addr = address(xToken(newPool));
         if (_isContract(addr)) {
             return;
         }
-        address newRewardDistToken = _deployDividendToken(newPool);
-        emit PoolUpdated(vaultId, newRewardDistToken);
+        address newXToken = _deployDividendToken(newPool);
+        emit PoolUpdated(vaultId, newXToken);
     }
 
     function updatePoolForVaults(uint256[] calldata vaultIds) external override {
@@ -199,13 +201,15 @@ contract LPStaking is ILPStaking, Pausable {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         _claimRewards(pool, msg.sender);
         _withdraw(pool, amount, msg.sender);
+
+        emit Withdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
     }
 
     function balanceOf(uint256 vaultId, address addr) public view override returns (uint256) {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        TimelockRewardDistributionTokenImpl dist = rewardDistributionToken(pool);
-        if (!_isContract(address(dist))) revert NotAPool();
-        return dist.balanceOf(addr);
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
+        if (!_isContract(address(_xToken))) revert NotAPool();
+        return _xToken.balanceOf(addr);
     }
 
     function claimRewards(uint256 vaultId) public override {
@@ -214,36 +218,36 @@ contract LPStaking is ILPStaking, Pausable {
     }
 
     // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
-    function rewardDistributionToken(StakingPool memory pool) public view override returns (TimelockRewardDistributionTokenImpl) {
-        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2) /* small nonce to change tokens */));
-        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(timelockRewardDistTokenImpl), salt);
-        return TimelockRewardDistributionTokenImpl(tokenAddr);
+    function xToken(StakingPool memory pool) public view override returns (LPStakingXTokenUpgradeable) {
+        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.baseToken, uint256(2) /* small nonce to change tokens */));
+        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(timelockXTokenImpl), salt);
+        return LPStakingXTokenUpgradeable(tokenAddr);
     }
 
-    function rewardDistributionTokenAddr(address stakedToken, address rewardToken) public view override returns (address) {
-        StakingPool memory pool = StakingPool(stakedToken, rewardToken);
-        return address(rewardDistributionToken(pool));
+    function xTokenAddr(address stakedToken, address baseToken) public view override returns (address) {
+        StakingPool memory pool = StakingPool(stakedToken, baseToken);
+        return address(xToken(pool));
     }
 
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) public override onlyOwner {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        TimelockRewardDistributionTokenImpl rewardDistToken = rewardDistributionToken(pool);
-        rewardDistToken.burnFrom(from, amount);
-        rewardDistToken.mint(to, amount);
+        LPStakingXTokenUpgradeable _xToken = xToken(pool);
+        _xToken.burnFrom(from, amount);
+        _xToken.mint(to, amount);
     }
 
     function _claimRewards(StakingPool memory pool, address account) internal {
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
-        rewardDistributionToken(pool).withdrawReward(account);
+        xToken(pool).withdrawReward(account);
     }
 
     function _deployDividendToken(StakingPool memory pool) internal returns (address) {
         // Changed to use new nonces.
-        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.rewardToken, uint256(2)));
-        address rewardDistToken = ClonesUpgradeable.cloneDeterministic(address(timelockRewardDistTokenImpl), salt);
-        string memory name = stakingTokenProvider.nameForStakingToken(pool.rewardToken);
-        TimelockRewardDistributionTokenImpl(rewardDistToken).__TimelockRewardDistributionToken_init(IERC20Upgradeable(pool.rewardToken), name, name);
-        return rewardDistToken;
+        bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.baseToken, uint256(2)));
+        address _xToken = ClonesUpgradeable.cloneDeterministic(address(timelockXTokenImpl), salt);
+        string memory name = stakingTokenProvider.nameForStakingToken(pool.baseToken);
+        LPStakingXTokenUpgradeable(_xToken).__LPStakingXToken_init(IERC20Upgradeable(pool.baseToken), name, name);
+        return _xToken;
     }
 
     function _isContract(address account) internal view returns (bool) {
@@ -259,7 +263,7 @@ contract LPStaking is ILPStaking, Pausable {
 
     function _withdraw(StakingPool memory pool, uint256 amount, address account) internal {
         if (pool.stakingToken == address(0)) revert PoolDoesNotExist();
-        rewardDistributionToken(pool).burnFrom(account, amount);
+        xToken(pool).burnFrom(account, amount);
         IERC20Upgradeable(pool.stakingToken).safeTransfer(account, amount);
     }
 }
