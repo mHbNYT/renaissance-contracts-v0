@@ -13,7 +13,7 @@ import {FeeDistributor} from "../contracts/FeeDistributor.sol";
 import {IUniswapV2Factory} from "../contracts/interfaces/IUniswapV2Factory.sol";
 import {IUniswapV2Pair} from "../contracts/interfaces/IUniswapV2Pair.sol";
 import {IUniswapV2Router} from "../contracts/interfaces/IUniswapV2Router.sol";
-import {TimelockRewardDistributionTokenImpl} from "../contracts/token/TimelockRewardDistributionTokenImpl.sol";
+import {LPStakingXTokenUpgradeable} from "../contracts/token/LPStakingXTokenUpgradeable.sol";
 
 /// @author 0xkowloon
 /// @title Tests for LP staking
@@ -96,7 +96,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     addLiquidity();
     depositLPTokens();
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(this)), 999999999999999000);
     assertEq(rewardDistToken.timelockUntil(address(this)), block.timestamp + 2);
   }
@@ -113,7 +113,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     uniswapV2Pair.approve(address(lpStaking), lpTokenBalance);
     lpStaking.timelockDepositFor(vaultId, address(1), lpTokenBalance, 123);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 999999999999999000);
     assertEq(rewardDistToken.timelockUntil(address(1)), block.timestamp + 123);
   }
@@ -152,7 +152,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     uniswapV2Pair.approve(address(lpStaking), lpTokenBalance);
     lpStaking.deposit(vaultId, lpTokenBalance / 2);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(this)), 499999999999999500);
     assertEq(rewardDistToken.timelockUntil(address(this)), block.timestamp + 2);
 
@@ -166,7 +166,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
   function testReceiveRewards() public {
     mintVaultTokens(2);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
 
     createUniswapV2Pair();
     addLiquidity();
@@ -187,13 +187,13 @@ contract LPStakingTest is DSTest, SetupEnvironment {
   function testTimelockedTokensCannotBeTransferred() public {
     mintVaultTokens(2);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
 
     createUniswapV2Pair();
     addLiquidity();
     depositLPTokens();
 
-    vm.expectRevert(TimelockRewardDistributionTokenImpl.UserIsLocked.selector);
+    vm.expectRevert(LPStakingXTokenUpgradeable.UserIsLocked.selector);
     rewardDistToken.transfer(address(1), 0.01 ether);
 
     // passed timelock, transfer goes through
@@ -212,7 +212,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(uniswapV2Pair.balanceOf(address(1)), lpTokenBalance);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 0);
     assertEq(rewardDistToken.withdrawnRewardOf(address(1)), 499999999999999999);
     assertEq(rewardDistToken.dividendOf(address(1)), 0);
@@ -230,7 +230,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(uniswapV2Pair.balanceOf(address(1)), lpTokenBalance);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 0);
     assertEq(rewardDistToken.withdrawnRewardOf(address(1)), 499999999999999999);
     assertEq(rewardDistToken.dividendOf(address(1)), 0);
@@ -248,7 +248,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(uniswapV2Pair.balanceOf(address(1)), lpTokenBalance);
     assertEq(vault.balanceOf(address(1)), 0);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 0);
     assertEq(rewardDistToken.withdrawnRewardOf(address(1)), 0);
     assertEq(rewardDistToken.dividendOf(address(1)), 499999999999999999);
@@ -266,7 +266,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(uniswapV2Pair.balanceOf(address(1)), 100000000000000000);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 899999999999999000);
     assertEq(rewardDistToken.withdrawnRewardOf(address(1)), 499999999999999999);
     assertEq(rewardDistToken.dividendOf(address(1)), 0);
@@ -284,7 +284,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     assertEq(uniswapV2Pair.balanceOf(address(1)), 0);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
     assertEq(rewardDistToken.balanceOf(address(1)), 999999999999999000);
     assertEq(rewardDistToken.withdrawnRewardOf(address(1)), 499999999999999999);
     assertEq(rewardDistToken.dividendOf(address(1)), 0);
@@ -335,16 +335,16 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     lpStaking.deposit(vaultId, lpTokenBalance);
   }
 
-  function getRewardDistToken() private view returns (TimelockRewardDistributionTokenImpl rewardDistToken) {
+  function getRewardDistToken() private view returns (LPStakingXTokenUpgradeable rewardDistToken) {
     (address stakingToken, address rewardToken) = lpStaking.vaultStakingInfo(vaultId);
-    address rewardDistTokenAddress = lpStaking.rewardDistributionTokenAddr(stakingToken, rewardToken);
-    rewardDistToken = TimelockRewardDistributionTokenImpl(rewardDistTokenAddress);
+    address rewardDistTokenAddress = lpStaking.xTokenAddr(stakingToken, rewardToken);
+    rewardDistToken = LPStakingXTokenUpgradeable(rewardDistTokenAddress);
   }
 
   function exitRelatedFunctionsSetUp() private returns (uint256 lpTokenBalance) {
     mintVaultTokens(2);
 
-    TimelockRewardDistributionTokenImpl rewardDistToken = getRewardDistToken();
+    LPStakingXTokenUpgradeable rewardDistToken = getRewardDistToken();
 
     createUniswapV2Pair();
     addLiquidity();

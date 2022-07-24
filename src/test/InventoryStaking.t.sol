@@ -7,7 +7,7 @@ import {console, SetupEnvironment} from "./utils/utils.sol";
 import {InventoryStaking, IInventoryStaking} from "../contracts/InventoryStaking.sol";
 import {FNFTCollectionFactory} from "../contracts/FNFTCollectionFactory.sol";
 import {FNFTCollection} from "../contracts/FNFTCollection.sol";
-import {XTokenUpgradeable} from "../contracts/token/XTokenUpgradeable.sol";
+import {InventoryStakingXTokenUpgradeable} from "../contracts/token/InventoryStakingXTokenUpgradeable.sol";
 import {VaultManager} from "../contracts/VaultManager.sol";
 
 /// @author 0xkowloon
@@ -88,7 +88,7 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(this)), 0.8 ether);
 
     address xTokenAddress = inventoryStaking.vaultXToken(vaultId);
-    XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddress);
+    InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(xTokenAddress);
     assertEq(xToken.balanceOf(address(this)), 1 ether);
     assertEq(xToken.timelockUntil(address(this)), block.timestamp + 10 seconds);
 
@@ -114,7 +114,7 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
     assertEq(vault.balanceOf(address(this)), 0.9 ether);
 
     address xTokenAddress = inventoryStaking.vaultXToken(vaultId);
-    XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddress);
+    InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(xTokenAddress);
     assertEq(xToken.balanceOf(address(this)), 123 ether);
     assertEq(xToken.timelockUntil(address(this)), block.timestamp + 3 seconds);
   }
@@ -155,7 +155,7 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
     vm.stopPrank();
 
     address xTokenAddress = inventoryStaking.vaultXToken(vaultId);
-    XTokenUpgradeable xToken = XTokenUpgradeable(xTokenAddress);
+    InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(xTokenAddress);
 
     assertEq(inventoryStaking.xTokenShareValue(vaultId), 1 ether);
 
@@ -207,7 +207,7 @@ contract InventoryStakingTest is DSTest, SetupEnvironment {
   function testXTokenStorageVariables() public {
     mintVaultTokens(1);
     inventoryStaking.deployXTokenForVault(vaultId);
-    XTokenUpgradeable xToken = XTokenUpgradeable(inventoryStaking.vaultXToken(vaultId));
+    InventoryStakingXTokenUpgradeable xToken = InventoryStakingXTokenUpgradeable(inventoryStaking.vaultXToken(vaultId));
     assertEq(address(xToken.baseToken()), address(vault));
     assertEq(xToken.name(), "xDOODLE");
     assertEq(xToken.symbol(), "xDOODLE");

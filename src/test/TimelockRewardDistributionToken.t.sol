@@ -4,19 +4,19 @@ pragma solidity 0.8.13;
 import "ds-test/test.sol";
 import {CheatCodes} from "./utils/cheatcodes.sol";
 
-import {TimelockRewardDistributionTokenImpl} from "../contracts/token/TimelockRewardDistributionTokenImpl.sol";
+import {LPStakingXTokenUpgradeable} from "../contracts/token/LPStakingXTokenUpgradeable.sol";
 import {MockERC20Upgradeable} from "../contracts/mocks/ERC20.sol";
 
-contract TimelockRewardDistributionTokenTest is DSTest {
-  TimelockRewardDistributionTokenImpl distribution;
+contract LPStakingXTokenTest is DSTest {
+  LPStakingXTokenUpgradeable distribution;
   MockERC20Upgradeable rewardToken;
   CheatCodes vm;
 
   function setUp() public {
-    distribution = new TimelockRewardDistributionTokenImpl();
+    distribution = new LPStakingXTokenUpgradeable();
     rewardToken = new MockERC20Upgradeable();
     rewardToken.__MockERC20Upgradeable_init("Test", "TEST");
-    distribution.__TimelockRewardDistributionToken_init(rewardToken, "Test", "TEST");
+    distribution.__LPStakingXToken_init(rewardToken, "Test", "TEST");
 
     vm = CheatCodes(address(bytes20(uint160(uint256(keccak256("hevm cheat code"))))));
   }
@@ -55,13 +55,13 @@ contract TimelockRewardDistributionTokenTest is DSTest {
   }
 
   function testDistributeRewardsZeroSupply() public {
-    vm.expectRevert(TimelockRewardDistributionTokenImpl.ZeroSupply.selector);
+    vm.expectRevert(LPStakingXTokenUpgradeable.ZeroSupply.selector);
     distribution.distributeRewards(1e18);
   }
 
   function testDistributeRewardsZeroAmount() public {
     distribution.mint(address(1), 1e18);
-    vm.expectRevert(TimelockRewardDistributionTokenImpl.ZeroAmount.selector);
+    vm.expectRevert(LPStakingXTokenUpgradeable.ZeroAmount.selector);
     distribution.distributeRewards(0);
   }
 
