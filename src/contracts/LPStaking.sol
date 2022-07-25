@@ -184,7 +184,7 @@ contract LPStaking is ILPStaking, Pausable {
             return;
         }
         address newXToken = _deployDividendToken(newPool);
-        emit PoolUpdated(vaultId, newXToken);
+        emit StakingPoolUpdated(vaultId, newXToken);
     }
 
     function updatePoolForVaults(uint256[] calldata vaultIds) external override {

@@ -67,7 +67,7 @@ interface ILPStaking {
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) external;
 
     event StakingPoolCreated(uint256 vaultId, address xToken, address baseToken);
-    event PoolUpdated(uint256 vaultId, address xToken);
+    event StakingPoolUpdated(uint256 vaultId, address xToken);
     event FeesReceived(uint256 vaultId, uint256 amount, address xToken);
     event LPDeposited(uint256 vaultId, uint256 amount, address xToken, address sender);
     event XTokenWithdrawn(uint256 vaultId, uint256 amount, address xToken, address sender);
