@@ -4,21 +4,16 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "./interfaces/IFeeDistributor.sol";
-import "./interfaces/IFNFTCollection.sol";
 import "./interfaces/ILPStaking.sol";
-import "./interfaces/IStakingZap.sol";
+import "./interfaces/ILPStakingZap.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVaultManager.sol";
 import "./interfaces/IWETH.sol";
 
-contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgradeable {
+contract StakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
   IUniswapV2Router public immutable override router;
@@ -184,5 +179,12 @@ contract StakingZap is IStakingZap, Ownable, ReentrancyGuard, ERC721HolderUpgrad
       keccak256(abi.encodePacked(token0, token1)),
       hex'754e1d90e536e4c1df81b7f030f47b4ca80c87120e145c294f098c83a6cb5ace' // init code hash
     )))));
+  }
+
+  // returns sorted token addresses, used to handle return values from pairs sorted in this order
+  function _sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
+    if (tokenA == tokenB) revert IdenticalAddress();
+    (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+    if (token0 == address(0)) revert ZeroAddress();
   }
 }
