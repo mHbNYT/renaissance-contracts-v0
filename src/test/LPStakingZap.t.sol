@@ -7,7 +7,6 @@ import {LPStakingZap} from "../contracts/LPStakingZap.sol";
 import {VaultManager} from "../contracts/VaultManager.sol";
 import {LPStaking} from "../contracts/LPStaking.sol";
 import {FeeDistributor} from "../contracts/FeeDistributor.sol";
-import {InventoryStaking} from "../contracts/InventoryStaking.sol";
 import {IUniswapV2Router} from "../contracts/interfaces/IUniswapV2Router.sol";
 
 contract LPStakingZapTest is DSTest, SetupEnvironment {
@@ -42,7 +41,6 @@ contract LPStakingZapTest is DSTest, SetupEnvironment {
     }
 
     event LPLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
-    event InventoryLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
 
     function testSetLPLockTime() public {
         vm.expectEmit(true, false, false, true);

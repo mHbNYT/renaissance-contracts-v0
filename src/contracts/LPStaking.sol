@@ -23,17 +23,17 @@ contract LPStaking is ILPStaking, Pausable {
     mapping(uint256 => StakingPool) public override vaultStakingInfo;
 
     IStakingTokenProvider public override stakingTokenProvider;
-    LPStakingXTokenUpgradeable public override timelockXTokenImpl;
+    LPStakingXTokenUpgradeable public override lpStakingXToken;
     IVaultManager public override vaultManager;
 
     function __LPStaking__init(address _vaultManager, address _stakingTokenProvider) external override initializer {
         __Ownable_init();
         if (_stakingTokenProvider == address(0)) revert ZeroAddress();
-        if (address(timelockXTokenImpl) != address(0)) revert TimelockXTokenImplAlreadySet();
+        if (address(lpStakingXToken) != address(0)) revert LPStakingXTokenAlreadySet();
         vaultManager = IVaultManager(_vaultManager);
         stakingTokenProvider = IStakingTokenProvider(_stakingTokenProvider);
-        timelockXTokenImpl = new LPStakingXTokenUpgradeable();
-        timelockXTokenImpl.__LPStakingXToken_init(IERC20Upgradeable(address(0)), "", "");
+        lpStakingXToken = new LPStakingXTokenUpgradeable();
+        lpStakingXToken.__LPStakingXToken_init(IERC20Upgradeable(address(0)), "", "");
     }
 
     modifier onlyAdmin() {
@@ -49,7 +49,7 @@ contract LPStaking is ILPStaking, Pausable {
         StakingPool memory pool = StakingPool(_stakingToken, _baseToken);
         vaultStakingInfo[vaultId] = pool;
         address newXToken = _deployDividendToken(pool);
-        emit PoolCreated(vaultId, newXToken, _baseToken);
+        emit StakingPoolCreated(vaultId, newXToken, _baseToken);
     }
 
     function deposit(uint256 vaultId, uint256 amount) external override {
@@ -74,7 +74,7 @@ contract LPStaking is ILPStaking, Pausable {
             _xToken.timelockMint(msg.sender, amount, 2);
         }
 
-        emit Deposited(vaultId, amount, address(_xToken), msg.sender);
+        emit LPDeposited(vaultId, amount, address(_xToken), msg.sender);
     }
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external override {
@@ -202,7 +202,7 @@ contract LPStaking is ILPStaking, Pausable {
         _claimRewards(pool, msg.sender);
         _withdraw(pool, amount, msg.sender);
 
-        emit Withdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
+        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
     }
 
     function withdrawTo(uint256 vaultId, uint256 amount, address to) external override {
@@ -210,7 +210,7 @@ contract LPStaking is ILPStaking, Pausable {
         _claimRewards(pool, to);
         _withdraw(pool, amount, to);
 
-        emit Withdrawn(vaultId, amount, address(xToken(pool)), to);
+        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
     }
 
     function balanceOf(uint256 vaultId, address addr) public view override returns (uint256) {
@@ -233,7 +233,7 @@ contract LPStaking is ILPStaking, Pausable {
     // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.
     function xToken(StakingPool memory pool) public view override returns (LPStakingXTokenUpgradeable) {
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.baseToken, uint256(2) /* small nonce to change tokens */));
-        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(timelockXTokenImpl), salt);
+        address tokenAddr = ClonesUpgradeable.predictDeterministicAddress(address(lpStakingXToken), salt);
         return LPStakingXTokenUpgradeable(tokenAddr);
     }
 
@@ -257,7 +257,7 @@ contract LPStaking is ILPStaking, Pausable {
     function _deployDividendToken(StakingPool memory pool) internal returns (address) {
         // Changed to use new nonces.
         bytes32 salt = keccak256(abi.encodePacked(pool.stakingToken, pool.baseToken, uint256(2)));
-        address _xToken = ClonesUpgradeable.cloneDeterministic(address(timelockXTokenImpl), salt);
+        address _xToken = ClonesUpgradeable.cloneDeterministic(address(lpStakingXToken), salt);
         string memory name = stakingTokenProvider.nameForStakingToken(pool.baseToken);
         LPStakingXTokenUpgradeable(_xToken).__LPStakingXToken_init(IERC20Upgradeable(pool.baseToken), name, name);
         return _xToken;

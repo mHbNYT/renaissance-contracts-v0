@@ -16,7 +16,7 @@ interface ILPStaking {
 
     function stakingTokenProvider() external view returns (IStakingTokenProvider);
 
-    function timelockXTokenImpl() external view returns (LPStakingXTokenUpgradeable);
+    function lpStakingXToken() external view returns (LPStakingXTokenUpgradeable);
 
     function vaultStakingInfo(uint256) external view returns (address, address);
 
@@ -66,11 +66,11 @@ interface ILPStaking {
 
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) external;
 
-    event PoolCreated(uint256 vaultId, address xToken, address baseToken);
+    event StakingPoolCreated(uint256 vaultId, address xToken, address baseToken);
     event PoolUpdated(uint256 vaultId, address xToken);
     event FeesReceived(uint256 vaultId, uint256 amount, address xToken);
-    event Deposited(uint256 vaultId, uint256 amount, address xToken, address sender);
-    event Withdrawn(uint256 vaultId, uint256 amount, address xToken, address sender);
+    event LPDeposited(uint256 vaultId, uint256 amount, address xToken, address sender);
+    event XTokenWithdrawn(uint256 vaultId, uint256 amount, address xToken, address sender);
     event StakingTokenProviderUpdated(address oldStakingTokenProvider, address newStakingTokenProvider);
 
     error NotAPool();
@@ -79,7 +79,7 @@ interface ILPStaking {
     error NothingToMigrate();
     error PoolAlreadyExists();
     error PoolDoesNotExist();
-    error TimelockXTokenImplAlreadySet();
+    error LPStakingXTokenAlreadySet();
     error TimelockTooLong();
     error VaultManagerAlreadySet();
     error VaultManagerNotSet();

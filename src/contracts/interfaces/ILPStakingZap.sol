@@ -4,7 +4,6 @@ pragma solidity 0.8.13;
 
 import "./IWETH.sol";
 import "./ILPStaking.sol";
-import "./IInventoryStaking.sol";
 import "./IVaultManager.sol";
 import "./IUniswapV2Router.sol";
 
