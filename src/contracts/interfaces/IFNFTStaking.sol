@@ -6,14 +6,14 @@ import "./IVaultManager.sol";
 import "./ITimelockExcludeList.sol";
 
 
-interface IInventoryStaking {
+interface IFNFTStaking {
     function vaultManager() external view returns (IVaultManager);
 
     function inventoryLockTimeErc20() external view returns (uint256);
 
     function timelockExcludeList() external view returns (ITimelockExcludeList);
 
-    function __InventoryStaking_init(address _vaultManager) external;
+    function __FNFTStaking_init(address _vaultManager) external;
 
     function setTimelockExcludeList(address _timelockExcludeList) external;
 
@@ -41,12 +41,13 @@ interface IInventoryStaking {
 
     function vaultXToken(uint256 vaultId) external view returns (address);
 
-    event BaseTokenDeposited(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, uint256 timelockUntil, address sender);
-    event BaseTokenWithdrawn(uint256 vaultId, uint256 baseTokenAmount, uint256 xTokenAmount, address sender);
-    event FeesReceived(uint256 vaultId, uint256 amount);
+    event StakingPoolCreated(uint256 vaultId, address xToken, address baseToken);
+    event FeesReceived(uint256 vaultId, uint256 amount, address xToken);
+    event BaseTokenDeposited(uint256 vaultId, uint256 baseTokenAmount, uint256 amount, uint256 timelockUntil, address sender);
+    event XTokenWithdrawn(uint256 vaultId, uint256 baseTokenAmount, uint256 amount, address sender);
+
     event InventoryLockTimeErc20Updated(uint256 oldInventoryLockTimeErc20, uint256 newInventoryLockTimeErc20);
     event TimelockExcludeListUpdated(address oldTimelockExcludeList, address newTimelockExcludeList);
-    event XTokenCreated(uint256 vaultId, address baseToken, address xToken);
 
     error LockTooLong();
     error NotExcludedFromFees();

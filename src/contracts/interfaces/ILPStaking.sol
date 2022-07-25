@@ -4,19 +4,19 @@ pragma solidity 0.8.13;
 
 import "./IVaultManager.sol";
 import "./IStakingTokenProvider.sol";
-import "../token/TimelockRewardDistributionTokenImpl.sol";
+import "../token/LPStakingXTokenUpgradeable.sol";
 
 interface ILPStaking {
     struct StakingPool {
         address stakingToken;
-        address rewardToken;
+        address baseToken;
     }
 
     function vaultManager() external view returns (IVaultManager);
 
     function stakingTokenProvider() external view returns (IStakingTokenProvider);
 
-    function timelockRewardDistTokenImpl() external view returns (TimelockRewardDistributionTokenImpl);
+    function lpStakingXToken() external view returns (LPStakingXTokenUpgradeable);
 
     function vaultStakingInfo(uint256) external view returns (address, address);
 
@@ -38,9 +38,9 @@ interface ILPStaking {
 
     function exit(uint256 vaultId) external;
 
-    function emergencyExitAndClaim(address _stakingToken, address _rewardToken) external;
+    function emergencyExitAndClaim(address _stakingToken, address _baseToken) external;
 
-    function emergencyExit(address _stakingToken, address _rewardToken) external;
+    function emergencyExit(address _stakingToken, address _baseToken) external;
 
     function withdraw(uint256 vaultId, uint256 amount) external;
 
@@ -48,9 +48,9 @@ interface ILPStaking {
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external;
 
-    function rewardDistributionToken(uint256 vaultId) external view returns (TimelockRewardDistributionTokenImpl);
+    function xToken(uint256 vaultId) external view returns (LPStakingXTokenUpgradeable);
 
-    function rewardDistributionTokenAddr(address stakedToken, address rewardToken) external view returns (address);
+    function xTokenAddr(address stakedToken, address baseToken) external view returns (address);
 
     function balanceOf(uint256 vaultId, address addr) external view returns (uint256);
 
@@ -58,14 +58,16 @@ interface ILPStaking {
 
     function lockedLPBalance(uint256 vaultId, address who) external view returns (uint256);
 
-    function rewardDistributionToken(StakingPool memory pool) external view returns (TimelockRewardDistributionTokenImpl);
+    function xToken(StakingPool memory pool) external view returns (LPStakingXTokenUpgradeable);
 
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) external;
 
-    event PoolCreated(uint256 vaultId, address pool);
-    event PoolUpdated(uint256 vaultId, address pool);
+    event StakingPoolCreated(uint256 vaultId, address xToken, address baseToken);
+    event PoolUpdated(uint256 vaultId, address xToken);
+    event FeesReceived(uint256 vaultId, uint256 amount, address xToken);
+    event LPDeposited(uint256 vaultId, uint256 amount, address xToken, address sender);
+    event XTokenWithdrawn(uint256 vaultId, uint256 amount, address xToken, address sender);
     event StakingTokenProviderUpdated(address oldStakingTokenProvider, address newStakingTokenProvider);
-    event FeesReceived(uint256 vaultId, uint256 amount);
 
     error NotAPool();
     error NotDeployingProperDistro();
@@ -73,7 +75,7 @@ interface ILPStaking {
     error NothingToMigrate();
     error PoolAlreadyExists();
     error PoolDoesNotExist();
-    error TimelockRewardDistTokenImplAlreadySet();
+    error LPStakingXTokenAlreadySet();
     error TimelockTooLong();
     error VaultManagerAlreadySet();
     error VaultManagerNotSet();
