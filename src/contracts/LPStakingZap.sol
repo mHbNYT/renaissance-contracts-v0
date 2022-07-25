@@ -14,7 +14,7 @@ import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVaultManager.sol";
 import "./interfaces/IWETH.sol";
 
-contract StakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
+contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
   using SafeERC20Upgradeable for IERC20Upgradeable;
 
   IUniswapV2Router public immutable override router;

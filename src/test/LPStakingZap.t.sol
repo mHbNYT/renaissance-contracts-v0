@@ -3,20 +3,19 @@ pragma solidity 0.8.13;
 
 import "ds-test/test.sol";
 import {SetupEnvironment} from "./utils/utils.sol";
-import {StakingZap} from "../contracts/StakingZap.sol";
+import {LPStakingZap} from "../contracts/LPStakingZap.sol";
 import {VaultManager} from "../contracts/VaultManager.sol";
 import {LPStaking} from "../contracts/LPStaking.sol";
 import {FeeDistributor} from "../contracts/FeeDistributor.sol";
 import {InventoryStaking} from "../contracts/InventoryStaking.sol";
 import {IUniswapV2Router} from "../contracts/interfaces/IUniswapV2Router.sol";
 
-contract StakingZapTest is DSTest, SetupEnvironment {
+contract LPStakingZapTest is DSTest, SetupEnvironment {
     IUniswapV2Router private router;
     FeeDistributor private feeDistributor;
     VaultManager private vaultManager;
-    StakingZap private stakingZap;
+    LPStakingZap private lpStakingZap;
     LPStaking private lpStaking;
-    InventoryStaking private inventoryStaking;
 
     function setUp() public {
         setupEnvironment(10 ether);
@@ -29,21 +28,17 @@ contract StakingZapTest is DSTest, SetupEnvironment {
             vaultManager,
             ,
             ,
-            inventoryStaking
         ) = setupContracts();
         router = setupRouter();
-        stakingZap = new StakingZap(address(vaultManager), address(router));
-        feeDistributor.setInventoryStakingAddress(address(inventoryStaking));
+        lpStakingZap = new LPStakingZap(address(vaultManager), address(router));
     }
 
     function testAssignLPStakingContract() public {
-        assertEq(address(stakingZap.lpStaking()), address(0));
-        assertEq(address(stakingZap.inventoryStaking()), address(0));
+        assertEq(address(lpStakingZap.lpStaking()), address(0));
 
-        stakingZap.assignLPStakingContract();
+        lpStakingZap.assignLPStakingContract();
 
-        assertEq(address(stakingZap.lpStaking()), address(lpStaking));
-        assertEq(address(stakingZap.inventoryStaking()), address(inventoryStaking));
+        assertEq(address(lpStakingZap.lpStaking()), address(lpStaking));
     }
 
     event LPLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
@@ -52,12 +47,6 @@ contract StakingZapTest is DSTest, SetupEnvironment {
     function testSetLPLockTime() public {
         vm.expectEmit(true, false, false, true);
         emit LPLockTimeUpdated(48 hours, 7 days);
-        stakingZap.setLPLockTime(7 days);
-    }
-
-    function testSetInventoryLockTime() public {
-        vm.expectEmit(true, false, false, true);
-        emit InventoryLockTimeUpdated(7 days, 14 days);
-        stakingZap.setInventoryLockTime(14 days);
+        lpStakingZap.setLPLockTime(7 days);
     }
 }
