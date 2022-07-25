@@ -36,11 +36,11 @@ contract StakingZapTest is DSTest, SetupEnvironment {
         feeDistributor.setInventoryStakingAddress(address(inventoryStaking));
     }
 
-    function testAssignStakingContracts() public {
+    function testAssignLPStakingContract() public {
         assertEq(address(stakingZap.lpStaking()), address(0));
         assertEq(address(stakingZap.inventoryStaking()), address(0));
 
-        stakingZap.assignStakingContracts();
+        stakingZap.assignLPStakingContract();
 
         assertEq(address(stakingZap.lpStaking()), address(lpStaking));
         assertEq(address(stakingZap.inventoryStaking()), address(inventoryStaking));

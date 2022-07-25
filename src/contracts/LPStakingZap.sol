@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "./interfaces/IFeeDistributor.sol";
 import "./interfaces/ILPStaking.sol";
 import "./interfaces/ILPStakingZap.sol";
 import "./interfaces/IUniswapV2Router.sol";
@@ -29,6 +30,12 @@ contract StakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     vaultManager = IVaultManager(_vaultManager);
     WETH = IWETH(IUniswapV2Router(_router).WETH());
     IERC20Upgradeable(address(IUniswapV2Router(_router).WETH())).safeApprove(_router, type(uint256).max);
+  }
+
+  function assignLPStakingContract() public override {
+    if (address(lpStaking) != address(0)) revert NotZeroAddress();
+    IFeeDistributor feeDistributor = IFeeDistributor(IVaultManager(vaultManager).feeDistributor());
+    lpStaking = ILPStaking(feeDistributor.lpStaking());
   }
 
   receive() external payable {

@@ -44,7 +44,11 @@ interface ILPStaking {
 
     function withdraw(uint256 vaultId, uint256 amount) external;
 
+    function withdrawTo(uint256 vaultId, uint256 amount, address to) external;
+
     function claimRewards(uint256 vaultId) external;
+
+    function claimRewardsTo(uint256 vaultId, address to) external;
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external;
 

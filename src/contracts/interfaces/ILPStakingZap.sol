@@ -19,7 +19,7 @@ interface ILPStakingZap {
 
     function lpLockTime() external returns(uint256);
 
-    function assignStakingContracts() external;
+    function assignLPStakingContract() external;
 
     function rescue(address token) external;
 
@@ -69,6 +69,7 @@ interface ILPStakingZap {
     error InvalidDestination();
     error LockTooLong();
     error NotExcluded();
+    error NotZeroAddress();
     error OnlyWETH();
     error ZeroAddress();
 }
