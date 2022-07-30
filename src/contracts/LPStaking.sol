@@ -80,7 +80,7 @@ contract LPStaking is ILPStaking, Pausable {
     function claimMultipleRewards(uint256[] calldata vaultIds) external override {
         uint256 length = vaultIds.length;
         for (uint256 i; i < length;) {
-            claimRewards(vaultIds[i]);
+            claimRewardsTo(vaultIds[i], msg.sender);
             unchecked {
                 ++i;
             }

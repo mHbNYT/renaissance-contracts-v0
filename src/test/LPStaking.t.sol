@@ -279,7 +279,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     vm.warp(block.timestamp + 3);
     vm.prank(address(1));
 
-    lpStaking.claimRewards(vaultId);
+    lpStaking.claimRewardsTo(vaultId, address(1));
 
     assertEq(uniswapV2Pair.balanceOf(address(1)), 0);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
