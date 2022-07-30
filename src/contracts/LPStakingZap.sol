@@ -28,8 +28,9 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
   constructor(address _vaultManager, address _router) Ownable() ReentrancyGuard() {
     router = IUniswapV2Router(_router);
     vaultManager = IVaultManager(_vaultManager);
-    WETH = IWETH(IUniswapV2Router(_router).WETH());
-    IERC20Upgradeable(address(IUniswapV2Router(_router).WETH())).safeApprove(_router, type(uint256).max);
+    address weth = IUniswapV2Router(_router).WETH();
+    WETH = IWETH(weth);
+    IERC20Upgradeable(weth).safeApprove(_router, type(uint256).max);
   }
 
   function assignLPStakingContract() public override {
