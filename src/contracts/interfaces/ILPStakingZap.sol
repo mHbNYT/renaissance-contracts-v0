@@ -27,7 +27,6 @@ interface ILPStakingZap {
     function stakeLiquidityETH(
 		uint256 vaultId,
         uint256 minTokenIn,
-        uint256 minWethIn,
         uint256 wethIn,
         address to
 	) external payable returns (uint256, uint256, uint256);

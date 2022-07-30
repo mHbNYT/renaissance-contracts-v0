@@ -25,9 +25,18 @@ contract FNFTStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
 
     function __FNFTStakingXToken_init(address _baseToken, string memory name, string memory symbol) public initializer {
         __Ownable_init();
-        // string memory _name = IFNFTStaking(msg.sender).fnftCollectionFactory().vault();
         __ERC20_init(name, symbol);
         baseToken = IERC20Upgradeable(_baseToken);
+    }
+
+    function burnXTokens(address who, uint256 _share) external onlyOwner returns (uint256) {
+        // Gets the amount of xToken in existence
+        uint256 totalShares = totalSupply();
+        // Calculates the amount of base tokens the xToken is worth
+        uint256 what = (_share * baseToken.balanceOf(address(this))) / totalShares;
+        _burn(who, _share);
+        baseToken.safeTransfer(who, what);
+        return what;
     }
 
     // Needs to be called BEFORE new base tokens are deposited.
@@ -49,20 +58,14 @@ contract FNFTStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
         }
     }
 
-    function burnXTokens(address who, uint256 _share) external onlyOwner returns (uint256) {
-        // Gets the amount of xToken in existence
-        uint256 totalShares = totalSupply();
-        // Calculates the amount of base tokens the xToken is worth
-        uint256 what = (_share * baseToken.balanceOf(address(this))) / totalShares;
-        _burn(who, _share);
-        baseToken.safeTransfer(who, what);
-        return what;
+    function timelockUntil(address account) external view returns (uint256) {
+        return timelock[account];
     }
 
-    function timelockAccount(address account, uint256 timelockLength) public onlyOwner virtual {
+    function timelockAccount(address account, uint256 timelockLength) public onlyOwner {
         if (timelockLength >= MAX_TIMELOCK) revert LockTooLong();
         uint256 timelockFinish = block.timestamp + timelockLength;
-        if(timelockFinish > timelock[account]){
+        if (timelockFinish > timelock[account]) {
             timelock[account] = timelockFinish;
             emit Timelocked(account, timelockFinish);
         }
@@ -73,11 +76,7 @@ contract FNFTStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {
         super._burn(who, amount);
     }
 
-    function timelockUntil(address account) public view returns (uint256) {
-        return timelock[account];
-    }
-
-    function _timelockMint(address account, uint256 amount, uint256 timelockLength) internal virtual {
+    function _timelockMint(address account, uint256 amount, uint256 timelockLength) internal {
         timelockAccount(account, timelockLength);
         _mint(account, amount);
     }
