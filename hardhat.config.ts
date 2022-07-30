@@ -34,7 +34,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: +process.env.AURORA_LOCAL_CHAINID!,
+      chainId: +process.env.LOCAL_CHAINID!,
       saveDeployments: false,
       gasPrice: 200000000000,
       gas: 30000000,
@@ -42,19 +42,19 @@ const config: HardhatUserConfig = {
         url: "https://eth-mainnet.alchemyapi.io/v2/7p4KzWgfAW2gU_4xOoPT5mpxDdOgFycO"
       }
     },
-    aurora_testnet: {
-      url: process.env.AURORA_TEST_URI,
-      chainId: +process.env.AURORA_TEST_CHAINID!,
-      accounts: [`${process.env.AURORA_TEST_PRIVATE_KEY}`],
+    testnet: {
+      url: process.env.TEST_URI,
+      chainId: +process.env.TEST_CHAINID!,
+      accounts: [`${process.env.TEST_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000,
       saveDeployments: false,
     },
-    aurora_mainnet: {
-      url: process.env.AURORA_MAIN_URI,
-      chainId: +process.env.AURORA_MAIN_CHAINID!,
-      accounts: [`${process.env.AURORA_MAIN_PRIVATE_KEY}`],
+    mainnet: {
+      url: process.env.MAIN_URI,
+      chainId: +process.env.MAIN_CHAINID!,
+      accounts: [`${process.env.MAIN_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000,
@@ -69,15 +69,15 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     WETH: {
-      aurora_mainnet: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
+      mainnet: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
     },
     TREASURY: {
       default: '0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b',
     },
     UNISWAP_V2_FACTORY: {
       hardhat: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-      aurora_testnet: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-      aurora_mainnet: '0xc66F594268041dB60507F00703b152492fb176E7',
+      testnet: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      mainnet: '0xc66F594268041dB60507F00703b152492fb176E7',
     },
   },
 };

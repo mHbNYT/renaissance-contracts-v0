@@ -7,8 +7,7 @@
     2. Holding a certain % of an FNFT will allow you to withdraw the NFT and payout the remaining holders.
 ## FNFT Lifecycle
 ### Birth of an FNFT
-1. DAO buys NFT on mainnet
-2. DAO bridges NFT to Aurora
+1. DAO buys NFT
 3. DAO uses the NFT as the underlying asset and creates a new FNFT contract for that token with a fixed amount of fractions (e.g. 1000).
 4. (OPTION): Create an LP - [(dev note) uniRouter.addLiquidity](https://github.com/Uniswap/v2-periphery/blob/master/contracts/UniswapV2Router02.sol#L61) - for the FNFT ERC20s at a _slight_ discount, (e.g. if the DAO bought the nft for 1000ETH and made 1000 fractions, the LP would be created with 950ETH and 1000 fractions, so the initial price of an FNFT would be .95ETH)
     1. DAO creates a new liquidity pool with ETH using 100% of the FNFT supply - i.e: the DAO moves all the fractions into the market for trading (net result: more swapping fees for the treasury)
@@ -42,11 +41,11 @@ npx hardhat node
 ### Deploy to a local node
 npx hardhat run --network localhost dev-scripts/deploy.js
 
-### Deploy to Aurora Testnet
-npx hardhat run --network aurora_testnet dev-scripts/deploy.js
+### Deploy to Testnet
+npx hardhat run --network testnet dev-scripts/deploy.js
 
-### Deploy to Aurora
-npx hardhat run --network aurora scripts/deploy.js
+### Deploy to Mainnet
+npx hardhat run --network mainnet scripts/deploy.js
 
 ## setup forge test
 install usbmodule
