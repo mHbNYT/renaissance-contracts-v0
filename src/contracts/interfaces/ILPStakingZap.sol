@@ -26,7 +26,6 @@ interface ILPStakingZap {
 
     function stakeLiquidityETH(
 		uint256 vaultId,
-        address vault,
         uint256 minTokenIn,
         uint256 minWethIn,
         uint256 wethIn,
@@ -35,7 +34,6 @@ interface ILPStakingZap {
 
     function stakeLiquidityWETH(
 		uint256 vaultId,
-        address vault,
         uint256 minTokenIn,
         uint256 minWethIn,
         uint256 wethIn,
@@ -44,7 +42,6 @@ interface ILPStakingZap {
 
     function unlockAndRemoveLiquidityETH(
         uint256 vaultId,
-        address vault,
         uint256 amount,
         uint256 minTokenOut,
         uint256 minEthOut,
@@ -53,7 +50,6 @@ interface ILPStakingZap {
 
     function unlockAndRemoveLiquidityWETH(
         uint256 vaultId,
-        address vault,
         uint256 amount,
         uint256 minTokenOut,
         uint256 minEthOut,

@@ -28,12 +28,11 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
   constructor(address _vaultManager, address _router) Ownable() ReentrancyGuard() {
     router = IUniswapV2Router(_router);
     vaultManager = IVaultManager(_vaultManager);
-    IWETH weth = IWETH(IUniswapV2Router(_router).WETH());
-    WETH = weth;
-    IERC20Upgradeable(address(weth)).safeApprove(_router, type(uint256).max);
+    WETH = IWETH(IUniswapV2Router(_router).WETH());
+    IERC20Upgradeable(address(IUniswapV2Router(_router).WETH())).safeApprove(_router, type(uint256).max);
   }
 
-  function assignLPStakingContract() external override {
+  function assignLPStakingContract() public override {
     if (address(lpStaking) != address(0)) revert NotZeroAddress();
     IFeeDistributor feeDistributor = IFeeDistributor(IVaultManager(vaultManager).feeDistributor());
     lpStaking = ILPStaking(feeDistributor.lpStaking());
@@ -60,7 +59,6 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 
 	function stakeLiquidityETH(
 		uint256 vaultId,
-    address vault,
     uint256 minTokenIn,
     uint256 minWethIn,
     uint256 wethIn,
@@ -69,12 +67,13 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 		if (to == address(0) || to == address(this)) revert InvalidDestination();
 		WETH.deposit{value: msg.value}();
 
+    address vault = vaultManager.vault(vaultId);
+
 		return _addLiquidityAndLock(vaultId, vault, minTokenIn, minWethIn, wethIn, to);
 	}
 
 	function stakeLiquidityWETH(
 		uint256 vaultId,
-    address vault,
     uint256 minTokenIn,
     uint256 minWethIn,
     uint256 wethIn,
@@ -83,25 +82,29 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 		if (to == address(0) || to == address(this)) revert InvalidDestination();
 		IERC20Upgradeable(address(WETH)).safeTransferFrom(msg.sender, address(this), wethIn);
 
+    address vault = vaultManager.vault(vaultId);
+
 		return _addLiquidityAndLock(vaultId, vault, minTokenIn, minWethIn, wethIn, to);
 	}
 
   function unlockAndRemoveLiquidityETH(
     uint256 vaultId,
-    address vault,
     uint256 amount,
     uint256 minTokenOut,
     uint256 minEthOut,
     address to
   ) external override returns (uint256, uint256) {
+    IVaultManager _vaultManager = vaultManager;
     if (to == address(0) || to == address(this)) revert InvalidDestination();
-    if (!vaultManager.excludedFromFees(address(this))) revert NotExcluded();
+    if (!_vaultManager.excludedFromFees(address(this))) revert NotExcluded();
+
+    address vault = _vaultManager.vault(vaultId);
 
     lpStaking.claimRewardsTo(vaultId, to);
     lpStaking.withdraw(vaultId, amount);
 
     (uint256 amountToken, uint256 amountEth) = router.removeLiquidityETH(
-      address(vault),
+      vault,
       amount,
       minTokenOut,
       minEthOut,
@@ -114,20 +117,22 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 
   function unlockAndRemoveLiquidityWETH(
     uint256 vaultId,
-    address vault,
     uint256 amount,
     uint256 minTokenOut,
     uint256 minEthOut,
     address to
   ) external override returns (uint256, uint256) {
+    IVaultManager _vaultManager = vaultManager;
     if (to == address(0) || to == address(this)) revert InvalidDestination();
-    if (!vaultManager.excludedFromFees(address(this))) revert NotExcluded();
+    if (!_vaultManager.excludedFromFees(address(this))) revert NotExcluded();
+
+    address vault = _vaultManager.vault(vaultId);
 
     lpStaking.claimRewardsTo(vaultId, to);
     lpStaking.withdraw(vaultId, amount);
 
     (uint256 amountToken, uint256 amountWeth) = router.removeLiquidity(
-      address(vault),
+      vault,
       address(WETH),
       amount,
       minTokenOut,
@@ -153,7 +158,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     IERC20Upgradeable(vault).safeApprove(address(router), minTokenIn);
 
 		(uint256 amountToken, uint256 amountEth, uint256 liquidity) = router.addLiquidity(
-      address(vault),
+      vault,
       address(WETH),
       minTokenIn,
       wethIn,
