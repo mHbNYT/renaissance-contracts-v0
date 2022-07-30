@@ -100,7 +100,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     address vault = _vaultManager.vault(vaultId);
 
     lpStaking.claimRewardsTo(vaultId, to);
-    lpStaking.withdraw(vaultId, amount);
+    lpStaking.withdrawTo(vaultId, amount, address(this));
 
     (uint256 amountToken, uint256 amountEth) = router.removeLiquidityETH(
       vault,
@@ -128,7 +128,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     address vault = _vaultManager.vault(vaultId);
 
     lpStaking.claimRewardsTo(vaultId, to);
-    lpStaking.withdraw(vaultId, amount);
+    lpStaking.withdrawTo(vaultId, amount, address(this));
 
     (uint256 amountToken, uint256 amountWeth) = router.removeLiquidity(
       vault,

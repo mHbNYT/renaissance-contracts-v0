@@ -42,11 +42,7 @@ interface ILPStaking {
 
     function emergencyExit(address _stakingToken, address _baseToken) external;
 
-    function withdraw(uint256 vaultId, uint256 amount) external;
-
     function withdrawTo(uint256 vaultId, uint256 amount, address to) external;
-
-    function claimRewards(uint256 vaultId) external;
 
     function claimRewardsTo(uint256 vaultId, address to) external;
 

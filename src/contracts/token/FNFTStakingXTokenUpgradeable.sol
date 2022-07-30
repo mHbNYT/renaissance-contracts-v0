@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./ERC20Upgradeable.sol";
 
-// XTokens let uou come in with some vault tokens, and leave with more! The longer you stay, the more vault tokens you get.
+// XTokens let you come in with some vault tokens, and leave with more! The longer you stay, the more vault tokens you get.
 //
 // This contract handles swapping to and from xSushi, SushiSwap's staking token.
 contract FNFTStakingXTokenUpgradeable is OwnableUpgradeable, ERC20Upgradeable {

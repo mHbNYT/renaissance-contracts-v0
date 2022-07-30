@@ -197,20 +197,12 @@ contract LPStaking is ILPStaking, Pausable {
         }
     }
 
-    function withdraw(uint256 vaultId, uint256 amount) external override {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        _claimRewards(pool, msg.sender);
-        _withdraw(pool, amount, msg.sender);
-
-        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
-    }
-
     function withdrawTo(uint256 vaultId, uint256 amount, address to) external override {
         StakingPool memory pool = vaultStakingInfo[vaultId];
         _claimRewards(pool, to);
         _withdraw(pool, amount, to);
 
-        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
+        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), to);
     }
 
     function balanceOf(uint256 vaultId, address addr) public view override returns (uint256) {
@@ -218,11 +210,6 @@ contract LPStaking is ILPStaking, Pausable {
         LPStakingXTokenUpgradeable _xToken = xToken(pool);
         if (!_isContract(address(_xToken))) revert NotAPool();
         return _xToken.balanceOf(addr);
-    }
-
-    function claimRewards(uint256 vaultId) public override {
-        StakingPool memory pool = vaultStakingInfo[vaultId];
-        _claimRewards(pool, msg.sender);
     }
 
     function claimRewardsTo(uint256 vaultId, address to) public override {
