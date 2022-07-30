@@ -60,7 +60,6 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 	function stakeLiquidityETH(
 		uint256 vaultId,
     uint256 minTokenIn,
-    uint256 minWethIn,
     uint256 wethIn,
     address to
 	) external payable override nonReentrant returns (uint256, uint256, uint256) {
@@ -69,7 +68,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
 
     address vault = vaultManager.vault(vaultId);
 
-		return _addLiquidityAndLock(vaultId, vault, minTokenIn, minWethIn, wethIn, to);
+		return _addLiquidityAndLock(vaultId, vault, minTokenIn, msg.value, wethIn, to);
 	}
 
 	function stakeLiquidityWETH(
