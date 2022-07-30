@@ -33,7 +33,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     IERC20Upgradeable(address(weth)).safeApprove(_router, type(uint256).max);
   }
 
-  function assignLPStakingContract() public override {
+  function assignLPStakingContract() external override {
     if (address(lpStaking) != address(0)) revert NotZeroAddress();
     IFeeDistributor feeDistributor = IFeeDistributor(IVaultManager(vaultManager).feeDistributor());
     lpStaking = ILPStaking(feeDistributor.lpStaking());
