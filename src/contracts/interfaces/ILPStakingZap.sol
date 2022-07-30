@@ -60,7 +60,7 @@ interface ILPStakingZap {
         address to
     ) external returns (uint256, uint256);
 
-    event UserStaked(uint256 vaultId, uint256 count, uint256 lpBalance, uint256 timelockUntil, address sender);
+    event UserStaked(uint256 indexed vaultId, uint256 count, uint256 lpBalance, uint256 timelockUntil, address indexed sender);
     event LPLockTimeUpdated(uint256 oldLockTime, uint256 newLockTime);
 
     error CallFailed();
