@@ -8,7 +8,7 @@
     "build": "forge build",
     "dev": "npx hardhat node --tags local",
     "dev:seed": "npx hardhat node --tags seed",
-    "deploy": "npx hardhat deploy --tags main --network mainnet"
+    "deploy": "npx hardhat deploy --tags main --network ethereum"
   },
   "author": "",
   "license": "ISC",

@@ -42,10 +42,10 @@ npx hardhat node
 npx hardhat run --network localhost dev-scripts/deploy.js
 
 ### Deploy to Testnet
-npx hardhat run --network testnet dev-scripts/deploy.js
+npx hardhat run --network rinkeby dev-scripts/deploy.js
 
 ### Deploy to Mainnet
-npx hardhat run --network mainnet scripts/deploy.js
+npx hardhat run --network ethereum scripts/deploy.js
 
 ## setup forge test
 install usbmodule
