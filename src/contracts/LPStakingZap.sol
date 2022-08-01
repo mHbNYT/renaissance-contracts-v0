@@ -179,7 +179,7 @@ contract LPStakingZap is ILPStakingZap, Ownable, ReentrancyGuard {
     }
 
 		uint256 lockEndTime = block.timestamp + lpLockTime;
-    emit UserStaked(vaultId, minTokenIn, liquidity, lockEndTime, to);
+    emit UserStaked(vaultId, to, minTokenIn, liquidity, lockEndTime);
     return (amountToken, amountEth, liquidity);
 	}
 
