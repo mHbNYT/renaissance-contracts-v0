@@ -42,7 +42,7 @@ const config: HardhatUserConfig = {
         url: "https://eth-mainnet.alchemyapi.io/v2/7p4KzWgfAW2gU_4xOoPT5mpxDdOgFycO"
       }
     },
-    rinkeby: {
+    testnet: {
       url: process.env.TEST_URI,
       chainId: +process.env.TEST_CHAINID!,
       accounts: [`${process.env.TEST_PRIVATE_KEY}`],
@@ -51,7 +51,7 @@ const config: HardhatUserConfig = {
       gas: 8000000,
       saveDeployments: false,
     },
-    ethereum: {
+    mainnet: {
       url: process.env.MAIN_URI,
       chainId: +process.env.MAIN_CHAINID!,
       accounts: [`${process.env.MAIN_PRIVATE_KEY}`],
@@ -69,19 +69,15 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     WETH: {
-      hardhat: '',
-      rinkeby: '',
-      ethereum: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+      mainnet: '0xC9BdeEd33CD01541e1eeD10f90519d2C06Fe3feB',
     },
     TREASURY: {
-      hardhat: '',
-      rinkeby: '',
-      ethereum: '',
+      default: '0x511fEFE374e9Cb50baF1E3f2E076c94b3eF8B03b',
     },
     UNISWAP_V2_FACTORY: {
-      hardhat: '',
-      rinkeby: '',
-      ethereum: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      hardhat: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      testnet: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+      mainnet: '0xc66F594268041dB60507F00703b152492fb176E7',
     },
   },
 };
