@@ -42,9 +42,9 @@ interface ILPStaking {
 
     function emergencyExit(address _stakingToken, address _baseToken) external;
 
-    function withdraw(uint256 vaultId, uint256 amount) external;
+    function withdrawTo(uint256 vaultId, uint256 amount, address to) external;
 
-    function claimRewards(uint256 vaultId) external;
+    function claimRewardsTo(uint256 vaultId, address to) external;
 
     function claimMultipleRewards(uint256[] calldata vaultIds) external;
 
@@ -63,7 +63,7 @@ interface ILPStaking {
     function retrieveTokens(uint256 vaultId, uint256 amount, address from, address to) external;
 
     event StakingPoolCreated(uint256 vaultId, address xToken, address baseToken);
-    event PoolUpdated(uint256 vaultId, address xToken);
+    event StakingPoolUpdated(uint256 vaultId, address xToken);
     event FeesReceived(uint256 vaultId, uint256 amount, address xToken);
     event LPDeposited(uint256 vaultId, uint256 amount, address xToken, address sender);
     event XTokenWithdrawn(uint256 vaultId, uint256 amount, address xToken, address sender);

@@ -80,7 +80,7 @@ contract LPStaking is ILPStaking, Pausable {
     function claimMultipleRewards(uint256[] calldata vaultIds) external override {
         uint256 length = vaultIds.length;
         for (uint256 i; i < length;) {
-            claimRewards(vaultIds[i]);
+            claimRewardsTo(vaultIds[i], msg.sender);
             unchecked {
                 ++i;
             }
@@ -184,7 +184,7 @@ contract LPStaking is ILPStaking, Pausable {
             return;
         }
         address newXToken = _deployDividendToken(newPool);
-        emit PoolUpdated(vaultId, newXToken);
+        emit StakingPoolUpdated(vaultId, newXToken);
     }
 
     function updatePoolForVaults(uint256[] calldata vaultIds) external override {
@@ -197,12 +197,12 @@ contract LPStaking is ILPStaking, Pausable {
         }
     }
 
-    function withdraw(uint256 vaultId, uint256 amount) external override {
+    function withdrawTo(uint256 vaultId, uint256 amount, address to) external override {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        _claimRewards(pool, msg.sender);
-        _withdraw(pool, amount, msg.sender);
+        _claimRewards(pool, to);
+        _withdraw(pool, amount, to);
 
-        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), msg.sender);
+        emit XTokenWithdrawn(vaultId, amount, address(xToken(pool)), to);
     }
 
     function balanceOf(uint256 vaultId, address addr) public view override returns (uint256) {
@@ -212,9 +212,9 @@ contract LPStaking is ILPStaking, Pausable {
         return _xToken.balanceOf(addr);
     }
 
-    function claimRewards(uint256 vaultId) public override {
+    function claimRewardsTo(uint256 vaultId, address to) public override {
         StakingPool memory pool = vaultStakingInfo[vaultId];
-        _claimRewards(pool, msg.sender);
+        _claimRewards(pool, to);
     }
 
     // Note: this function does not guarantee the token is deployed, we leave that check to elsewhere to save gas.

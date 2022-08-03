@@ -261,7 +261,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     vm.warp(block.timestamp + 3);
     vm.prank(address(1));
 
-    lpStaking.withdraw(vaultId, 100000000000000000);
+    lpStaking.withdrawTo(vaultId, 100000000000000000, address(1));
 
     assertEq(uniswapV2Pair.balanceOf(address(1)), 100000000000000000);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
@@ -279,7 +279,7 @@ contract LPStakingTest is DSTest, SetupEnvironment {
     vm.warp(block.timestamp + 3);
     vm.prank(address(1));
 
-    lpStaking.claimRewards(vaultId);
+    lpStaking.claimRewardsTo(vaultId, address(1));
 
     assertEq(uniswapV2Pair.balanceOf(address(1)), 0);
     assertEq(vault.balanceOf(address(1)), 499999999999999999);
