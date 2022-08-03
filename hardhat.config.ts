@@ -7,6 +7,7 @@ import "@typechain/hardhat";
 import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-interface-generator";
+import "hardhat-contract-sizer";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -16,7 +17,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 1000,  // FIXME: make FNFTFactory compile w/ 2m runs
+            runs: 200,
           },
         },
       },
@@ -25,7 +26,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 2_000_000,
+            runs: 200,
           },
         },
       },
@@ -33,25 +34,27 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: +process.env.AURORA_LOCAL_CHAINID!,
+      chainId: +process.env.LOCAL_CHAINID!,
       saveDeployments: false,
+      gasPrice: 200000000000,
+      gas: 30000000,
       forking: {
         url: "https://eth-mainnet.alchemyapi.io/v2/7p4KzWgfAW2gU_4xOoPT5mpxDdOgFycO"
       }
     },
-    aurora_testnet: {
-      url: process.env.AURORA_TEST_URI,
-      chainId: +process.env.AURORA_TEST_CHAINID!,
-      accounts: [`${process.env.AURORA_TEST_PRIVATE_KEY}`],
+    rinkeby: {
+      url: process.env.TEST_URI,
+      chainId: +process.env.TEST_CHAINID!,
+      accounts: [`${process.env.TEST_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000,
       saveDeployments: false,
     },
-    aurora_mainnet: {
-      url: process.env.AURORA_MAIN_URI,
-      chainId: +process.env.AURORA_MAIN_CHAINID!,
-      accounts: [`${process.env.AURORA_MAIN_PRIVATE_KEY}`],
+    ethereum: {
+      url: process.env.MAIN_URI,
+      chainId: +process.env.MAIN_CHAINID!,
+      accounts: [`${process.env.MAIN_PRIVATE_KEY}`],
       timeout: 600000,
       gasPrice: 2000000000,
       gas: 8000000,
@@ -66,13 +69,18 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     WETH: {
-      aurora_mainnet: process.env.AURORA_MAIN_WETH || null
+      hardhat: '0x000000000000000000000000000000000000000a',
+      rinkeby: '0x000000000000000000000000000000000000000b',
+      ethereum: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     },
-    DAO: {
-      hardhat: 2,
-      aurora_testnet: 2,
-      aurora_mainnet: process.env.AURORA_MAIN_DAO || null,
-    }
+    TREASURY: {
+      default: '0x000000000000000000000000000000000000000a',
+    },
+    UNISWAP_V2_FACTORY: {
+      hardhat: '0x000000000000000000000000000000000000000a',
+      rinkeby: '0x000000000000000000000000000000000000000b',
+      ethereum: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
+    },
   },
 };
 

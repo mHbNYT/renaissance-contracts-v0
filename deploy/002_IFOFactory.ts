@@ -6,22 +6,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   
   const {deploy, get} = deployments;
   const {deployer} = await getNamedAccounts();
-
-  const signer = await ethers.getSigner(deployer);
-
-  // get fnft settings proxy address
-  const proxyControllerInfo = await get('MultiProxyController');
-  const proxyController = new ethers.Contract(
-    proxyControllerInfo.address,
-    proxyControllerInfo.abi,
-    signer
-  );
-  const fnftSettingsAddress = (await proxyController.proxyMap(
-    ethers.utils.formatBytes32String("FNFTSettings")
-  ))[1];  
+  
+  const signer = await ethers.getSigner(deployer);  
 
   // deploy implementation contract
-  const fnftFactoryImpl = await deploy('FNFTFactory', {
+  const ifoFactoryImpl = await deploy('IFOFactory', {
     from: deployer,
     log: true,
   });
@@ -33,12 +22,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployerInfo.abi,
     signer
   );
-  await deployerContract.deployFNFTFactory(
-    fnftFactoryImpl.address, 
-    fnftSettingsAddress
-  );
+  await deployerContract.deployIFOFactory(ifoFactoryImpl.address);
 
 };
-
 func.tags = ['main', 'local', 'seed'];
 export default func;

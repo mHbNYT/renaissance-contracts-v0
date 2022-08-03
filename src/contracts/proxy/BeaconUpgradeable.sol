@@ -27,7 +27,7 @@ contract BeaconUpgradeable is OwnableUpgradeable, IBeacon {
     /**
      * @dev Returns the current child implementation address.
      */
-    function childImplementation() external view virtual override returns (address) {
+    function childImplementation() public view virtual override returns (address) {
         return _childImplementation;
     }
 
