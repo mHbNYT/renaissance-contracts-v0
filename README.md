@@ -1,3 +1,5 @@
+#Hi There
+
 ## Ideas:
 ## FNFT Utility
 1. Trading an FNFT allows you to gain exposure to the upside of blue-chip NFTs
